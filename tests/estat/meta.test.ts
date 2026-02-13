@@ -212,6 +212,38 @@ describe("resolveAgeSelection", () => {
     });
     expect(() => resolveAgeSelection(noAgeClassObjs)).toThrow(CliError);
   });
+
+  it("年齢分類が検出不能な場合のエラーに診断情報が含まれる", () => {
+    const industrialMeta = {
+      CLASS_INF: {
+        CLASS_OBJ: [
+          areaClassObj,
+          timeClassObj,
+          {
+            "@id": "cat01",
+            "@name": "産業分類",
+            CLASS: [
+              { "@code": "A", "@name": "農業" },
+              { "@code": "B", "@name": "漁業" },
+            ],
+          },
+        ],
+      },
+    };
+    const classObjs = extractClassObjects(industrialMeta);
+    try {
+      resolveAgeSelection(classObjs);
+      expect.fail("エラーが投げられるべき");
+    } catch (error) {
+      expect(error).toBeInstanceOf(CliError);
+      const cliError = error as CliError;
+      // 診断情報に inspect コマンド案内と推奨IDが含まれる
+      expect(cliError.hints.some((h: string) => h.includes("inspect"))).toBe(true);
+      expect(cliError.hints.some((h: string) => h.includes("0003448299"))).toBe(true);
+      // 候補分類の診断に「総数×」「0-14歳×」が含まれる
+      expect(cliError.hints[0]).toContain("×");
+    }
+  });
 });
 
 describe("extractDataValues", () => {
