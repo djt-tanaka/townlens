@@ -1,0 +1,26 @@
+{
+  "name": "estat-city-report",
+  "version": "0.1.0",
+  "description": "CLI tool to generate municipality comparison reports from e-Stat API",
+  "main": "dist/cli.js",
+  "bin": {
+    "estat-report": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "dev": "tsx src/cli.ts",
+    "start": "node dist/cli.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.7",
+    "playwright": "^1.51.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
