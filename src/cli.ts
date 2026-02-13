@@ -18,10 +18,15 @@ program.name("estat-report").description("e-Stat 市区町村比較レポートC
 function requireAppId(): string {
   const appId = process.env.ESTAT_APP_ID;
   if (!appId) {
-    throw new CliError("環境変数 ESTAT_APP_ID が未設定です", [
-      "e-Stat の appId を取得して ESTAT_APP_ID に設定してください。",
-      ".env を使う場合は ESTAT_APP_ID=<YOUR_APP_ID> を記述してください。"
-    ]);
+    throw new CliError(
+      "環境変数 ESTAT_APP_ID が未設定です",
+      [
+        "e-Stat の appId を取得して ESTAT_APP_ID に設定してください。",
+        ".env を使う場合は ESTAT_APP_ID=<YOUR_APP_ID> を記述してください。"
+      ],
+      undefined,
+      2
+    );
   }
   return appId;
 }
@@ -41,6 +46,10 @@ program
 
     console.log(`作成: ${created.join(", ")}`);
     console.log("次に estat.config.json の statsDataId と ESTAT_APP_ID を設定してください。");
+    console.log("");
+    console.log("  export ESTAT_APP_ID=<YOUR_APP_ID>");
+    console.log("");
+    console.log("または .env ファイルに ESTAT_APP_ID=<YOUR_APP_ID> を記述してください。");
   });
 
 program
@@ -48,7 +57,8 @@ program
   .description("統計表を検索")
   .requiredOption("--keyword <text>", "検索キーワード")
   .option("--limit <n>", "件数", "20")
-  .action(async (options: { keyword: string; limit: string }) => {
+  .option("--json", "JSON形式で出力")
+  .action(async (options: { keyword: string; limit: string; json?: boolean }) => {
     const appId = requireAppId();
     const client = new EstatApiClient(appId);
     const limit = Number(options.limit);
@@ -56,7 +66,16 @@ program
     const items = await client.getStatsList(options.keyword, Number.isFinite(limit) ? limit : 20);
 
     if (items.length === 0) {
-      console.log("検索結果がありませんでした。");
+      if (options.json) {
+        console.log("[]");
+      } else {
+        console.log("検索結果がありませんでした。");
+      }
+      return;
+    }
+
+    if (options.json) {
+      console.log(JSON.stringify(items, null, 2));
       return;
     }
 
@@ -124,12 +143,13 @@ program
       });
 
       const html = renderReportHtml({
-        title: "市区町村人口比較レポート",
+        title: "市区町村比較レポート（子育て世帯向け・MVP）",
         generatedAt: new Date().toLocaleString("ja-JP"),
         statsDataId: `${resolved.statsDataId} (${resolved.source})`,
         timeLabel: reportData.timeLabel,
         totalLabel: reportData.totalLabel,
         kidsLabel: reportData.kidsLabel,
+        classInfo: `${reportData.ageSelection.classId}: ${reportData.ageSelection.total.code}(${reportData.totalLabel}) / ${reportData.ageSelection.kids.code}(${reportData.kidsLabel})`,
         rows: reportData.rows
       });
 
@@ -145,5 +165,6 @@ program
 
 program.parseAsync(process.argv).catch((error: unknown) => {
   console.error(formatError(error));
-  process.exit(1);
+  const code = error instanceof CliError ? error.exitCode : 1;
+  process.exit(code);
 });

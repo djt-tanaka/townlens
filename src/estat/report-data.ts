@@ -25,16 +25,20 @@ export interface BuildReportInput {
   metaInfo: any;
 }
 
+export interface ReportRow {
+  cityInput: string;
+  cityResolved: string;
+  areaCode: string;
+  total: number;
+  kids: number;
+  ratio: number;
+  totalRank: number;
+  ratioRank: number;
+}
+
 export interface BuildReportResult {
   outPath: string;
-  rows: Array<{
-    cityInput: string;
-    cityResolved: string;
-    areaCode: string;
-    total: number;
-    kids: number;
-    ratio: number;
-  }>;
+  rows: ReportRow[];
   timeLabel: string;
   totalLabel: string;
   kidsLabel: string;
@@ -96,7 +100,7 @@ export async function buildReportData(input: BuildReportInput): Promise<BuildRep
     })
   ]);
 
-  const rows = cities.map((city) => {
+  const baseRows = cities.map((city) => {
     const total = totalMap.get(city.code);
     const kids = kidsMap.get(city.code);
 
@@ -117,6 +121,15 @@ export async function buildReportData(input: BuildReportInput): Promise<BuildRep
       ratio: total > 0 ? (kids / total) * 100 : 0
     };
   });
+
+  const totalSorted = [...baseRows].sort((a, b) => b.total - a.total);
+  const ratioSorted = [...baseRows].sort((a, b) => b.ratio - a.ratio);
+
+  const rows: ReportRow[] = baseRows.map((row) => ({
+    ...row,
+    totalRank: totalSorted.findIndex((r) => r.areaCode === row.areaCode) + 1,
+    ratioRank: ratioSorted.findIndex((r) => r.areaCode === row.areaCode) + 1
+  }));
 
   return {
     outPath: resolveOutPath(input.outPath),

@@ -7,6 +7,8 @@ export interface ReportRow {
   total: number;
   kids: number;
   ratio: number;
+  totalRank: number;
+  ratioRank: number;
 }
 
 export interface ReportModel {
@@ -16,6 +18,7 @@ export interface ReportModel {
   timeLabel: string;
   totalLabel: string;
   kidsLabel: string;
+  classInfo: string;
   rows: ReportRow[];
 }
 
@@ -34,11 +37,15 @@ export function renderReportHtml(model: ReportModel): string {
         <td>${escapeHtml(row.cityResolved)}</td>
         <td>${escapeHtml(row.areaCode)}</td>
         <td class="num">${numberFormat(row.total)}</td>
+        <td class="num">${row.totalRank}</td>
         <td class="num">${numberFormat(row.kids)}</td>
         <td class="num">${ratioText}</td>
+        <td class="num">${row.ratioRank}</td>
       </tr>`;
     })
     .join("\n");
+
+  const citiesList = model.rows.map((r) => escapeHtml(r.cityInput)).join("、");
 
   return `<!doctype html>
 <html lang="ja">
@@ -63,15 +70,34 @@ export function renderReportHtml(model: ReportModel): string {
         background: linear-gradient(150deg, #f8fafc 0%, #eff6ff 100%);
         font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
       }
+      .cover {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: calc(100vh - 40px);
+        text-align: center;
+        page-break-after: always;
+      }
+      .cover h1 {
+        font-size: 28px;
+        color: var(--accent);
+        margin-bottom: 24px;
+      }
+      .cover .cover-meta {
+        color: var(--sub);
+        font-size: 14px;
+        line-height: 2;
+      }
       .report {
         background: var(--card);
         border: 1px solid var(--line);
         border-radius: 12px;
         padding: 20px;
       }
-      h1 {
+      h2 {
         margin: 0 0 6px;
-        font-size: 24px;
+        font-size: 20px;
         color: var(--accent);
       }
       .meta {
@@ -90,6 +116,7 @@ export function renderReportHtml(model: ReportModel): string {
         background: var(--head);
         border: 1px solid var(--line);
         padding: 8px;
+        font-size: 11px;
       }
       td {
         border: 1px solid var(--line);
@@ -102,35 +129,51 @@ export function renderReportHtml(model: ReportModel): string {
         margin-top: 12px;
         font-size: 11px;
         color: var(--sub);
+        line-height: 1.6;
       }
     </style>
   </head>
   <body>
-    <section class="report">
+    <section class="cover">
       <h1>${escapeHtml(model.title)}</h1>
-      <div class="meta">
+      <div class="cover-meta">
         生成日時: ${escapeHtml(model.generatedAt)}<br />
+        対象市区町村: ${citiesList}<br />
         statsDataId: ${escapeHtml(model.statsDataId)}<br />
-        時点: ${escapeHtml(model.timeLabel)}<br />
+        時点: ${escapeHtml(model.timeLabel)}
+      </div>
+    </section>
+
+    <section class="report">
+      <h2>比較結果</h2>
+      <div class="meta">
         指標: ${escapeHtml(model.totalLabel)} / ${escapeHtml(model.kidsLabel)} / 0〜14歳比率
       </div>
       <table>
         <thead>
           <tr>
-            <th style="width: 5%">No</th>
-            <th style="width: 17%">入力市区町村名</th>
-            <th style="width: 17%">解決名</th>
-            <th style="width: 11%">cdArea</th>
-            <th style="width: 17%">人口（総数）</th>
-            <th style="width: 17%">0〜14歳人口</th>
-            <th style="width: 16%">0〜14歳比率</th>
+            <th style="width: 4%">No</th>
+            <th style="width: 13%">入力名</th>
+            <th style="width: 13%">解決名</th>
+            <th style="width: 9%">cdArea</th>
+            <th style="width: 14%">人口（総数）</th>
+            <th style="width: 7%">人口順位</th>
+            <th style="width: 14%">0〜14歳人口</th>
+            <th style="width: 13%">0〜14歳比率</th>
+            <th style="width: 7%">比率順位</th>
           </tr>
         </thead>
         <tbody>
           ${rowsHtml}
         </tbody>
       </table>
-      <div class="footnote">出典: e-Stat API getStatsData / 本レポートはCLIによる自動生成</div>
+      <div class="footnote">
+        出典: e-Stat API getStatsData<br />
+        statsDataId: ${escapeHtml(model.statsDataId)}<br />
+        時点コード: ${escapeHtml(model.timeLabel)}<br />
+        使用分類: ${escapeHtml(model.classInfo)}<br />
+        本レポートはCLIによる自動生成です。
+      </div>
     </section>
   </body>
 </html>`;

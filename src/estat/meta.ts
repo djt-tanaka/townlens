@@ -118,6 +118,12 @@ export function buildAreaEntries(areaClass: ClassObj): AreaEntry[] {
   }));
 }
 
+const PREFECTURE_PREFIX = /^(北海道|東京都|京都府|大阪府|.{2,3}県)/;
+
+function stripPrefecture(input: string): string {
+  return input.replace(PREFECTURE_PREFIX, "");
+}
+
 function candidateScore(input: string, target: string): number {
   const a = normalizeLabel(input);
   const b = normalizeLabel(target);
@@ -143,7 +149,12 @@ export function resolveCities(cities: string[], areaEntries: AreaEntry[]): CityR
 
 function resolveSingleCity(city: string, areaEntries: AreaEntry[]): CityResolution {
   const normalizedInput = normalizeLabel(city);
-  const exact = areaEntries.filter((entry) => normalizeLabel(entry.name) === normalizedInput);
+  const strippedInput = normalizeLabel(stripPrefecture(city));
+
+  const exact = areaEntries.filter((entry) => {
+    const normalizedName = normalizeLabel(entry.name);
+    return normalizedName === normalizedInput || normalizedName === strippedInput;
+  });
 
   if (exact.length === 1) {
     return {
@@ -154,15 +165,21 @@ function resolveSingleCity(city: string, areaEntries: AreaEntry[]): CityResoluti
   }
 
   if (exact.length > 1) {
-    throw new CliError(`市区町村名 '${city}' は複数候補があります`, [
-      `候補: ${exact.slice(0, 8).map((entry) => `${entry.name}(${entry.code})`).join(", ")}`,
-      "都道府県を含む正式名称で指定してください。"
-    ]);
+    throw new CliError(
+      `市区町村名 '${city}' は複数候補があります`,
+      [
+        `候補: ${exact.slice(0, 8).map((entry) => `${entry.name}(${entry.code})`).join(", ")}`,
+        "都道府県を含む正式名称で指定してください。"
+      ],
+      undefined,
+      3
+    );
   }
 
   const partial = areaEntries.filter((entry) => {
     const normalizedName = normalizeLabel(entry.name);
-    return normalizedName.includes(normalizedInput) || normalizedInput.includes(normalizedName);
+    return normalizedName.includes(normalizedInput) || normalizedInput.includes(normalizedName) ||
+      normalizedName.includes(strippedInput) || strippedInput.includes(normalizedName);
   });
 
   if (partial.length === 1) {
@@ -184,16 +201,26 @@ function resolveSingleCity(city: string, areaEntries: AreaEntry[]): CityResoluti
     .map((entry) => `${entry.name}(${entry.code})`);
 
   if (partial.length > 1) {
-    throw new CliError(`市区町村名 '${city}' は曖昧です`, [
-      `候補: ${partial.slice(0, 8).map((entry) => `${entry.name}(${entry.code})`).join(", ")}`,
-      "より具体的な名称で再実行してください。"
-    ]);
+    throw new CliError(
+      `市区町村名 '${city}' は曖昧です`,
+      [
+        `候補: ${partial.slice(0, 8).map((entry) => `${entry.name}(${entry.code})`).join(", ")}`,
+        "より具体的な名称で再実行してください。"
+      ],
+      undefined,
+      3
+    );
   }
 
-  throw new CliError(`市区町村名 '${city}' を解決できませんでした`, [
-    suggestions.length > 0 ? `近い候補: ${suggestions.join(", ")}` : "メタ情報に候補がありません。",
-    "statsDataId が市区町村粒度の統計か確認してください。"
-  ]);
+  throw new CliError(
+    `市区町村名 '${city}' を解決できませんでした`,
+    [
+      suggestions.length > 0 ? `近い候補: ${suggestions.join(", ")}` : "メタ情報に候補がありません。",
+      "statsDataId が市区町村粒度の統計か確認してください。"
+    ],
+    undefined,
+    3
+  );
 }
 
 function classScoreForTime(classObj: ClassObj): number {
