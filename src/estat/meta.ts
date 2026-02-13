@@ -1,4 +1,5 @@
 import { CliError } from "../errors";
+import { DATASETS } from "../config/datasets";
 import { arrify, normalizeLabel, parseNumber, textFrom, toCdParamName } from "../utils";
 
 export interface ClassItem {
@@ -368,14 +369,22 @@ export function resolveAgeSelection(
       });
 
   if (!selectedClass) {
-    const preview = candidates
-      .slice(0, 5)
-      .map((classObj) => `${classObj.id}:${classObj.name}`)
-      .join(", ");
-    throw new CliError("年齢区分（総数/0〜14）を特定できませんでした", [
-      preview ? `候補分類: ${preview}` : "分類候補が見つかりませんでした。",
-      "--classId/--totalCode/--kidsCode で手動指定してください。"
-    ]);
+    const diagnostics = candidates.slice(0, 5).map((classObj) => {
+      const bestTotal = Math.max(...classObj.items.map((item) => isTotalLabel(item.name)), 0);
+      const bestKids = Math.max(...classObj.items.map((item) => isKidsLabel(item.name)), 0);
+      const sample = classObj.items.slice(0, 6).map((item) => item.name).join(", ");
+      return `  ${classObj.id}(${classObj.name}): 総数${bestTotal > 0 ? "○" : "×"} 0-14歳${bestKids > 0 ? "○" : "×"} → ${sample}`;
+    }).join("\n");
+
+    const hints: string[] = [
+      diagnostics
+        ? `候補分類の診断:\n${diagnostics}`
+        : "分類候補が見つかりませんでした。",
+      "--classId/--totalCode/--kidsCode で手動指定するか、別の statsDataId を試してください。",
+      `事前診断: estat-report inspect --statsDataId <ID>`,
+      `推奨統計表: --statsDataId ${DATASETS.population.statsDataId} (${DATASETS.population.label})`,
+    ];
+    throw new CliError("年齢区分（総数/0〜14）を特定できませんでした", hints);
   }
 
   const total = overrides?.totalCode

@@ -20,6 +20,8 @@ import { mergeCrimeIntoScoringInput } from "./estat/merge-crime-scoring";
 import { buildDisasterData } from "./reinfo/disaster-data";
 import { mergeDisasterIntoScoringInput } from "./reinfo/merge-disaster-scoring";
 import { ensureDir } from "./utils";
+import { DATASETS } from "./config/datasets";
+import { inspectStatsData, formatInspectResult } from "./estat/inspect";
 
 dotenv.config();
 
@@ -112,6 +114,24 @@ program
     for (const item of items) {
       console.log(`- ${item.id} | ${item.title} | ${item.statName} | ${item.surveyDate}`);
     }
+  });
+
+program
+  .command("inspect")
+  .description("統計表のメタデータを検査し、レポート生成の可否を診断")
+  .requiredOption("--statsDataId <id>", "検査する統計表ID")
+  .option("--json", "JSON形式で出力")
+  .action(async (options: { statsDataId: string; json?: boolean }) => {
+    const appId = requireAppId();
+    const client = new EstatApiClient(appId);
+    const result = await inspectStatsData(client, options.statsDataId);
+
+    if (options.json) {
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    console.log(formatInspectResult(result));
   });
 
 program
@@ -242,9 +262,9 @@ program
         let hasCrimeData = false;
 
         if (options.crime) {
-          const crimeStatsDataId = options.crimeStatsId ?? config.crimeStatsDataId;
+          const crimeStatsDataId = options.crimeStatsId ?? config.crimeStatsDataId ?? DATASETS.crime.statsDataId;
           if (!crimeStatsDataId) {
-            console.log("犯罪統計の statsDataId が未設定のためスキップします。--crime-stats-id または config の crimeStatsDataId を設定してください。");
+            console.log("犯罪統計の statsDataId が未設定のためスキップします。");
           } else {
             const crimeData = await buildCrimeData(client, reportData.rows.map((r) => r.areaCode), {
               statsDataId: crimeStatsDataId,

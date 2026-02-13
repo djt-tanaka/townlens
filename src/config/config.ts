@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { CliError } from "../errors";
+import { DATASETS } from "./datasets";
 
 export interface SelectorConfig {
   classId?: string;
@@ -47,8 +48,8 @@ export async function writeInitFiles(): Promise<string[]> {
       defaultProfile: "population",
       profiles: {
         population: {
-          statsDataId: "REPLACE_WITH_STATS_DATA_ID",
-          notes: "市区町村別・年齢階級（総数/0-14）を含む統計表を指定する"
+          statsDataId: DATASETS.population.statsDataId,
+          notes: "国勢調査 年齢（3区分）人口。別のデータを使う場合のみ変更してください。",
         }
       }
     };
@@ -122,14 +123,9 @@ export function resolveStatsDataId(args: {
     };
   }
 
-  throw new CliError(
-    "statsDataId が未指定です",
-    [
-      "--statsDataId <ID> を指定してください。",
-      "または estat-report init を実行して profile を作成し、--profile <name> を指定してください。",
-      "候補を探すには estat-report search --keyword \"人口\" を利用してください。"
-    ],
-    undefined,
-    2
-  );
+  return {
+    statsDataId: DATASETS.population.statsDataId,
+    selectors: { ...DATASETS.population.selectors },
+    source: "builtin-default",
+  };
 }

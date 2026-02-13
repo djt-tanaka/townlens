@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { resolveStatsDataId, loadConfig, writeInitFiles } from "../../src/config/config";
 import { CliError } from "../../src/errors";
+import { DATASETS } from "../../src/config/datasets";
 
 // fs モジュールをモック
 vi.mock("node:fs/promises", () => ({
@@ -86,10 +87,11 @@ describe("resolveStatsDataId", () => {
     ).toThrow(CliError);
   });
 
-  it("statsDataIdもprofileも未指定ならエラー", () => {
-    expect(() =>
-      resolveStatsDataId({ config: {} })
-    ).toThrow(CliError);
+  it("statsDataIdもprofileも未指定ならビルトインデフォルトを返す", () => {
+    const result = resolveStatsDataId({ config: {} });
+    expect(result.statsDataId).toBe(DATASETS.population.statsDataId);
+    expect(result.source).toBe("builtin-default");
+    expect(result.selectors?.classId).toBe("cat01");
   });
 
   it("explicitStatsDataIdがあればprofileを無視する", () => {
