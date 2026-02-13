@@ -5,9 +5,12 @@ import { formatError, CliError } from "./errors";
 import { loadConfig, resolveStatsDataId, writeInitFiles } from "./config/config";
 import { EstatApiClient } from "./estat/client";
 import { loadMetaInfoWithCache } from "./estat/cache";
-import { buildReportData } from "./estat/report-data";
+import { buildReportData, toScoringInput } from "./estat/report-data";
 import { renderReportHtml } from "./report/html";
+import { renderScoredReportHtml } from "./report/templates/compose";
 import { renderPdfFromHtml } from "./report/pdf";
+import { scoreCities } from "./scoring";
+import { POPULATION_INDICATORS, findPreset, CHILDCARE_FOCUSED } from "./scoring/presets";
 import { ensureDir } from "./utils";
 
 dotenv.config();
@@ -96,6 +99,8 @@ program
   .option("--totalCode <code>", "総数の分類コード")
   .option("--kidsCode <code>", "0〜14歳の分類コード")
   .option("--timeCode <code>", "時間コード")
+  .option("--scored", "スコア付きレポートを生成")
+  .option("--preset <name>", "重みプリセット (childcare/price/safety)", "childcare")
   .action(
     async (options: {
       cities: string;
@@ -106,6 +111,8 @@ program
       totalCode?: string;
       kidsCode?: string;
       timeCode?: string;
+      scored?: boolean;
+      preset: string;
     }) => {
       const appId = requireAppId();
       const config = await loadConfig();
@@ -142,20 +149,48 @@ program
         metaInfo
       });
 
-      const html = renderReportHtml({
-        title: "市区町村比較レポート（子育て世帯向け・MVP）",
-        generatedAt: new Date().toLocaleString("ja-JP"),
-        statsDataId: `${resolved.statsDataId} (${resolved.source})`,
-        timeLabel: reportData.timeLabel,
-        totalLabel: reportData.totalLabel,
-        kidsLabel: reportData.kidsLabel,
-        classInfo: `${reportData.ageSelection.classId}: ${reportData.ageSelection.total.code}(${reportData.totalLabel}) / ${reportData.ageSelection.kids.code}(${reportData.kidsLabel})`,
-        rows: reportData.rows
-      });
+      let html: string;
+
+      if (options.scored) {
+        const preset = findPreset(options.preset) ?? CHILDCARE_FOCUSED;
+        const timeYear = reportData.timeLabel.match(/\d{4}/)?.[0] ?? "不明";
+        const scoringInput = toScoringInput(reportData, timeYear, resolved.statsDataId);
+        const results = scoreCities(scoringInput, POPULATION_INDICATORS, preset);
+
+        html = renderScoredReportHtml({
+          title: "引っ越し先スコア レポート（子育て世帯向け）",
+          generatedAt: new Date().toLocaleString("ja-JP"),
+          cities: cityNames,
+          statsDataId: `${resolved.statsDataId} (${resolved.source})`,
+          timeLabel: reportData.timeLabel,
+          preset,
+          results,
+          definitions: POPULATION_INDICATORS,
+          rawRows: reportData.rows,
+        });
+
+        console.log(`スコア付きPDFを出力しました: ${reportData.outPath}`);
+        console.log(`プリセット: ${preset.label}`);
+        for (const r of [...results].sort((a, b) => a.rank - b.rank)) {
+          console.log(`  ${r.rank}位: ${r.cityName} (スコア: ${r.compositeScore.toFixed(1)}, 信頼度: ${r.confidence.level})`);
+        }
+      } else {
+        html = renderReportHtml({
+          title: "市区町村比較レポート（子育て世帯向け・MVP）",
+          generatedAt: new Date().toLocaleString("ja-JP"),
+          statsDataId: `${resolved.statsDataId} (${resolved.source})`,
+          timeLabel: reportData.timeLabel,
+          totalLabel: reportData.totalLabel,
+          kidsLabel: reportData.kidsLabel,
+          classInfo: `${reportData.ageSelection.classId}: ${reportData.ageSelection.total.code}(${reportData.totalLabel}) / ${reportData.ageSelection.kids.code}(${reportData.kidsLabel})`,
+          rows: reportData.rows
+        });
+
+        console.log(`PDFを出力しました: ${reportData.outPath}`);
+      }
 
       await renderPdfFromHtml(html, reportData.outPath);
 
-      console.log(`PDFを出力しました: ${reportData.outPath}`);
       console.log(`時点: ${reportData.timeLabel}`);
       console.log(`年齢分類: ${reportData.ageSelection.classId}`);
       console.log(`総数: ${reportData.totalLabel}(${reportData.ageSelection.total.code})`);

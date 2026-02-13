@@ -1,15 +1,7 @@
+import { ReportRow } from "../types";
 import { escapeHtml } from "../utils";
 
-export interface ReportRow {
-  cityInput: string;
-  cityResolved: string;
-  areaCode: string;
-  total: number;
-  kids: number;
-  ratio: number;
-  totalRank: number;
-  ratioRank: number;
-}
+export { ReportRow } from "../types";
 
 export interface ReportModel {
   title: string;

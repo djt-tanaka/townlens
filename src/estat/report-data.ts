@@ -1,4 +1,6 @@
 import { CliError } from "../errors";
+import { CityIndicators, IndicatorValue } from "../scoring/types";
+import { ReportRow } from "../types";
 import { resolveOutPath } from "../utils";
 import { SelectorConfig } from "../config/config";
 import { EstatApiClient } from "./client";
@@ -15,6 +17,8 @@ import {
   valuesByArea
 } from "./meta";
 
+export { ReportRow } from "../types";
+
 export interface BuildReportInput {
   client: EstatApiClient;
   statsDataId: string;
@@ -23,17 +27,6 @@ export interface BuildReportInput {
   selectors?: SelectorConfig;
   timeCode?: string;
   metaInfo: any;
-}
-
-export interface ReportRow {
-  cityInput: string;
-  cityResolved: string;
-  areaCode: string;
-  total: number;
-  kids: number;
-  ratio: number;
-  totalRank: number;
-  ratioRank: number;
 }
 
 export interface BuildReportResult {
@@ -139,4 +132,36 @@ export async function buildReportData(input: BuildReportInput): Promise<BuildRep
     kidsLabel: ageSelection.kids.name,
     ageSelection
   };
+}
+
+/**
+ * BuildReportResult からスコアリング入力を構築する
+ */
+export function toScoringInput(
+  result: BuildReportResult,
+  dataYear: string,
+  statsDataId: string
+): ReadonlyArray<CityIndicators> {
+  return result.rows.map((row) => {
+    const indicators: IndicatorValue[] = [
+      {
+        indicatorId: "population_total",
+        rawValue: row.total,
+        dataYear,
+        sourceId: statsDataId,
+      },
+      {
+        indicatorId: "kids_ratio",
+        rawValue: row.ratio,
+        dataYear,
+        sourceId: statsDataId,
+      },
+    ];
+
+    return {
+      cityName: row.cityResolved,
+      areaCode: row.areaCode,
+      indicators,
+    };
+  });
 }
