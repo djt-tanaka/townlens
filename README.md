@@ -8,6 +8,7 @@ e-Stat API から市区町村別の人口データを取得し、比較PDFを出
 npm install
 npx playwright install chromium
 npm run build
+npm link          # estat-report コマンドをグローバルに登録
 ```
 
 ```bash
@@ -22,6 +23,16 @@ estat-report init
 estat-report init
 estat-report search --keyword "人口"
 estat-report report --cities "新宿区,横浜市,大阪市" --statsDataId 0003000001 --out ./out/report.pdf
+```
+
+`npm link` を使わない場合は `npx` 経由でも実行できます。
+
+```bash
+npx estat-report init
+npx estat-report report --cities "新宿区,横浜市,大阪市" --statsDataId 0003000001 --out ./out/report.pdf
+
+# 開発中は tsx で直接実行も可能
+npm run dev -- report --cities "新宿区,横浜市,大阪市"
 ```
 
 ### report オプション
