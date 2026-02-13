@@ -66,11 +66,26 @@ export class EstatApiClient {
         const status = String(result?.STATUS ?? "0");
         const errorMsg = textFrom(result?.ERROR_MSG);
 
-        if (status !== "0") {
-          throw new CliError(`e-Stat APIエラー(status=${status})`, errorMsg ? [errorMsg] : []);
+        if (status === "0") {
+          return data;
         }
 
-        return data;
+        // status=1: 正常終了だが該当データなし
+        if (status === "1") {
+          if (endpoint === "getMetaInfo") {
+            throw new CliError(
+              "該当するメタ情報がありません (statsDataId が無効または廃止)",
+              [errorMsg, "estat-report search --keyword \"人口\" で有効なIDを検索してください。"].filter(Boolean) as string[]
+            );
+          }
+          if (errorMsg) {
+            console.warn(`[warn] e-Stat: ${errorMsg}`);
+          }
+          return data;
+        }
+
+        // status=2+: APIエラー
+        throw new CliError(`e-Stat APIエラー(status=${status})`, errorMsg ? [errorMsg] : []);
       } catch (error) {
         if (error instanceof CliError) {
           throw error;

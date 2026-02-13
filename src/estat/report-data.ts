@@ -114,6 +114,7 @@ export async function buildReportData(input: BuildReportInput): Promise<BuildRep
     if (total === undefined || kids === undefined) {
       throw new CliError(`統計値を取得できない市区町村があります (${city.input})`, [
         `時間コード: ${timeSelection.code} / 年齢分類: ${ageSelection.classId}`,
+        "指定した市区町村にデータが存在しない可能性があります（e-Stat API がデータなしを返却）。",
         "--timeCode または --classId/--totalCode/--kidsCode の手動指定を試してください。",
         `分類候補:\n${formatSelectionPreview(classObjs)}`
       ]);

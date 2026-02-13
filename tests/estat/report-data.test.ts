@@ -287,4 +287,27 @@ describe("buildReportData", () => {
     expect(shinjuku.total).toBe(346235);
     expect(shinjuku.kids).toBe(32451);
   });
+
+  it("APIが空データを返した場合、ヒント付きエラーを投げる", async () => {
+    const emptyClient = {
+      getStatsData: vi.fn().mockResolvedValue({
+        GET_STATS_DATA: {
+          STATISTICAL_DATA: {
+            DATA_INF: { VALUE: [] },
+          },
+        },
+      }),
+      getStatsList: vi.fn(),
+      getMetaInfo: vi.fn(),
+    };
+
+    await expect(
+      buildReportData({
+        client: emptyClient as any,
+        statsDataId: "0003448299",
+        cityNames: ["新宿区"],
+        metaInfo: sampleMetaInfo,
+      })
+    ).rejects.toThrow(/統計値を取得できない/);
+  });
 });

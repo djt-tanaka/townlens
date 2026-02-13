@@ -183,4 +183,18 @@ describe("buildCrimeData", () => {
       expect.objectContaining({ cdCat01: "D3101" }),
     );
   });
+
+  it("APIが空データを返した場合、空Mapを返す（グレースフル）", async () => {
+    vi.mocked(cache.loadMetaInfoWithCache).mockResolvedValue(sampleMetaInfo);
+    mockClient.getStatsData.mockResolvedValue({
+      GET_STATS_DATA: {
+        STATISTICAL_DATA: {
+          DATA_INF: { VALUE: [] },
+        },
+      },
+    });
+
+    const result = await buildCrimeData(mockClient, ["13104", "13113"], baseConfig);
+    expect(result.size).toBe(0);
+  });
 });
