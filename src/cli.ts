@@ -17,6 +17,8 @@ import { mergePriceIntoScoringInput } from "./reinfo/merge-scoring";
 import { PropertyType, PROPERTY_TYPE_LABELS } from "./reinfo/types";
 import { buildCrimeData } from "./estat/crime-data";
 import { mergeCrimeIntoScoringInput } from "./estat/merge-crime-scoring";
+import { buildDisasterData } from "./reinfo/disaster-data";
+import { mergeDisasterIntoScoringInput } from "./reinfo/merge-disaster-scoring";
 import { ensureDir } from "./utils";
 
 dotenv.config();
@@ -132,6 +134,7 @@ program
   .option("--no-price", "不動産価格データなしで実行")
   .option("--no-crime", "犯罪統計データなしで実行")
   .option("--crime-stats-id <id>", "犯罪統計の statsDataId")
+  .option("--no-disaster", "災害リスクデータなしで実行")
   .action(
     async (options: {
       cities: string;
@@ -151,6 +154,7 @@ program
       price: boolean;
       crime: boolean;
       crimeStatsId?: string;
+      disaster: boolean;
     }) => {
       const appId = requireAppId();
       const config = await loadConfig();
@@ -262,6 +266,31 @@ program
           }
         }
 
+        let hasDisasterData = false;
+
+        if (options.disaster) {
+          const reinfoKey = requireReinfoApiKey();
+          const disasterClient = new ReinfoApiClient(reinfoKey);
+          const areaCodes = reportData.rows.map((r) => r.areaCode);
+          const disasterData = await buildDisasterData(disasterClient, areaCodes);
+
+          if (disasterData.size > 0) {
+            scoringInput = mergeDisasterIntoScoringInput(scoringInput, disasterData);
+            definitions = ALL_INDICATORS;
+            hasDisasterData = true;
+            enrichedRows = enrichedRows.map((row) => {
+              const data = disasterData.get(row.areaCode);
+              if (!data) return row;
+              return {
+                ...row,
+                floodRisk: data.floodRisk,
+                landslideRisk: data.landslideRisk,
+                evacuationSiteCount: data.evacuationSiteCount,
+              };
+            });
+          }
+        }
+
         const results = scoreCities(scoringInput, definitions, preset);
 
         html = renderScoredReportHtml({
@@ -278,6 +307,7 @@ program
           propertyTypeLabel: hasPriceData ? propertyTypeLabel : undefined,
           budgetLimit: hasPriceData ? budgetLimit : undefined,
           hasCrimeData,
+          hasDisasterData,
         });
 
         console.log(`スコア付きPDFを出力しました: ${reportData.outPath}`);
@@ -287,6 +317,9 @@ program
         }
         if (hasCrimeData) {
           console.log("犯罪統計データ: 有効");
+        }
+        if (hasDisasterData) {
+          console.log("災害リスクデータ: 有効");
         }
         for (const r of [...results].sort((a, b) => a.rank - b.rank)) {
           console.log(`  ${r.rank}位: ${r.cityName} (スコア: ${r.compositeScore.toFixed(1)}, 信頼度: ${r.confidence.level})`);

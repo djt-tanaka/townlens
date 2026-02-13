@@ -19,4 +19,10 @@ export interface ReportRow {
   readonly propertyTypeLabel?: string | null;
   /** Phase 2a: 刑法犯認知件数（人口千人当たり） */
   readonly crimeRate?: number | null;
+  /** Phase 2b: 洪水浸水リスクの有無 */
+  readonly floodRisk?: boolean | null;
+  /** Phase 2b: 土砂災害リスクの有無 */
+  readonly landslideRisk?: boolean | null;
+  /** Phase 2b: 指定緊急避難場所数 */
+  readonly evacuationSiteCount?: number | null;
 }

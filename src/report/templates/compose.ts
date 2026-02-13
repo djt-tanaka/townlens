@@ -26,6 +26,8 @@ export interface ScoredReportModel {
   readonly budgetLimit?: number;
   /** Phase 2a: 犯罪統計データが含まれるか */
   readonly hasCrimeData?: boolean;
+  /** Phase 2b: 災害リスクデータが含まれるか */
+  readonly hasDisasterData?: boolean;
 }
 
 /**
@@ -74,6 +76,7 @@ export function renderScoredReportHtml(model: ScoredReportModel): string {
     generatedAt: model.generatedAt,
     hasPriceData: model.hasPriceData,
     hasCrimeData: model.hasCrimeData,
+    hasDisasterData: model.hasDisasterData,
   });
 
   return `<!doctype html>

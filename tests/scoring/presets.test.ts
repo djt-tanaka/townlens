@@ -8,6 +8,7 @@ import {
   POPULATION_INDICATORS,
   PRICE_INDICATORS,
   SAFETY_INDICATORS,
+  DISASTER_INDICATORS,
   ALL_INDICATORS,
 } from "../../src/scoring/presets";
 
@@ -92,9 +93,33 @@ describe("SAFETY_INDICATORS", () => {
   });
 });
 
+describe("DISASTER_INDICATORS", () => {
+  it("Phase 2b用の災害指標が定義されている", () => {
+    expect(DISASTER_INDICATORS.length).toBeGreaterThanOrEqual(2);
+    const ids = DISASTER_INDICATORS.map((d) => d.id);
+    expect(ids).toContain("flood_risk");
+    expect(ids).toContain("evacuation_sites");
+  });
+
+  it("災害指標はdisasterカテゴリ", () => {
+    for (const def of DISASTER_INDICATORS) {
+      expect(def.category).toBe("disaster");
+    }
+  });
+
+  it("flood_riskはlower_better、evacuation_sitesはhigher_better", () => {
+    const flood = DISASTER_INDICATORS.find((d) => d.id === "flood_risk")!;
+    expect(flood.direction).toBe("lower_better");
+    const evac = DISASTER_INDICATORS.find((d) => d.id === "evacuation_sites")!;
+    expect(evac.direction).toBe("higher_better");
+  });
+});
+
 describe("ALL_INDICATORS", () => {
   it("全フェーズの指標を統合している", () => {
-    expect(ALL_INDICATORS.length).toBe(POPULATION_INDICATORS.length + PRICE_INDICATORS.length + SAFETY_INDICATORS.length);
+    expect(ALL_INDICATORS.length).toBe(
+      POPULATION_INDICATORS.length + PRICE_INDICATORS.length + SAFETY_INDICATORS.length + DISASTER_INDICATORS.length,
+    );
   });
 
   it("IDが一意", () => {

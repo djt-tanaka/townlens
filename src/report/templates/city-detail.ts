@@ -28,6 +28,11 @@ function getRawValue(indicatorId: string, rawRow: ReportRow): number | null | un
     kids_ratio: () => rawRow.ratio,
     condo_price_median: () => rawRow.condoPriceMedian,
     crime_rate: () => rawRow.crimeRate,
+    flood_risk: () => {
+      if (rawRow.floodRisk == null && rawRow.landslideRisk == null) return undefined;
+      return (rawRow.floodRisk ? 1 : 0) + (rawRow.landslideRisk ? 1 : 0);
+    },
+    evacuation_sites: () => rawRow.evacuationSiteCount,
   };
   return mapping[indicatorId]?.() ?? undefined;
 }
