@@ -17,6 +17,8 @@ export interface ProfileConfig {
 export interface EstatConfig {
   defaultProfile?: string;
   profiles?: Record<string, ProfileConfig>;
+  /** Phase 2a: 犯罪統計用の statsDataId（社会・人口統計体系等） */
+  crimeStatsDataId?: string;
 }
 
 export async function loadConfig(configPath = "estat.config.json"): Promise<EstatConfig> {

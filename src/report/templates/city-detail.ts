@@ -27,6 +27,12 @@ function getRawValue(indicatorId: string, rawRow: ReportRow): number | null | un
     population_total: () => rawRow.total,
     kids_ratio: () => rawRow.ratio,
     condo_price_median: () => rawRow.condoPriceMedian,
+    crime_rate: () => rawRow.crimeRate,
+    flood_risk: () => {
+      if (rawRow.floodRisk == null && rawRow.landslideRisk == null) return undefined;
+      return (rawRow.floodRisk ? 1 : 0) + (rawRow.landslideRisk ? 1 : 0);
+    },
+    evacuation_sites: () => rawRow.evacuationSiteCount,
   };
   return mapping[indicatorId]?.() ?? undefined;
 }
@@ -47,13 +53,23 @@ function renderPriceRange(rawRow: ReportRow): string {
     return "";
   }
   const countDisplay = count != null ? `（取引件数: ${numberFormat(count)}件）` : "";
+  const affordabilityLine =
+    rawRow.affordabilityRate != null
+      ? `
+        <tr>
+          <td>├ 予算内取引割合</td>
+          <td class="num">${rawRow.affordabilityRate.toFixed(1)}%</td>
+          <td class="num">-</td>
+          <td class="num">-</td>
+        </tr>`
+      : "";
   return `
         <tr>
           <td>├ 価格レンジ (Q25-Q75)</td>
           <td class="num">${numberFormat(q25)} 〜 ${numberFormat(q75)} 万円${countDisplay}</td>
           <td class="num">-</td>
           <td class="num">-</td>
-        </tr>`;
+        </tr>${affordabilityLine}`;
 }
 
 export function renderCityDetail(model: CityDetailModel): string {

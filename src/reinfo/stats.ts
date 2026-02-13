@@ -1,12 +1,45 @@
-import { CondoPriceStats, ReinfoTradeRecord } from "./types";
+import { CondoPriceStats, PropertyType, PROPERTY_TYPE_LABELS, ReinfoTradeRecord } from "./types";
 
-const CONDO_TYPE = "中古マンション等";
-
-/** "中古マンション等" のレコードのみ抽出 */
-export function filterCondoTrades(
-  trades: ReadonlyArray<ReinfoTradeRecord>
+/** 指定された物件タイプのレコードのみ抽出 */
+export function filterTradesByType(
+  trades: ReadonlyArray<ReinfoTradeRecord>,
+  propertyType: PropertyType,
 ): ReadonlyArray<ReinfoTradeRecord> {
-  return trades.filter((t) => t.Type === CONDO_TYPE);
+  if (propertyType === "all") {
+    return trades.filter((t) => t.Type !== "");
+  }
+  const label = PROPERTY_TYPE_LABELS[propertyType];
+  return trades.filter((t) => t.Type === label);
+}
+
+/** "中古マンション等" のレコードのみ抽出（後方互換ラッパー） */
+export function filterCondoTrades(
+  trades: ReadonlyArray<ReinfoTradeRecord>,
+): ReadonlyArray<ReinfoTradeRecord> {
+  return filterTradesByType(trades, "condo");
+}
+
+/** 予算上限でフィルタ（万円単位で指定） */
+export function filterByBudgetLimit(
+  trades: ReadonlyArray<ReinfoTradeRecord>,
+  budgetLimitManYen: number,
+): ReadonlyArray<ReinfoTradeRecord> {
+  const limitYen = budgetLimitManYen * 10000;
+  return trades.filter((t) => {
+    const price = Number(t.TradePrice);
+    return Number.isFinite(price) && price > 0 && price <= limitYen;
+  });
+}
+
+/** 予算上限内の取引割合を算出（0-100%） */
+export function calculateAffordabilityRate(
+  prices: ReadonlyArray<number>,
+  budgetLimitManYen: number,
+): number {
+  if (prices.length === 0) return 0;
+  const limitYen = budgetLimitManYen * 10000;
+  const affordable = prices.filter((p) => p <= limitYen).length;
+  return (affordable / prices.length) * 100;
 }
 
 /** 取引価格を数値配列に変換（無効値・0円を除外） */

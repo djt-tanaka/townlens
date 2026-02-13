@@ -90,4 +90,40 @@ describe("buildPriceData", () => {
     const elapsed = Date.now() - start;
     expect(elapsed).toBeGreaterThanOrEqual(350); // マージン考慮
   }, 10000);
+
+  it("propertyType=house で中古戸建住宅のみ集計する", async () => {
+    vi.mocked(cache.fetchTradesWithCache).mockResolvedValueOnce([
+      { Type: "中古マンション等", TradePrice: "50000000", Area: "80", BuildingYear: "2015", FloorPlan: "2LDK", Prefecture: "東京都", Municipality: "新宿区", DistrictName: "新宿" },
+      { Type: "中古戸建住宅", TradePrice: "40000000", Area: "120", BuildingYear: "2010", FloorPlan: "4LDK", Prefecture: "東京都", Municipality: "新宿区", DistrictName: "西新宿" },
+    ] as any);
+
+    const result = await buildPriceData(mockClient, ["13104"], "2024", undefined, "house");
+    const stats = result.get("13104")!;
+    expect(stats.count).toBe(1);
+    expect(stats.median).toBe(40000000);
+    expect(stats.propertyTypeLabel).toBe("中古戸建住宅");
+  });
+
+  it("budgetLimit で予算上限フィルタが適用される", async () => {
+    vi.mocked(cache.fetchTradesWithCache).mockResolvedValueOnce([
+      { Type: "中古マンション等", TradePrice: "30000000", Area: "70", BuildingYear: "2010", FloorPlan: "2LDK", Prefecture: "東京都", Municipality: "新宿区", DistrictName: "西新宿" },
+      { Type: "中古マンション等", TradePrice: "60000000", Area: "100", BuildingYear: "2015", FloorPlan: "3LDK", Prefecture: "東京都", Municipality: "新宿区", DistrictName: "新宿" },
+      { Type: "中古マンション等", TradePrice: "40000000", Area: "80", BuildingYear: "2012", FloorPlan: "2LDK", Prefecture: "東京都", Municipality: "新宿区", DistrictName: "大久保" },
+    ] as any);
+
+    const result = await buildPriceData(mockClient, ["13104"], "2024", undefined, "condo", 5000);
+    const stats = result.get("13104")!;
+    expect(stats.count).toBe(2);
+    expect(stats.affordabilityRate).toBeCloseTo(66.7, 0);
+  });
+
+  it("budgetLimit未指定時はaffordabilityRateがundefined", async () => {
+    vi.mocked(cache.fetchTradesWithCache).mockResolvedValueOnce([
+      { Type: "中古マンション等", TradePrice: "30000000", Area: "70", BuildingYear: "2010", FloorPlan: "2LDK", Prefecture: "東京都", Municipality: "新宿区", DistrictName: "西新宿" },
+    ] as any);
+
+    const result = await buildPriceData(mockClient, ["13104"], "2024");
+    const stats = result.get("13104")!;
+    expect(stats.affordabilityRate).toBeUndefined();
+  });
 });

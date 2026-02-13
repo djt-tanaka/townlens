@@ -14,6 +14,11 @@ import { POPULATION_INDICATORS, ALL_INDICATORS, findPreset, CHILDCARE_FOCUSED } 
 import { ReinfoApiClient } from "./reinfo/client";
 import { buildPriceData } from "./reinfo/price-data";
 import { mergePriceIntoScoringInput } from "./reinfo/merge-scoring";
+import { PropertyType, PROPERTY_TYPE_LABELS } from "./reinfo/types";
+import { buildCrimeData } from "./estat/crime-data";
+import { mergeCrimeIntoScoringInput } from "./estat/merge-crime-scoring";
+import { buildDisasterData } from "./reinfo/disaster-data";
+import { mergeDisasterIntoScoringInput } from "./reinfo/merge-disaster-scoring";
 import { ensureDir } from "./utils";
 
 dotenv.config();
@@ -124,7 +129,12 @@ program
   .option("--preset <name>", "重みプリセット (childcare/price/safety)", "childcare")
   .option("--year <YYYY>", "不動産取引データの年 (デフォルト: 前年)")
   .option("--quarter <1-4>", "四半期 (1-4)")
+  .option("--property-type <type>", "物件タイプ (condo/house/land/all)", "condo")
+  .option("--budget-limit <万円>", "予算上限（万円）")
   .option("--no-price", "不動産価格データなしで実行")
+  .option("--no-crime", "犯罪統計データなしで実行")
+  .option("--crime-stats-id <id>", "犯罪統計の statsDataId")
+  .option("--no-disaster", "災害リスクデータなしで実行")
   .action(
     async (options: {
       cities: string;
@@ -139,7 +149,12 @@ program
       preset: string;
       year?: string;
       quarter?: string;
+      propertyType: string;
+      budgetLimit?: string;
       price: boolean;
+      crime: boolean;
+      crimeStatsId?: string;
+      disaster: boolean;
     }) => {
       const appId = requireAppId();
       const config = await loadConfig();
@@ -186,12 +201,23 @@ program
         let hasPriceData = false;
         let enrichedRows = reportData.rows;
 
+        const propertyType = (["condo", "house", "land", "all"].includes(options.propertyType)
+          ? options.propertyType
+          : "condo") as PropertyType;
+        const budgetLimit = options.budgetLimit ? Number(options.budgetLimit) : undefined;
+        if (budgetLimit !== undefined && (!Number.isFinite(budgetLimit) || budgetLimit <= 0)) {
+          throw new CliError("--budget-limit は正の数値を指定してください", ["例: --budget-limit 5000"]);
+        }
+        const propertyTypeLabel = PROPERTY_TYPE_LABELS[propertyType];
+
         if (options.price) {
           const reinfoKey = requireReinfoApiKey();
           const reinfoClient = new ReinfoApiClient(reinfoKey);
           const priceYear = options.year ?? String(new Date().getFullYear() - 1);
           const areaCodes = reportData.rows.map((r) => r.areaCode);
-          const priceData = await buildPriceData(reinfoClient, areaCodes, priceYear, options.quarter);
+          const priceData = await buildPriceData(
+            reinfoClient, areaCodes, priceYear, options.quarter, propertyType, budgetLimit,
+          );
 
           if (priceData.size > 0) {
             scoringInput = mergePriceIntoScoringInput(scoringInput, priceData);
@@ -206,6 +232,60 @@ program
                 condoPriceQ25: Math.round(stats.q25 / 10000),
                 condoPriceQ75: Math.round(stats.q75 / 10000),
                 condoPriceCount: stats.count,
+                affordabilityRate: stats.affordabilityRate ?? null,
+                propertyTypeLabel: stats.propertyTypeLabel ?? null,
+              };
+            });
+          }
+        }
+
+        let hasCrimeData = false;
+
+        if (options.crime) {
+          const crimeStatsDataId = options.crimeStatsId ?? config.crimeStatsDataId;
+          if (!crimeStatsDataId) {
+            console.log("犯罪統計の statsDataId が未設定のためスキップします。--crime-stats-id または config の crimeStatsDataId を設定してください。");
+          } else {
+            const crimeData = await buildCrimeData(client, reportData.rows.map((r) => r.areaCode), {
+              statsDataId: crimeStatsDataId,
+            });
+
+            if (crimeData.size > 0) {
+              scoringInput = mergeCrimeIntoScoringInput(scoringInput, crimeData);
+              definitions = ALL_INDICATORS;
+              hasCrimeData = true;
+              enrichedRows = enrichedRows.map((row) => {
+                const stats = crimeData.get(row.areaCode);
+                if (!stats) return row;
+                return {
+                  ...row,
+                  crimeRate: stats.crimeRate,
+                };
+              });
+            }
+          }
+        }
+
+        let hasDisasterData = false;
+
+        if (options.disaster) {
+          const reinfoKey = requireReinfoApiKey();
+          const disasterClient = new ReinfoApiClient(reinfoKey);
+          const areaCodes = reportData.rows.map((r) => r.areaCode);
+          const disasterData = await buildDisasterData(disasterClient, areaCodes);
+
+          if (disasterData.size > 0) {
+            scoringInput = mergeDisasterIntoScoringInput(scoringInput, disasterData);
+            definitions = ALL_INDICATORS;
+            hasDisasterData = true;
+            enrichedRows = enrichedRows.map((row) => {
+              const data = disasterData.get(row.areaCode);
+              if (!data) return row;
+              return {
+                ...row,
+                floodRisk: data.floodRisk,
+                landslideRisk: data.landslideRisk,
+                evacuationSiteCount: data.evacuationSiteCount,
               };
             });
           }
@@ -224,12 +304,22 @@ program
           definitions,
           rawRows: enrichedRows,
           hasPriceData,
+          propertyTypeLabel: hasPriceData ? propertyTypeLabel : undefined,
+          budgetLimit: hasPriceData ? budgetLimit : undefined,
+          hasCrimeData,
+          hasDisasterData,
         });
 
         console.log(`スコア付きPDFを出力しました: ${reportData.outPath}`);
         console.log(`プリセット: ${preset.label}`);
         if (hasPriceData) {
           console.log("不動産価格データ: 有効");
+        }
+        if (hasCrimeData) {
+          console.log("犯罪統計データ: 有効");
+        }
+        if (hasDisasterData) {
+          console.log("災害リスクデータ: 有効");
         }
         for (const r of [...results].sort((a, b) => a.rank - b.rank)) {
           console.log(`  ${r.rank}位: ${r.cityName} (スコア: ${r.compositeScore.toFixed(1)}, 信頼度: ${r.confidence.level})`);

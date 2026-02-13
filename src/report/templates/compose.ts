@@ -20,6 +20,14 @@ export interface ScoredReportModel {
   readonly rawRows: ReadonlyArray<ReportRow>;
   /** Phase 1: 不動産価格データが含まれるか */
   readonly hasPriceData?: boolean;
+  /** Phase 1: 物件タイプラベル */
+  readonly propertyTypeLabel?: string;
+  /** Phase 1: 予算上限（万円） */
+  readonly budgetLimit?: number;
+  /** Phase 2a: 犯罪統計データが含まれるか */
+  readonly hasCrimeData?: boolean;
+  /** Phase 2b: 災害リスクデータが含まれるか */
+  readonly hasDisasterData?: boolean;
 }
 
 /**
@@ -34,6 +42,8 @@ export function renderScoredReportHtml(model: ScoredReportModel): string {
     timeLabel: model.timeLabel,
     presetLabel: model.preset.label,
     hasPriceData: model.hasPriceData,
+    propertyTypeLabel: model.propertyTypeLabel,
+    budgetLimit: model.budgetLimit,
   });
 
   const summary = renderSummary({
@@ -65,6 +75,8 @@ export function renderScoredReportHtml(model: ScoredReportModel): string {
     timeLabel: model.timeLabel,
     generatedAt: model.generatedAt,
     hasPriceData: model.hasPriceData,
+    hasCrimeData: model.hasCrimeData,
+    hasDisasterData: model.hasDisasterData,
   });
 
   return `<!doctype html>

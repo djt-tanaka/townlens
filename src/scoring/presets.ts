@@ -78,8 +78,42 @@ export const PRICE_INDICATORS: ReadonlyArray<IndicatorDefinition> = [
   },
 ];
 
-/** 全指標定義（Phase 0 + Phase 1） */
+/** Phase 2a: 犯罪統計の指標定義 */
+export const SAFETY_INDICATORS: ReadonlyArray<IndicatorDefinition> = [
+  {
+    id: "crime_rate",
+    label: "刑法犯認知件数（人口千人当たり）",
+    unit: "件/千人",
+    direction: "lower_better",
+    category: "safety",
+    precision: 2,
+  },
+];
+
+/** Phase 2b: 災害リスクの指標定義 */
+export const DISASTER_INDICATORS: ReadonlyArray<IndicatorDefinition> = [
+  {
+    id: "flood_risk",
+    label: "洪水・土砂災害リスク",
+    unit: "リスクスコア",
+    direction: "lower_better",
+    category: "disaster",
+    precision: 0,
+  },
+  {
+    id: "evacuation_sites",
+    label: "避難場所数",
+    unit: "箇所",
+    direction: "higher_better",
+    category: "disaster",
+    precision: 0,
+  },
+];
+
+/** 全指標定義（Phase 0 + Phase 1 + Phase 2a + Phase 2b） */
 export const ALL_INDICATORS: ReadonlyArray<IndicatorDefinition> = [
   ...POPULATION_INDICATORS,
   ...PRICE_INDICATORS,
+  ...SAFETY_INDICATORS,
+  ...DISASTER_INDICATORS,
 ];

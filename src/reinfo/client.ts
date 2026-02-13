@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from "axios";
 import { CliError } from "../errors";
 import { ReinfoTradeRecord, ReinfoTradeResponse, ReinfoCityRecord } from "./types";
+import type { TileCoord, GeoJsonFeatureCollection } from "./disaster-client";
 
 const MAX_RETRIES = 3;
 const INITIAL_DELAY_MS = 1000;
@@ -103,5 +104,14 @@ export class ReinfoApiClient {
       area,
     });
     return response.data ?? [];
+  }
+
+  /** 防災タイルAPI（XKT026/XKT029/XGT001等）からGeoJSONを取得 */
+  async fetchTile(endpoint: string, tile: TileCoord): Promise<GeoJsonFeatureCollection> {
+    return this.request<GeoJsonFeatureCollection>(endpoint, {
+      z: String(tile.z),
+      x: String(tile.x),
+      y: String(tile.y),
+    });
   }
 }
