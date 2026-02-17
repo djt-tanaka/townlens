@@ -1,9 +1,11 @@
-import { CityScoreResult, ConfidenceLevel } from "../../scoring/types";
+import { CityScoreResult, ConfidenceLevel, IndicatorDefinition } from "../../scoring/types";
 import { escapeHtml } from "../../utils";
+import { generateComparisonNarrative } from "../narrative";
 
 export interface SummaryModel {
   readonly results: ReadonlyArray<CityScoreResult>;
   readonly presetLabel: string;
+  readonly definitions: ReadonlyArray<IndicatorDefinition>;
 }
 
 function confidenceBadge(level: ConfidenceLevel): string {
@@ -54,6 +56,11 @@ export function renderSummary(model: SummaryModel): string {
           ${rankingRows}
         </tbody>
       </table>
+
+      <div class="narrative" style="margin-top:12px;">
+        <h3>総合評価</h3>
+        <p>${escapeHtml(generateComparisonNarrative(model.results, model.definitions))}</p>
+      </div>
 
       <div class="note" style="margin-top:12px;">
         ※ 総合スコアは候補内での相対比較値（0-100）です。全国基準ではありません。<br>

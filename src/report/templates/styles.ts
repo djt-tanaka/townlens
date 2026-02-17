@@ -73,5 +73,22 @@ export function baseStyles(): string {
     }
     .meta { color: var(--sub); font-size: 11px; margin-bottom: 12px; }
     .note { color: var(--sub); font-size: 10px; line-height: 1.5; }
+    .narrative {
+      background: var(--accent-light);
+      border-left: 3px solid var(--accent);
+      padding: 12px 16px;
+      margin: 12px 0;
+      border-radius: 0 4px 4px 0;
+    }
+    .narrative h3 {
+      font-size: 12px;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+    .narrative p {
+      font-size: 11px;
+      line-height: 1.8;
+      color: var(--text);
+    }
   `;
 }

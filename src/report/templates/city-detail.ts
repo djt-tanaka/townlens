@@ -1,11 +1,13 @@
 import { CityScoreResult, IndicatorDefinition, ConfidenceLevel } from "../../scoring/types";
 import { escapeHtml } from "../../utils";
 import { ReportRow } from "../../types";
+import { generateCityNarrative } from "../narrative";
 
 export interface CityDetailModel {
   readonly result: CityScoreResult;
   readonly definition: ReadonlyArray<IndicatorDefinition>;
   readonly rawRow: ReportRow;
+  readonly totalCities: number;
 }
 
 function confidenceLabel(level: ConfidenceLevel): string {
@@ -121,6 +123,11 @@ export function renderCityDetail(model: CityDetailModel): string {
           ${indicatorRows}
         </tbody>
       </table>
+
+      <div class="narrative" style="margin-top:12px;">
+        <h3>評価コメント</h3>
+        <p>${escapeHtml(generateCityNarrative(result, model.definition, model.totalCities))}</p>
+      </div>
 
       <h3 style="margin-top:12px;">注意事項</h3>
       <ul class="note" style="padding-left:16px;">

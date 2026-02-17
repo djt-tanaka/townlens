@@ -91,7 +91,7 @@ describe("renderCover", () => {
 
 describe("renderSummary", () => {
   it("サマリHTMLを生成する", () => {
-    const html = renderSummary({ results: sampleResults, presetLabel: "子育て重視" });
+    const html = renderSummary({ results: sampleResults, presetLabel: "子育て重視", definitions });
     expect(html).toContain("結論サマリ");
     expect(html).toContain("新宿区");
     expect(html).toContain("渋谷区");
@@ -114,6 +114,7 @@ describe("renderCityDetail", () => {
       result: sampleResults[0],
       definition: definitions,
       rawRow: rawRows[0],
+      totalCities: 2,
     });
     expect(html).toContain("新宿区");
     expect(html).toContain("13104");
@@ -147,6 +148,7 @@ describe("renderCityDetail", () => {
       result: resultWithPrice,
       definition: defsWithPrice,
       rawRow: rawRowWithPrice,
+      totalCities: 2,
     });
     expect(html).toContain("中古マンション価格");
     expect(html).toContain("4,000");
