@@ -258,6 +258,28 @@ describe("buildCrimeData", () => {
     );
   });
 
+  it("最新年にデータがない場合、前年度にフォールバックする", async () => {
+    vi.mocked(cache.loadMetaInfoWithCache).mockResolvedValue(tabMetaInfo);
+    // 1回目(2009年度): 空レスポンス → 2回目(2008年度): データあり
+    mockClient.getStatsData
+      .mockResolvedValueOnce(createStatsResponse([]))
+      .mockResolvedValueOnce(
+        createStatsResponse([
+          { area: "13104", time: "2008100000", cat01: "R3110", tab: "K4201", value: "10.5" },
+          { area: "13113", time: "2008100000", cat01: "R3110", tab: "K4201", value: "7.8" },
+        ]),
+      );
+
+    const result = await buildCrimeData(mockClient, ["13104", "13113"], baseConfig);
+
+    expect(result.size).toBe(2);
+    expect(result.get("13104")!.crimeRate).toBe(10.5);
+    expect(result.get("13104")!.dataYear).toBe("2008");
+    expect(result.get("13113")!.crimeRate).toBe(7.8);
+    // 2回API呼び出しが行われる
+    expect(mockClient.getStatsData).toHaveBeenCalledTimes(2);
+  });
+
   it("tab 指標検出時に resolveDefaultFilters が適用される", async () => {
     vi.mocked(cache.loadMetaInfoWithCache).mockResolvedValue(tabMetaInfo);
     mockClient.getStatsData.mockResolvedValue(

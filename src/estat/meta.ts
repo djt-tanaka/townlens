@@ -281,6 +281,40 @@ function timeComparable(code: string): { len: number; raw: string } {
   };
 }
 
+/**
+ * time分類のコードを新しい順（降順）にソートして返す。
+ * フォールバック検索（最新年にデータがない場合に前年を試す等）に使用する。
+ */
+export function resolveTimeCandidates(classObjs: ClassObj[]): ReadonlyArray<TimeSelection> {
+  const sorted = [...classObjs].sort((a, b) => classScoreForTime(b) - classScoreForTime(a));
+  const timeClass = sorted[0];
+
+  if (!timeClass || classScoreForTime(timeClass) <= 0) {
+    return [];
+  }
+
+  return [...timeClass.items]
+    .sort((a, b) => {
+      const ca = timeComparable(a.code);
+      const cb = timeComparable(b.code);
+      if (ca.len !== cb.len) {
+        return cb.len - ca.len;
+      }
+      if (ca.raw < cb.raw) {
+        return 1;
+      }
+      if (ca.raw > cb.raw) {
+        return -1;
+      }
+      return 0;
+    })
+    .map((item) => ({
+      classId: timeClass.id,
+      code: item.code,
+      label: item.name,
+    }));
+}
+
 export function resolveLatestTime(classObjs: ClassObj[], explicitCode?: string): TimeSelection {
   const sorted = [...classObjs].sort((a, b) => classScoreForTime(b) - classScoreForTime(a));
   const timeClass = sorted[0];
