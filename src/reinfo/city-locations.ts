@@ -1,3 +1,5 @@
+import { geocodeCityName } from "./geocode";
+
 /** 市区町村の代表地点（市役所・区役所の緯度経度） */
 export interface CityLocation {
   readonly lat: number;
@@ -107,7 +109,34 @@ export const CITY_LOCATIONS: ReadonlyMap<string, CityLocation> = new Map(
   LOCATIONS.map(([code, lat, lng]) => [code, { lat, lng }]),
 );
 
+/** ランタイムキャッシュ（ジオコーディング結果を保持） */
+const runtimeCache = new Map<string, CityLocation>();
+
 /** 市区町村コードから代表地点を取得する。未登録の場合はnullを返す。 */
 export function getCityLocation(areaCode: string): CityLocation | null {
-  return CITY_LOCATIONS.get(areaCode) ?? null;
+  return CITY_LOCATIONS.get(areaCode) ?? runtimeCache.get(areaCode) ?? null;
+}
+
+/**
+ * 市区町村コードから代表地点を取得する（非同期版）。
+ * 静的テーブルに無い場合、cityNameが指定されていれば国土地理院APIでフォールバック取得する。
+ */
+export async function getCityLocationAsync(
+  areaCode: string,
+  cityName?: string,
+): Promise<CityLocation | null> {
+  const cached = getCityLocation(areaCode);
+  if (cached) {
+    return cached;
+  }
+
+  if (!cityName) {
+    return null;
+  }
+
+  const location = await geocodeCityName(cityName);
+  if (location) {
+    runtimeCache.set(areaCode, location);
+  }
+  return location;
 }

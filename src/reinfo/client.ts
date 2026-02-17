@@ -109,6 +109,7 @@ export class ReinfoApiClient {
   /** 防災タイルAPI（XKT026/XKT029/XGT001等）からGeoJSONを取得 */
   async fetchTile(endpoint: string, tile: TileCoord): Promise<GeoJsonFeatureCollection> {
     return this.request<GeoJsonFeatureCollection>(endpoint, {
+      response_format: "geojson",
       z: String(tile.z),
       x: String(tile.x),
       y: String(tile.y),

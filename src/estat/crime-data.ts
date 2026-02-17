@@ -98,6 +98,10 @@ export async function buildCrimeData(
   const timeSelection = resolveLatestTime(classObjs, config.timeCode);
   const dataYear = timeSelection.code.replace(/\D/g, "").slice(0, 4);
 
+  if (!indicatorClass) {
+    console.warn("[warn] 犯罪指標の分類を自動検出できませんでした。全カテゴリから取得を試みます。");
+  }
+
   const queryParams: GetStatsDataParams = {
     statsDataId: config.statsDataId,
     cdArea: areaCodes.join(","),
@@ -112,6 +116,14 @@ export async function buildCrimeData(
   const values = extractDataValues(response);
   const areaMap = valuesByArea(values, timeSelection.code);
 
+  if (areaMap.size === 0 && values.length > 0) {
+    const sampleTimes = [...new Set(values.slice(0, 20).map((v) => v.time))].join(", ");
+    console.warn(
+      `[warn] 犯罪統計: ${values.length}件の値が返りましたが、timeCode="${timeSelection.code}" でフィルタ後0件です。`
+      + ` サンプルtime値: [${sampleTimes}]`,
+    );
+  }
+
   for (const [areaCode, value] of areaMap) {
     if (areaCodes.includes(areaCode) && value !== null) {
       result.set(areaCode, {
@@ -119,6 +131,14 @@ export async function buildCrimeData(
         dataYear,
       });
     }
+  }
+
+  if (result.size === 0 && areaMap.size > 0) {
+    const sampleAreas = [...areaMap.keys()].slice(0, 5).join(", ");
+    console.warn(
+      `[warn] 犯罪統計: areaMapに${areaMap.size}件ありますが、対象都市コード(${areaCodes.join(",")})と一致しません。`
+      + ` areaMap内のコード例: [${sampleAreas}]`,
+    );
   }
 
   return result;
