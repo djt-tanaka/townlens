@@ -105,6 +105,38 @@ describe("ReinfoApiClient", () => {
     });
   });
 
+  describe("fetchTile", () => {
+    it("response_format=geojsonパラメータを含めてリクエストする", async () => {
+      const mockGeoJson = { type: "FeatureCollection", features: [] };
+      mockAxiosInstance.get.mockResolvedValue({ data: mockGeoJson });
+
+      const client = new ReinfoApiClient("test-key");
+      await client.fetchTile("XKT026", { z: 14, x: 14430, y: 6491 });
+
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith("XKT026", {
+        params: {
+          response_format: "geojson",
+          z: "14",
+          x: "14430",
+          y: "6491",
+        },
+      });
+    });
+
+    it("GeoJSONレスポンスを返す", async () => {
+      const mockGeoJson = {
+        type: "FeatureCollection",
+        features: [{ type: "Feature", geometry: { type: "Polygon", coordinates: [] }, properties: {} }],
+      };
+      mockAxiosInstance.get.mockResolvedValue({ data: mockGeoJson });
+
+      const client = new ReinfoApiClient("test-key");
+      const result = await client.fetchTile("XGT001", { z: 14, x: 14430, y: 6491 });
+
+      expect(result.features).toHaveLength(1);
+    });
+  });
+
   describe("エラーハンドリング", () => {
     it("401エラーで認証エラーメッセージをスローする", async () => {
       const axiosError = {

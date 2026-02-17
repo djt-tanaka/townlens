@@ -1,5 +1,5 @@
 import { ReinfoApiClient } from "./client";
-import { getCityLocation } from "./city-locations";
+import { getCityLocationAsync } from "./city-locations";
 import { fetchDisasterRisk, DisasterRiskResult } from "./disaster-client";
 
 /** 都市ごとの災害リスクデータ */
@@ -29,11 +29,13 @@ function toRiskScore(result: DisasterRiskResult): number {
 /**
  * 複数都市の災害リスクデータを構築する。
  * 代表地点（市役所位置）の周辺タイルから洪水・土砂・避難場所情報を取得する。
- * 代表地点が未登録の都市はMapに含まれない。
+ * 静的テーブルに無い都市は国土地理院APIで座標を自動取得する。
+ * 座標を取得できない都市はMapに含まれない。
  */
 export async function buildDisasterData(
   client: ReinfoApiClient,
   areaCodes: ReadonlyArray<string>,
+  cityNames?: ReadonlyMap<string, string>,
 ): Promise<ReadonlyMap<string, CityDisasterData>> {
   const result = new Map<string, CityDisasterData>();
 
@@ -43,8 +45,10 @@ export async function buildDisasterData(
 
   for (let i = 0; i < areaCodes.length; i++) {
     const code = areaCodes[i];
-    const location = getCityLocation(code);
+    const cityName = cityNames?.get(code);
+    const location = await getCityLocationAsync(code, cityName);
     if (!location) {
+      console.warn(`[warn] ${cityName ?? code} の座標が取得できないため、災害リスクデータをスキップします`);
       continue;
     }
 

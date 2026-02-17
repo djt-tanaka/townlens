@@ -65,9 +65,18 @@ export async function fetchDisasterRisk(
   const tile = latLngToTile(location.lat, location.lng, zoom);
 
   const [floodData, landslideData, evacuationData] = await Promise.all([
-    client.fetchTile("XKT026", tile).catch(() => null),
-    client.fetchTile("XKT029", tile).catch(() => null),
-    sleep(TILE_DELAY_MS).then(() => client.fetchTile("XGT001", tile).catch(() => null)),
+    client.fetchTile("XKT026", tile).catch((err) => {
+      console.warn(`[warn] 洪水浸水想定区域(XKT026)の取得に失敗: ${err instanceof Error ? err.message : String(err)}`);
+      return null;
+    }),
+    client.fetchTile("XKT029", tile).catch((err) => {
+      console.warn(`[warn] 土砂災害警戒区域(XKT029)の取得に失敗: ${err instanceof Error ? err.message : String(err)}`);
+      return null;
+    }),
+    sleep(TILE_DELAY_MS).then(() => client.fetchTile("XGT001", tile).catch((err) => {
+      console.warn(`[warn] 指定緊急避難場所(XGT001)の取得に失敗: ${err instanceof Error ? err.message : String(err)}`);
+      return null;
+    })),
   ]);
 
   const floodRisk = hasFeatures(floodData);

@@ -302,30 +302,34 @@ program
           if (!reinfoKey) {
             console.log("REINFOLIB_API_KEY 未設定のため不動産価格データをスキップします。");
           } else {
-            const reinfoClient = new ReinfoApiClient(reinfoKey);
-            const priceYear = options.year ?? String(new Date().getFullYear() - 1);
-            const areaCodes = reportData.rows.map((r) => r.areaCode);
-            const priceData = await buildPriceData(
-              reinfoClient, areaCodes, priceYear, options.quarter, propertyType, budgetLimit,
-            );
+            try {
+              const reinfoClient = new ReinfoApiClient(reinfoKey);
+              const priceYear = options.year ?? String(new Date().getFullYear() - 1);
+              const areaCodes = reportData.rows.map((r) => r.areaCode);
+              const priceData = await buildPriceData(
+                reinfoClient, areaCodes, priceYear, options.quarter, propertyType, budgetLimit,
+              );
 
-            if (priceData.size > 0) {
-              scoringInput = mergePriceIntoScoringInput(scoringInput, priceData);
-              definitions = ALL_INDICATORS;
-              hasPriceData = true;
-              enrichedRows = reportData.rows.map((row) => {
-                const stats = priceData.get(row.areaCode);
-                if (!stats) return row;
-                return {
-                  ...row,
-                  condoPriceMedian: Math.round(stats.median / 10000),
-                  condoPriceQ25: Math.round(stats.q25 / 10000),
-                  condoPriceQ75: Math.round(stats.q75 / 10000),
-                  condoPriceCount: stats.count,
-                  affordabilityRate: stats.affordabilityRate ?? null,
-                  propertyTypeLabel: stats.propertyTypeLabel ?? null,
-                };
-              });
+              if (priceData.size > 0) {
+                scoringInput = mergePriceIntoScoringInput(scoringInput, priceData);
+                definitions = ALL_INDICATORS;
+                hasPriceData = true;
+                enrichedRows = reportData.rows.map((row) => {
+                  const stats = priceData.get(row.areaCode);
+                  if (!stats) return row;
+                  return {
+                    ...row,
+                    condoPriceMedian: Math.round(stats.median / 10000),
+                    condoPriceQ25: Math.round(stats.q25 / 10000),
+                    condoPriceQ75: Math.round(stats.q75 / 10000),
+                    condoPriceCount: stats.count,
+                    affordabilityRate: stats.affordabilityRate ?? null,
+                    propertyTypeLabel: stats.propertyTypeLabel ?? null,
+                  };
+                });
+              }
+            } catch (err) {
+              console.warn(`[warn] 不動産価格データの取得に失敗しました: ${err instanceof Error ? err.message : String(err)}`);
             }
           }
         }
@@ -337,22 +341,28 @@ program
           if (!crimeStatsDataId) {
             console.log("犯罪統計の statsDataId が未設定のためスキップします。");
           } else {
-            const crimeData = await buildCrimeData(client, reportData.rows.map((r) => r.areaCode), {
-              statsDataId: crimeStatsDataId,
-            });
-
-            if (crimeData.size > 0) {
-              scoringInput = mergeCrimeIntoScoringInput(scoringInput, crimeData);
-              definitions = ALL_INDICATORS;
-              hasCrimeData = true;
-              enrichedRows = enrichedRows.map((row) => {
-                const stats = crimeData.get(row.areaCode);
-                if (!stats) return row;
-                return {
-                  ...row,
-                  crimeRate: stats.crimeRate,
-                };
+            try {
+              const crimeData = await buildCrimeData(client, reportData.rows.map((r) => r.areaCode), {
+                statsDataId: crimeStatsDataId,
               });
+
+              if (crimeData.size > 0) {
+                scoringInput = mergeCrimeIntoScoringInput(scoringInput, crimeData);
+                definitions = ALL_INDICATORS;
+                hasCrimeData = true;
+                enrichedRows = enrichedRows.map((row) => {
+                  const stats = crimeData.get(row.areaCode);
+                  if (!stats) return row;
+                  return {
+                    ...row,
+                    crimeRate: stats.crimeRate,
+                  };
+                });
+              } else {
+                console.warn("[warn] 犯罪統計データが0件でした（対象都市のデータが見つかりませんでした）");
+              }
+            } catch (err) {
+              console.warn(`[warn] 犯罪統計データの取得に失敗しました: ${err instanceof Error ? err.message : String(err)}`);
             }
           }
         }
@@ -364,24 +374,31 @@ program
           if (!reinfoKey) {
             console.log("REINFOLIB_API_KEY 未設定のため災害リスクデータをスキップします。");
           } else {
-            const disasterClient = new ReinfoApiClient(reinfoKey);
-            const areaCodes = reportData.rows.map((r) => r.areaCode);
-            const disasterData = await buildDisasterData(disasterClient, areaCodes);
+            try {
+              const disasterClient = new ReinfoApiClient(reinfoKey);
+              const areaCodes = reportData.rows.map((r) => r.areaCode);
+              const cityNameMap = new Map(reportData.rows.map((r) => [r.areaCode, r.cityResolved]));
+              const disasterData = await buildDisasterData(disasterClient, areaCodes, cityNameMap);
 
-            if (disasterData.size > 0) {
-              scoringInput = mergeDisasterIntoScoringInput(scoringInput, disasterData);
-              definitions = ALL_INDICATORS;
-              hasDisasterData = true;
-              enrichedRows = enrichedRows.map((row) => {
-                const data = disasterData.get(row.areaCode);
-                if (!data) return row;
-                return {
-                  ...row,
-                  floodRisk: data.floodRisk,
-                  landslideRisk: data.landslideRisk,
-                  evacuationSiteCount: data.evacuationSiteCount,
-                };
-              });
+              if (disasterData.size > 0) {
+                scoringInput = mergeDisasterIntoScoringInput(scoringInput, disasterData);
+                definitions = ALL_INDICATORS;
+                hasDisasterData = true;
+                enrichedRows = enrichedRows.map((row) => {
+                  const data = disasterData.get(row.areaCode);
+                  if (!data) return row;
+                  return {
+                    ...row,
+                    floodRisk: data.floodRisk,
+                    landslideRisk: data.landslideRisk,
+                    evacuationSiteCount: data.evacuationSiteCount,
+                  };
+                });
+              } else {
+                console.warn("[warn] 災害リスクデータが0件でした");
+              }
+            } catch (err) {
+              console.warn(`[warn] 災害リスクデータの取得に失敗しました: ${err instanceof Error ? err.message : String(err)}`);
             }
           }
         }
