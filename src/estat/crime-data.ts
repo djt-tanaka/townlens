@@ -2,7 +2,7 @@ import { EstatApiClient, GetStatsDataParams } from "./client";
 import { loadMetaInfoWithCache } from "./cache";
 import {
   extractClassObjects,
-  resolveAreaClass,
+  resolveDefaultFilters,
   resolveLatestTime,
   extractDataValues,
   valuesByArea,
@@ -45,17 +45,20 @@ function crimeIndicatorScore(name: string): number {
   return 0;
 }
 
-/** 指標分類（catXX）を検出する */
+/** 指標分類（catXX / tab）を検出する */
 function resolveIndicatorClass(
   classObjs: ReadonlyArray<{ id: string; name: string; items: ReadonlyArray<{ code: string; name: string }> }>,
   explicitCode?: string,
 ): { classId: string; paramName: string; code: string } | null {
-  const catClasses = classObjs.filter((c) => c.id.startsWith("cat"));
-  if (catClasses.length === 0) {
+  // 社会・人口統計体系等では指標が tab（表章項目）に格納されるケースがある
+  const indicatorClasses = classObjs.filter(
+    (c) => c.id.startsWith("cat") || c.id === "tab",
+  );
+  if (indicatorClasses.length === 0) {
     return null;
   }
 
-  for (const cls of catClasses) {
+  for (const cls of indicatorClasses) {
     if (explicitCode) {
       const matched = cls.items.find((item) => item.code === explicitCode);
       if (matched) {
@@ -102,15 +105,27 @@ export async function buildCrimeData(
     console.warn("[warn] 犯罪指標の分類を自動検出できませんでした。全カテゴリから取得を試みます。");
   }
 
+  // area/time/指標分類以外の cat/tab 分類にデフォルトフィルタ（総数・実数等）を適用
+  const excludeIds = new Set([
+    "area",
+    "time",
+    timeSelection.classId,
+    ...(indicatorClass ? [indicatorClass.classId] : []),
+  ]);
+  const extraFilters = resolveDefaultFilters(classObjs, excludeIds);
+  const extraParams = Object.fromEntries(
+    extraFilters.map((f) => [f.paramName, f.code]),
+  );
+
   const queryParams: GetStatsDataParams = {
     statsDataId: config.statsDataId,
     cdArea: areaCodes.join(","),
     cdTime: timeSelection.code,
+    ...(indicatorClass
+      ? { [indicatorClass.paramName]: indicatorClass.code }
+      : {}),
+    ...extraParams,
   };
-
-  if (indicatorClass) {
-    queryParams[indicatorClass.paramName] = indicatorClass.code;
-  }
 
   const response = await client.getStatsData(queryParams);
   const values = extractDataValues(response);
