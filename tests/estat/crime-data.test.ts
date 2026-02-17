@@ -41,9 +41,49 @@ const sampleMetaInfo = {
   },
 };
 
+/** 社会・人口統計体系のメタ情報モック（tab クラスに指標がある場合） */
+const tabMetaInfo = {
+  CLASS_INF: {
+    CLASS_OBJ: [
+      {
+        "@id": "area",
+        "@name": "地域事項",
+        CLASS: [
+          { "@code": "13104", "@name": "新宿区" },
+          { "@code": "13113", "@name": "渋谷区" },
+        ],
+      },
+      {
+        "@id": "time",
+        "@name": "時間軸（年度）",
+        CLASS: [
+          { "@code": "2008100000", "@name": "2008年度" },
+          { "@code": "2009100000", "@name": "2009年度" },
+        ],
+      },
+      {
+        "@id": "tab",
+        "@name": "表章項目",
+        CLASS: [
+          { "@code": "K3101", "@name": "K3101_交通事故発生件数" },
+          { "@code": "K4201", "@name": "K4201_刑法犯認知件数" },
+        ],
+      },
+      {
+        "@id": "cat01",
+        "@name": "K安全 分類",
+        CLASS: [
+          { "@code": "R3110", "@name": "実数" },
+          { "@code": "R3120", "@name": "人口千人当たり" },
+        ],
+      },
+    ],
+  },
+};
+
 /** e-Stat APIレスポンスのモック生成 */
 function createStatsResponse(
-  values: Array<{ area: string; time: string; cat01: string; value: string }>,
+  values: Array<{ area: string; time: string; cat01: string; value: string; tab?: string }>,
 ) {
   return {
     GET_STATS_DATA: {
@@ -53,6 +93,7 @@ function createStatsResponse(
             "@area": v.area,
             "@time": v.time,
             "@cat01": v.cat01,
+            ...(v.tab ? { "@tab": v.tab } : {}),
             $: v.value,
           })),
         },
@@ -196,5 +237,43 @@ describe("buildCrimeData", () => {
 
     const result = await buildCrimeData(mockClient, ["13104", "13113"], baseConfig);
     expect(result.size).toBe(0);
+  });
+
+  it("tab クラスの指標（刑法犯認知件数）を自動検出する", async () => {
+    vi.mocked(cache.loadMetaInfoWithCache).mockResolvedValue(tabMetaInfo);
+    mockClient.getStatsData.mockResolvedValue(
+      createStatsResponse([
+        { area: "13104", time: "2009100000", cat01: "R3110", tab: "K4201", value: "15.2" },
+      ]),
+    );
+
+    const result = await buildCrimeData(mockClient, ["13104"], baseConfig);
+
+    expect(result.size).toBe(1);
+    expect(result.get("13104")!.crimeRate).toBe(15.2);
+    expect(result.get("13104")!.dataYear).toBe("2009");
+    // tab クラスから K4201（刑法犯認知件数）が検出され cdTab に設定される
+    expect(mockClient.getStatsData).toHaveBeenCalledWith(
+      expect.objectContaining({ cdTab: "K4201" }),
+    );
+  });
+
+  it("tab 指標検出時に resolveDefaultFilters が適用される", async () => {
+    vi.mocked(cache.loadMetaInfoWithCache).mockResolvedValue(tabMetaInfo);
+    mockClient.getStatsData.mockResolvedValue(
+      createStatsResponse([
+        { area: "13104", time: "2009100000", cat01: "R3110", tab: "K4201", value: "15.2" },
+      ]),
+    );
+
+    await buildCrimeData(mockClient, ["13104"], baseConfig);
+
+    // tab の K4201 と cat01 の「実数」がデフォルトフィルタとして適用される
+    expect(mockClient.getStatsData).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cdTab: "K4201",
+        cdCat01: "R3110",
+      }),
+    );
   });
 });

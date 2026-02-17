@@ -521,7 +521,7 @@ export function extractDataValues(data: any): DataValue[] {
         area = textFrom(value);
       } else if (normalizedKey === "time") {
         time = textFrom(value);
-      } else if (normalizedKey.startsWith("cat")) {
+      } else if (normalizedKey.startsWith("cat") || normalizedKey === "tab") {
         cats[normalizedKey] = textFrom(value);
       }
     }
