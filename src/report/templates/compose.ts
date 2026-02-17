@@ -49,6 +49,7 @@ export function renderScoredReportHtml(model: ScoredReportModel): string {
   const summary = renderSummary({
     results: model.results,
     presetLabel: model.preset.label,
+    definitions: model.definitions,
   });
 
   const dashboard = renderDashboard({
@@ -66,6 +67,7 @@ export function renderScoredReportHtml(model: ScoredReportModel): string {
         result,
         definition: model.definitions,
         rawRow,
+        totalCities: model.results.length,
       });
     })
     .join("\n");
