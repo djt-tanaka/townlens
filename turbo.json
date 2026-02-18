@@ -5,15 +5,9 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**"]
     },
-    "test": {
-      "dependsOn": ["^build"]
-    },
-    "test:run": {
-      "dependsOn": ["^build"]
-    },
-    "test:coverage": {
-      "dependsOn": ["^build"]
-    },
+    "test": {},
+    "test:run": {},
+    "test:coverage": {},
     "dev": {
       "cache": false,
       "persistent": true
