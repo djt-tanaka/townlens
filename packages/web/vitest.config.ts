@@ -8,14 +8,18 @@ export default defineConfig({
     },
   },
   test: {
-    include: ["tests/**/*.test.ts"],
+    include: ["tests/**/*.test.{ts,tsx}"],
+    environment: "jsdom",
     coverage: {
       provider: "v8",
-      include: ["src/**/*.ts"],
+      include: ["src/**/*.{ts,tsx}"],
       exclude: [
         "src/types/**/*.ts",
         "src/app/**/layout.tsx",
         "src/app/**/page.tsx",
+        "src/app/**/loading.tsx",
+        "src/app/**/error.tsx",
+        "src/app/**/not-found.tsx",
         // Supabase クライアント・ミドルウェアは外部依存が強く単体テスト対象外
         "src/lib/supabase/client.ts",
         "src/lib/supabase/server.ts",
@@ -23,6 +27,21 @@ export default defineConfig({
         "src/lib/supabase/middleware.ts",
         "src/middleware.ts",
         "src/app/auth/callback/route.ts",
+        // Recharts ラッパーコンポーネントは描画テスト困難
+        "src/components/report/radar-chart.tsx",
+        "src/components/report/bar-chart.tsx",
+        // shadcn/ui 自動生成コンポーネント
+        "src/components/ui/**/*.tsx",
+        // Client Components（認証フォーム、検索UI等）は E2E テストで検証
+        "src/components/auth/**/*.tsx",
+        "src/components/search/**/*.tsx",
+        "src/components/report/city-detail.tsx",
+        // 表示専用 Server Components（ロジックなし、E2E で検証）
+        "src/components/layout/**/*.tsx",
+        "src/components/report/narrative-block.tsx",
+        "src/components/report/disclaimer.tsx",
+        "src/components/report/score-summary.tsx",
+        "src/components/report/indicator-dashboard.tsx",
       ],
       thresholds: {
         statements: 80,
