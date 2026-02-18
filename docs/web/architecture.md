@@ -200,7 +200,7 @@ estat-city-report/
 
 | 観点 | 判断 |
 |------|------|
-| ビルドツール | Turborepo（Vercel ネイティブサポート、リモートキャッシュ、設定最小） |
+| ビルドツール | Turborepo（Vercel ネイティブサポート、リモートキャッシュ、設定最小）。リモートキャッシュは GitHub Actions Cache でも代替可能（§12.2 参照） |
 | パッケージマネージャ | pnpm（厳格な依存関係解決、ディスク効率） |
 | TypeScript | `tsconfig.base.json` で共有、各パッケージが `extends` |
 
@@ -244,7 +244,7 @@ estat-city-report/
 | SEO | `generateMetadata` + `@vercel/og` で動的OGP |
 | デプロイ | Vercel にゼロ設定デプロイ |
 
-**トレードオフ**: Supabase + Vercel へのプラットフォーム依存が発生するが、標準技術（PostgreSQL, JWT, REST）に準拠しており移行パスは確保される。
+**トレードオフ**: Supabase + Vercel へのプラットフォーム依存が発生するが、標準技術（PostgreSQL, JWT, REST）に準拠しており移行パスは確保される。Vercel 固有機能（ISR, `@vercel/og`）への依存度と代替手段の詳細は §12 を参照。
 
 ### 3.2 UI: shadcn/ui + Tailwind CSS v4
 
@@ -985,6 +985,202 @@ STRIPE_PRICE_PREMIUM=
 | Supabase 無料枠超過 | 低 | 低 | MVP規模では十分（50K MAU, 500MB DB） |
 | 不動産情報ライブラリ API の商用利用可否 | 高 | 中 | **MVP開始前に利用規約確認 + 問い合わせ必須** |
 | API応答遅延（複数Phase直列実行） | 中 | 中 | Phase間の並列化を検討。ただしMVPでは直列で十分な速度 |
+
+---
+
+## 12. プラットフォーム移行性
+
+本設計は Vercel を前提に最適化しているが、コスト構造の変化やチーム拡大に伴い、Cloudflare 等への移行を検討する可能性がある。本セクションでは Vercel 依存箇所を明文化し、移行の判断材料と実行パスを記録する。
+
+### 12.1 Vercel依存の分類
+
+| 分類 | 定義 |
+|------|------|
+| 置き換え容易 | API互換の代替があり、コード変更が1ファイル以内で完結 |
+| 置き換え中程度 | 代替実装が存在するが、複数ファイルの変更と動作検証が必要 |
+| 置き換え困難 | アーキテクチャの変更またはフレームワーク移行を伴う |
+
+| 依存箇所 | 利用セクション | 分類 | 理由 |
+|---------|--------------|------|------|
+| Vercel Analytics / Logs | §9.4 | 置き換え容易 | `<Analytics />` タグ除去のみ |
+| 環境変数管理 | §9.5 | 置き換え容易 | `process.env.*` は標準。管理UIが変わるだけ |
+| Turborepo リモートキャッシュ | §2.2 | 置き換え中程度 | GitHub Actions Cache に切替可。`turbo.json` の設定変更 |
+| `@vercel/og` (OGP画像生成) | §9.1 | 置き換え中程度 | `satori` + `@resvg/resvg-js` に1ファイル差替 |
+| ISR (`revalidate = 86400`) | §9.1, `/report/[id]` | 置き換え困難 | SSR + KVキャッシュへの設計変更が必要 |
+| Vercel Functions タイムアウト前提 | §4.3, §11 | 置き換え困難 | Cloudflare Workers は CPU時間制限の性質が異なる |
+
+**補足**: `@estat/core`（スコアリング、APIクライアント、ナラティブ生成）はプラットフォーム非依存であり、移行の影響を受けない。
+
+### 12.2 代替手段マッピング
+
+移行先として最も有力な Cloudflare を中心に整理する。
+
+#### ISR → SSR + Cloudflare KV キャッシュ
+
+```typescript
+// 現在（Vercel ISR）
+export const revalidate = 86400;
+
+// 移行後（SSR + KV キャッシュ）
+export const dynamic = 'force-dynamic';
+
+// lib/kv-cache.ts（新規）
+async function getOrSetKV<T>(
+  key: string,
+  fetcher: () => Promise<T>,
+  ttlSeconds: number
+): Promise<T> {
+  const cached = await KV_NAMESPACE.get(key, 'json');
+  if (cached) return cached as T;
+  const data = await fetcher();
+  await KV_NAMESPACE.put(key, JSON.stringify(data), {
+    expirationTtl: ttlSeconds,
+  });
+  return data;
+}
+```
+
+OpenNext（`@opennextjs/cloudflare`）経由であれば ISR のセマンティクスを保持できるが、2026年2月時点では実験的段階。
+
+#### `@vercel/og` → Satori 直接利用
+
+```typescript
+// 現在（@vercel/og）
+import { ImageResponse } from '@vercel/og';
+export const runtime = 'edge';
+export async function GET() {
+  return new ImageResponse(<OgComponent />, { width: 1200, height: 630 });
+}
+
+// 移行後（satori + @resvg/resvg-js）
+import satori from 'satori';
+import { Resvg } from '@resvg/resvg-js';
+export async function GET() {
+  const svg = await satori(<OgComponent />, {
+    width: 1200, height: 630, fonts: [...]
+  });
+  const resvg = new Resvg(svg);
+  const png = resvg.render().asPng();
+  return new Response(png, {
+    headers: { 'Content-Type': 'image/png' },
+  });
+}
+```
+
+変更ファイル: `/api/og/route.ts` の1ファイルのみ。
+
+#### Vercel Analytics → Cloudflare Web Analytics
+
+```html
+<!-- layout.tsx の <Analytics /> を除去し、以下に差し替え -->
+<script
+  defer
+  src='https://static.cloudflareinsights.com/beacon.min.js'
+  data-cf-beacon='{"token": "YOUR_TOKEN"}'
+/>
+```
+
+#### Turborepo リモートキャッシュ → GitHub Actions Cache
+
+```yaml
+# .github/workflows/ci.yml
+- uses: actions/cache@v4
+  with:
+    path: .turbo
+    key: ${{ runner.os }}-turbo-${{ github.sha }}
+    restore-keys: ${{ runner.os }}-turbo-
+```
+
+`turbo.json` の `remoteCache` 設定を削除するだけで切替可能。
+
+#### フレームワーク代替: Remix (React Router v7)
+
+長期的に OpenNext 経由の安定性が不十分な場合、Remix（React Router v7）が有力な代替候補となる。Cloudflare Workers をファーストクラスでサポートしており、React コンポーネント資産（shadcn/ui, Recharts）はそのまま流用可能。ただし Next.js App Router からの移行は Route Module（loaders/actions）への書き直しを伴い、2〜4週間の追加工数を見込む。
+
+### 12.3 コスト比較
+
+#### 月額固定費
+
+| 項目 | Vercel Pro | Cloudflare Workers Paid |
+|------|-----------|------------------------|
+| ホスティング | $20/人/月 | $5/月 + 従量 |
+| データベース | Supabase 共通 | Supabase 共通 |
+| 認証 | Supabase Auth 共通 | Supabase Auth 共通 |
+| 決済 | Stripe 共通 | Stripe 共通 |
+| エラー監視 | Sentry 共通 | Sentry 共通 |
+| Analytics | Vercel Analytics 含む | Cloudflare Web Analytics 無料 |
+| CDN / 帯域 | 含む（1TB/月） | 含む（無制限） |
+| **合計（最小・1人）** | **約 $20/月** | **約 $5/月** |
+
+#### 従量費用の試算（月1,000レポート生成時）
+
+| 項目 | Vercel Pro | Cloudflare Workers Paid |
+|------|-----------|------------------------|
+| Function 実行 | 含む | ≒ $0.003（100万リクエストあたり $0.30） |
+| 帯域超過 | 従量 | なし（無制限） |
+| 追加費用概算 | ほぼなし | 数十円程度 |
+
+#### フェーズ別の推奨
+
+| フェーズ | 推奨 | 理由 |
+|---------|------|------|
+| MVP〜PMF検証（1-2人） | Vercel Pro | DX優位性がコスト差（$15/月）を上回る。移行工数を開発に集中すべき |
+| チーム拡大（3人以上） | 移行検討開始 | $60/月以上で移行ROIが成立しやすくなる |
+| スケール（月1万レポート以上） | Cloudflare | 従量モデルの恩恵が最大化。帯域無制限も有利 |
+
+### 12.4 移行判断フレームワーク
+
+#### 意思決定トリガー
+
+以下のいずれかが発生した時点で移行を判断する。
+
+1. **コストトリガー**: Vercel 月額が $60（3人分）を超えた時点
+2. **機能トリガー**: Vercel Pro でもタイムアウトやリソース制限に抵触する場合
+3. **スケールトリガー**: 月間レポート生成が 10,000件を超えた時点
+4. **ビジネストリガー**: B2B SaaS 展開でデータ所在地要件やオンプレ対応が必要になった時点
+
+#### 移行前チェックリスト
+
+```
+事前確認
+□ OpenNext の Cloudflare 対応が安定版になっているか
+□ Remix（React Router v7）へのフレームワーク移行工数を見積もったか
+□ ISR 代替実装（KV キャッシュ）の SEO 影響を評価したか
+□ Supabase との接続レイテンシが Cloudflare Workers から許容範囲か確認したか
+□ Stripe Webhook の署名検証が Cloudflare 経由で正常動作するか確認したか
+
+コスト計算
+□ 移行工数（エンジニア時間）をコスト換算したか
+□ 移行後の月次コスト削減額を試算したか
+□ 回収期間（移行工数 ÷ 月次削減額）が 6ヶ月以内か
+```
+
+#### 推奨移行順序
+
+移行を決定した場合、リスクの低い順に段階的に実施する。
+
+```
+Phase A（1日）: 監視・分析の切り替え
+  Vercel Analytics → Cloudflare Web Analytics
+  ※ ダウンタイムなし。いつでも実施可能
+
+Phase B（1週間）: ビルドキャッシュの切り替え
+  Turborepo リモートキャッシュ → GitHub Actions Cache
+  ※ CI 設定変更のみ
+
+Phase C（1週間）: OGP 画像生成の切り替え
+  @vercel/og → satori + @resvg/resvg-js
+  ※ /api/og/route.ts の1ファイル変更
+
+Phase D（2〜4週間）: ホスティングの切り替え
+  Next.js + OpenNext → Cloudflare Workers
+  ISR → SSR + KV キャッシュ
+  ※ 最大工数。十分な検証期間を設ける
+
+Phase E（要検討）: フレームワーク移行
+  Next.js → Remix（React Router v7）
+  ※ Phase D の OpenNext が安定しない場合に検討
+```
 
 ---
 
