@@ -1,0 +1,33 @@
+{
+  "name": "@townlens/cli",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/cli.js",
+  "bin": {
+    "townlens": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "dev": "tsx src/cli.ts",
+    "start": "node dist/cli.js",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@townlens/core": "workspace:*",
+    "@inquirer/prompts": "^8.2.0",
+    "axios": "^1.7.9",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.7",
+    "playwright": "^1.51.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.1",
+    "@vitest/coverage-v8": "^4.0.18",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vitest": "^4.0.18"
+  }
+}
