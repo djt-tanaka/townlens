@@ -155,6 +155,44 @@ describe("buildMeshData", () => {
     expect(result.data.size).toBe(150);
   });
 
+  it("人口ゼロの場合はkidsRatioがundefinedになる", async () => {
+    const client = createMockClient({
+      "53394525_000": 0,
+      "53394525_001": 0,
+    });
+
+    const result = await buildMeshData({
+      client: client as any,
+      statsDataId: "test-mesh-id",
+      meshCodes: ["53394525"],
+      metaInfo: sampleMetaInfo,
+    });
+
+    const mesh = result.data.get("53394525");
+    expect(mesh).toBeDefined();
+    expect(mesh!.population).toBe(0);
+    expect(mesh!.kidsRatio).toBeUndefined();
+  });
+
+  it("子ども人口がundefinedの場合はkidsRatioがundefinedになる", async () => {
+    const client = createMockClient({
+      "53394525_000": 500,
+      // 53394525_001 なし → kidsPopulation undefined
+    });
+
+    const result = await buildMeshData({
+      client: client as any,
+      statsDataId: "test-mesh-id",
+      meshCodes: ["53394525"],
+      metaInfo: sampleMetaInfo,
+    });
+
+    const mesh = result.data.get("53394525");
+    expect(mesh).toBeDefined();
+    expect(mesh!.population).toBe(500);
+    expect(mesh!.kidsRatio).toBeUndefined();
+  });
+
   it("セレクタ上書きが適用される", async () => {
     const customMeta = {
       CLASS_INF: {

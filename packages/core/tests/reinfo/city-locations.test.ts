@@ -1,4 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { geocodeCityName } from "../../src/reinfo/geocode";
+
+vi.mock("../../src/reinfo/geocode", () => ({
+  geocodeCityName: vi.fn().mockResolvedValue(null),
+}));
+
 import { getCityLocation, getCityLocationAsync, CITY_LOCATIONS } from "../../src/reinfo/city-locations";
 
 describe("getCityLocation", () => {
@@ -46,23 +52,17 @@ describe("getCityLocationAsync", () => {
   });
 
   it("未登録でcityNameありなら国土地理院APIにフォールバックする", async () => {
-    vi.doMock("../../src/reinfo/geocode", () => ({
-      geocodeCityName: vi.fn().mockResolvedValue({ lat: 34.9587, lng: 137.0851 }),
-    }));
+    vi.mocked(geocodeCityName).mockResolvedValue({ lat: 34.9587, lng: 137.0851 });
 
-    const { getCityLocationAsync: fn } = await import("../../src/reinfo/city-locations");
-    const loc = await fn("23212", "安城市");
+    const loc = await getCityLocationAsync("23212", "安城市");
     expect(loc).not.toBeNull();
     expect(loc!.lat).toBeCloseTo(34.96, 1);
   });
 
   it("ジオコーディング失敗時にnullを返す", async () => {
-    vi.doMock("../../src/reinfo/geocode", () => ({
-      geocodeCityName: vi.fn().mockResolvedValue(null),
-    }));
+    vi.mocked(geocodeCityName).mockResolvedValue(null);
 
-    const { getCityLocationAsync: fn } = await import("../../src/reinfo/city-locations");
-    const loc = await fn("99999", "存在しない市");
+    const loc = await getCityLocationAsync("99999", "存在しない市");
     expect(loc).toBeNull();
   });
 });

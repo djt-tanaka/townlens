@@ -117,4 +117,31 @@ describe("scoreCities", () => {
     expect(meguro).toBeDefined();
     expect(meguro.rank).toBe(1);
   });
+
+  it("指標が欠損している都市はスキップされnotesに記録される", () => {
+    const citiesWithMissing: ReadonlyArray<CityIndicators> = [
+      {
+        cityName: "新宿区",
+        areaCode: "13104",
+        indicators: [
+          { indicatorId: "population_total", rawValue: 346235, dataYear: "2020", sourceId: "estat" },
+          // kids_ratio が欠損
+        ],
+      },
+      {
+        cityName: "渋谷区",
+        areaCode: "13113",
+        indicators: [
+          { indicatorId: "population_total", rawValue: 227850, dataYear: "2020", sourceId: "estat" },
+          { indicatorId: "kids_ratio", rawValue: 9.7, dataYear: "2020", sourceId: "estat" },
+        ],
+      },
+    ];
+
+    const results = scoreCities(citiesWithMissing, definitions, preset);
+    const shinjuku = results.find((r) => r.cityName === "新宿区")!;
+    // 新宿区は kids_ratio が欠損 → notes にデータ欠損の記録がある
+    expect(shinjuku.notes.length).toBeGreaterThan(0);
+    expect(shinjuku.notes[0]).toContain("欠損");
+  });
 });
