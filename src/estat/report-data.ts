@@ -70,7 +70,7 @@ export async function buildReportData(input: BuildReportInput): Promise<BuildRep
   if (classObjs.length === 0) {
     throw new CliError("メタ情報の分類事項が空です", [
       "statsDataId が正しいか確認してください。",
-      "estat-report search --keyword \"人口\" で別IDを探索してください。"
+      "townlens search --keyword \"人口\" で別IDを探索してください。"
     ]);
   }
 

@@ -22,7 +22,7 @@ export interface EstatConfig {
   crimeStatsDataId?: string;
 }
 
-export async function loadConfig(configPath = "estat.config.json"): Promise<EstatConfig> {
+export async function loadConfig(configPath = "townlens.config.json"): Promise<EstatConfig> {
   const filePath = path.resolve(configPath);
   try {
     const content = await fs.readFile(filePath, "utf8");
@@ -31,8 +31,8 @@ export async function loadConfig(configPath = "estat.config.json"): Promise<Esta
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       return {};
     }
-    throw new CliError("設定ファイル estat.config.json の読み込みに失敗しました", [
-      "estat.config.json のJSON構文を確認してください。"
+    throw new CliError("設定ファイル townlens.config.json の読み込みに失敗しました", [
+      "townlens.config.json のJSON構文を確認してください。"
     ]);
   }
 }
@@ -40,7 +40,7 @@ export async function loadConfig(configPath = "estat.config.json"): Promise<Esta
 export async function writeInitFiles(): Promise<string[]> {
   const created: string[] = [];
 
-  const configPath = path.resolve("estat.config.json");
+  const configPath = path.resolve("townlens.config.json");
   try {
     await fs.access(configPath);
   } catch {
@@ -54,7 +54,7 @@ export async function writeInitFiles(): Promise<string[]> {
       }
     };
     await fs.writeFile(configPath, `${JSON.stringify(template, null, 2)}\n`, "utf8");
-    created.push("estat.config.json");
+    created.push("townlens.config.json");
   }
 
   const envExamplePath = path.resolve(".env.example");
@@ -79,7 +79,7 @@ export function resolveStatsDataId(args: {
         "statsDataId がプレースホルダのままです",
         [
           "実在する statsDataId を --statsDataId で指定してください。",
-          "候補探索: estat-report search --keyword \"人口\""
+          "候補探索: townlens search --keyword \"人口\""
         ],
         undefined,
         2
@@ -98,7 +98,7 @@ export function resolveStatsDataId(args: {
       throw new CliError(
         `profile '${profileName}' が見つからないか statsDataId が未設定です`,
         [
-          "estat.config.json の profiles を確認してください。",
+          "townlens.config.json の profiles を確認してください。",
           "または --statsDataId <ID> を直接指定してください。"
         ],
         undefined,
@@ -109,8 +109,8 @@ export function resolveStatsDataId(args: {
       throw new CliError(
         `profile '${profileName}' の statsDataId がプレースホルダです`,
         [
-          "estat.config.json で実在する statsDataId に置き換えてください。",
-          "候補探索: estat-report search --keyword \"人口\""
+          "townlens.config.json で実在する statsDataId に置き換えてください。",
+          "候補探索: townlens search --keyword \"人口\""
         ],
         undefined,
         2

@@ -107,7 +107,7 @@ export function resolveAreaClass(classObjs: ClassObj[]): ClassObj {
   if (!selected || classScoreForArea(selected) <= 0) {
     throw new CliError("地域事項(cdArea)をメタ情報から特定できませんでした", [
       "statsDataId が市区町村を含む統計表か確認してください。",
-      "estat-report search --keyword \"市区町村 人口\" で統計表を再検索してください。"
+      "townlens search --keyword \"市区町村 人口\" で統計表を再検索してください。"
     ]);
   }
 
@@ -505,7 +505,7 @@ export function resolveAgeSelection(
         ? `候補分類の診断:\n${diagnostics}`
         : "分類候補が見つかりませんでした。",
       "--classId/--totalCode/--kidsCode で手動指定するか、別の statsDataId を試してください。",
-      `事前診断: estat-report inspect --statsDataId <ID>`,
+      `事前診断: townlens inspect --statsDataId <ID>`,
       `推奨統計表: --statsDataId ${DATASETS.population.statsDataId} (${DATASETS.population.label})`,
     ];
     throw new CliError("年齢区分（総数/0〜14）を特定できませんでした", hints);

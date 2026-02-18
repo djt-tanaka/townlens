@@ -1,4 +1,4 @@
-# e-Stat City Report MVP Spec
+# TownLens MVP Spec
 
 ## Goal
 - Input municipality names from CLI.
@@ -9,9 +9,9 @@
   - 0-14 ratio
 
 ## Commands
-- `estat-report init`
-- `estat-report search --keyword "<検索語>"`
-- `estat-report report --cities "<市区町村名,市区町村名,...>" [--statsDataId <ID>] [--profile <name>] [--out <path>]`
+- `townlens init`
+- `townlens search --keyword "<検索語>"`
+- `townlens report --cities "<市区町村名,市区町村名,...>" [--statsDataId <ID>] [--profile <name>] [--out <path>]`
 
 ## API
 - Use e-Stat `getStatsData` for actual statistical values.

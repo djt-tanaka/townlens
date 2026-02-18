@@ -164,7 +164,7 @@ export function formatInspectResult(result: InspectResult): string {
 
   if (result.canGenerateReport) {
     lines.push("レポート生成: 可能");
-    lines.push(`  estat-report report --statsDataId ${result.statsDataId} --cities "..."`);
+    lines.push(`  townlens report --statsDataId ${result.statsDataId} --cities "..."`);
   } else {
     lines.push("レポート生成: 不可");
     if (!result.ageDetection.success) {
