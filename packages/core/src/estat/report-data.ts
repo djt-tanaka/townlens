@@ -1,6 +1,6 @@
 import { AppError } from "../errors";
-import { CityIndicators, IndicatorValue } from "../scoring/types";
-import { ReportRow } from "../types";
+import type { CityIndicators, IndicatorValue } from "../scoring/types";
+import type { ReportRow } from "../types";
 import type { SelectorConfig } from "../types";
 import { EstatApiClient } from "./client";
 import {
@@ -18,7 +18,7 @@ import {
   valuesByArea
 } from "./meta";
 
-export { ReportRow } from "../types";
+export type { ReportRow } from "../types";
 
 export interface BuildReportInput {
   client: EstatApiClient;
