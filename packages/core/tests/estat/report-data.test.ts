@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { buildReportData, BuildReportInput, ReportRow } from "../../src/estat/report-data";
+import { buildReportData, BuildReportInput, ReportRow, toScoringInput, BuildReportResult } from "../../src/estat/report-data";
 
 // e-Stat APIレスポンスのモック用フィクスチャ
 const sampleMetaInfo = {
@@ -288,6 +288,19 @@ describe("buildReportData", () => {
     expect(shinjuku.kids).toBe(32451);
   });
 
+  it("メタ情報が空の場合エラーを投げる", async () => {
+    const emptyMeta = { CLASS_INF: { CLASS_OBJ: [] } };
+    const client = createMockClient({});
+    await expect(
+      buildReportData({
+        client: client as any,
+        statsDataId: "test",
+        cityNames: ["新宿区"],
+        metaInfo: emptyMeta,
+      })
+    ).rejects.toThrow(/メタ情報の分類事項が空/);
+  });
+
   it("APIが空データを返した場合、ヒント付きエラーを投げる", async () => {
     const emptyClient = {
       getStatsData: vi.fn().mockResolvedValue({
@@ -309,5 +322,30 @@ describe("buildReportData", () => {
         metaInfo: sampleMetaInfo,
       })
     ).rejects.toThrow(/統計値を取得できない/);
+  });
+});
+
+describe("toScoringInput", () => {
+  it("ReportRowからスコアリング入力を構築する", () => {
+    const result: BuildReportResult = {
+      rows: [
+        { cityInput: "新宿区", cityResolved: "新宿区", areaCode: "13104", total: 346235, kids: 32451, ratio: 9.37, totalRank: 1, ratioRank: 2 },
+        { cityInput: "渋谷区", cityResolved: "渋谷区", areaCode: "13113", total: 227850, kids: 22100, ratio: 9.7, totalRank: 2, ratioRank: 1 },
+      ],
+      timeLabel: "2020000000 (2020年)",
+      totalLabel: "総数",
+      kidsLabel: "0～14歳",
+      ageSelection: { classId: "cat01", paramName: "cdCat01", total: { code: "000", name: "総数" }, kids: { code: "001", name: "0～14歳" } },
+    };
+
+    const input = toScoringInput(result, "2020", "test-id");
+    expect(input).toHaveLength(2);
+    expect(input[0].cityName).toBe("新宿区");
+    expect(input[0].areaCode).toBe("13104");
+    expect(input[0].indicators).toHaveLength(2);
+    expect(input[0].indicators[0].indicatorId).toBe("population_total");
+    expect(input[0].indicators[0].rawValue).toBe(346235);
+    expect(input[0].indicators[1].indicatorId).toBe("kids_ratio");
+    expect(input[0].indicators[1].rawValue).toBe(9.37);
   });
 });

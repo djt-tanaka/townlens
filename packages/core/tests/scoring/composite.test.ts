@@ -76,4 +76,18 @@ describe("calculateCompositeScore", () => {
     expect(result.usedIndicatorCount).toBe(1);
     expect(result.score).toBeCloseTo(80, 0);
   });
+
+  it("全ての重みが0の場合はスコア0を返す", () => {
+    const zeroPreset: WeightPreset = {
+      name: "zero",
+      label: "全て0",
+      weights: { childcare: 0, price: 0, safety: 0, disaster: 0, transport: 0 },
+    };
+    const scores: ReadonlyArray<ChoiceScore> = [
+      { indicatorId: "kids_ratio", score: 80 },
+    ];
+    const result = calculateCompositeScore(scores, definitions, zeroPreset);
+    expect(result.score).toBe(0);
+    expect(result.usedIndicatorCount).toBe(1);
+  });
 });

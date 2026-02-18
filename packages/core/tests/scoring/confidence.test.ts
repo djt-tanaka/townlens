@@ -68,4 +68,25 @@ describe("evaluateConfidence", () => {
     expect(result.reason).toBeTruthy();
     expect(typeof result.reason).toBe("string");
   });
+
+  it("古いデータ・高欠損・低サンプルは全理由がLowに含まれる", () => {
+    const result = evaluateConfidence({
+      dataYear: String(currentYear - 10),
+      sampleCount: 5,
+      missingRate: 0.6,
+    });
+    expect(result.level).toBe("low");
+    expect(result.reason).toContain("10年前");
+    expect(result.reason).toContain("欠損率");
+    expect(result.reason).toContain("サンプル数が5件");
+  });
+
+  it("不正なデータ年はInfinityとして扱われLowになる", () => {
+    const result = evaluateConfidence({
+      dataYear: "不明",
+      sampleCount: null,
+      missingRate: 0.0,
+    });
+    expect(result.level).toBe("low");
+  });
 });
