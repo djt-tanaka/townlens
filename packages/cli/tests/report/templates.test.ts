@@ -87,6 +87,35 @@ describe("renderCover", () => {
     expect(html).toContain("不動産情報ライブラリ API");
     expect(html).toContain("e-Stat API");
   });
+
+  it("価格データなしの場合はe-Statのみ表示する", () => {
+    const html = renderCover({
+      title: "テスト",
+      generatedAt: "2026-02-13",
+      cities: ["新宿区"],
+      statsDataId: "0003448299",
+      timeLabel: "2020年",
+      presetLabel: "子育て重視",
+    });
+    expect(html).toContain("e-Stat API");
+    expect(html).not.toContain("不動産情報ライブラリ API");
+  });
+
+  it("物件タイプと予算上限を表示する", () => {
+    const html = renderCover({
+      title: "テスト",
+      generatedAt: "2026-02-13",
+      cities: ["新宿区"],
+      statsDataId: "0003448299",
+      timeLabel: "2020年",
+      presetLabel: "子育て重視",
+      propertyTypeLabel: "中古マンション等",
+      budgetLimit: 5000,
+    });
+    expect(html).toContain("中古マンション等");
+    expect(html).toContain("5,000");
+    expect(html).toContain("万円");
+  });
 });
 
 describe("renderSummary", () => {
@@ -97,6 +126,19 @@ describe("renderSummary", () => {
     expect(html).toContain("渋谷区");
     expect(html).toContain("50.0");
   });
+
+  it("3位以降のランクを正しく表示する", () => {
+    const threeResults: ReadonlyArray<CityScoreResult> = [
+      { ...sampleResults[0], rank: 3, compositeScore: 30 },
+      { ...sampleResults[1], rank: 1, compositeScore: 80 },
+      { cityName: "港区", areaCode: "13103", baseline: sampleResults[0].baseline,
+        choice: sampleResults[0].choice, compositeScore: 10,
+        confidence: { level: "low", reason: "テスト" }, rank: 4, notes: [] },
+    ];
+    const html = renderSummary({ results: threeResults, presetLabel: "子育て重視", definitions });
+    expect(html).toContain("🥉");
+    expect(html).toContain("4位");
+  });
 });
 
 describe("renderDashboard", () => {
@@ -105,6 +147,22 @@ describe("renderDashboard", () => {
     expect(html).toContain("指標ダッシュボード");
     expect(html).toContain("総人口");
     expect(html).toContain("0-14歳比率");
+  });
+
+  it("choiceスコアが見つからない場合に0にフォールバックする", () => {
+    const resultsNoScore: ReadonlyArray<CityScoreResult> = [
+      { ...sampleResults[0], choice: [] },
+    ];
+    const html = renderDashboard({ results: resultsNoScore, definitions });
+    expect(html).toContain("指標ダッシュボード");
+  });
+
+  it("baselineが見つからない場合にパーセンタイル表示をスキップする", () => {
+    const resultsNoBaseline: ReadonlyArray<CityScoreResult> = [
+      { ...sampleResults[0], baseline: [] },
+    ];
+    const html = renderDashboard({ results: resultsNoBaseline, definitions });
+    expect(html).not.toContain("パーセンタイル:");
   });
 });
 
@@ -119,6 +177,88 @@ describe("renderCityDetail", () => {
     expect(html).toContain("新宿区");
     expect(html).toContain("13104");
     expect(html).toContain("50.0");
+  });
+
+  it("災害リスク指標を正しく表示する", () => {
+    const disasterDefs: ReadonlyArray<IndicatorDefinition> = [
+      ...definitions,
+      { id: "flood_risk", label: "洪水・土砂災害リスク", unit: "リスクスコア", direction: "lower_better", category: "disaster", precision: 0 },
+      { id: "evacuation_sites", label: "避難場所数", unit: "箇所", direction: "higher_better", category: "disaster", precision: 0 },
+    ];
+    const resultWithDisaster: CityScoreResult = {
+      ...sampleResults[0],
+      choice: [
+        ...sampleResults[0].choice,
+        { indicatorId: "flood_risk", score: 30 },
+        { indicatorId: "evacuation_sites", score: 80 },
+      ],
+      baseline: [
+        ...sampleResults[0].baseline,
+        { indicatorId: "flood_risk", percentile: 40, populationSize: 2, baselineName: "候補内" },
+        { indicatorId: "evacuation_sites", percentile: 75, populationSize: 2, baselineName: "候補内" },
+      ],
+    };
+    const rawWithDisaster = {
+      ...rawRows[0],
+      floodRisk: true,
+      landslideRisk: false,
+      evacuationSiteCount: 5,
+    };
+    const html = renderCityDetail({
+      result: resultWithDisaster,
+      definition: disasterDefs,
+      rawRow: rawWithDisaster,
+      totalCities: 2,
+    });
+    expect(html).toContain("洪水・土砂災害リスク");
+    expect(html).toContain("避難場所数");
+  });
+
+  it("災害データが両方nullの場合にundefinedを返す", () => {
+    const disasterDefs: ReadonlyArray<IndicatorDefinition> = [
+      ...definitions,
+      { id: "flood_risk", label: "洪水・土砂災害リスク", unit: "リスクスコア", direction: "lower_better", category: "disaster", precision: 0 },
+    ];
+    const resultWithDisaster: CityScoreResult = {
+      ...sampleResults[0],
+      choice: [...sampleResults[0].choice, { indicatorId: "flood_risk", score: 0 }],
+      baseline: [...sampleResults[0].baseline, { indicatorId: "flood_risk", percentile: 50, populationSize: 2, baselineName: "候補内" }],
+    };
+    const html = renderCityDetail({
+      result: resultWithDisaster,
+      definition: disasterDefs,
+      rawRow: rawRows[0], // no floodRisk/landslideRisk
+      totalCities: 2,
+    });
+    expect(html).toContain("-"); // getRawValue returns undefined → formatRawValue returns "-"
+  });
+
+  it("価格データにaffordabilityRateが含まれる場合に表示する", () => {
+    const defsWithPrice: ReadonlyArray<IndicatorDefinition> = [
+      ...definitions,
+      { id: "condo_price_median", label: "中古マンション価格", unit: "万円", direction: "lower_better", category: "price", precision: 0 },
+    ];
+    const resultWithPrice: CityScoreResult = {
+      ...sampleResults[0],
+      choice: [...sampleResults[0].choice, { indicatorId: "condo_price_median", score: 60 }],
+      baseline: [...sampleResults[0].baseline, { indicatorId: "condo_price_median", percentile: 45, populationSize: 2, baselineName: "候補内" }],
+    };
+    const rawWithAffordability = {
+      ...rawRows[0],
+      condoPriceMedian: 4000,
+      condoPriceQ25: 3000,
+      condoPriceQ75: 5000,
+      condoPriceCount: 50,
+      affordabilityRate: 65.3,
+    };
+    const html = renderCityDetail({
+      result: resultWithPrice,
+      definition: defsWithPrice,
+      rawRow: rawWithAffordability,
+      totalCities: 2,
+    });
+    expect(html).toContain("65.3%");
+    expect(html).toContain("予算内取引割合");
   });
 
   it("価格指標を含む場合にQ25-Q75レンジを表示する", () => {
@@ -182,6 +322,30 @@ describe("renderDisclaimer", () => {
     expect(html).toContain("中古マンション価格");
     expect(html).toContain("価格レンジ");
   });
+
+  it("犯罪統計データありの場合に出典を表示する", () => {
+    const html = renderDisclaimer({
+      statsDataId: "0003448299",
+      timeLabel: "2020年",
+      generatedAt: "2026-02-13",
+      hasCrimeData: true,
+    });
+    expect(html).toContain("犯罪統計データ");
+    expect(html).toContain("刑法犯認知件数");
+  });
+
+  it("災害リスクデータありの場合に出典を表示する", () => {
+    const html = renderDisclaimer({
+      statsDataId: "0003448299",
+      timeLabel: "2020年",
+      generatedAt: "2026-02-13",
+      hasDisasterData: true,
+    });
+    expect(html).toContain("災害リスクデータ");
+    expect(html).toContain("XKT026");
+    expect(html).toContain("洪水・土砂災害リスク");
+    expect(html).toContain("避難場所数");
+  });
 });
 
 describe("renderScoredReportHtml", () => {
@@ -202,6 +366,23 @@ describe("renderScoredReportHtml", () => {
     expect(html).toContain("結論サマリ");
     expect(html).toContain("指標ダッシュボード");
     expect(html).toContain("免責事項");
+  });
+
+  it("rawRowが見つからない都市はスキップされる", () => {
+    const html = renderScoredReportHtml({
+      title: "テスト",
+      generatedAt: "2026-02-13",
+      cities: ["新宿区", "渋谷区"],
+      statsDataId: "0003448299",
+      timeLabel: "2020年",
+      preset,
+      results: sampleResults,
+      definitions,
+      rawRows: [rawRows[0]], // 渋谷区のrawRowが欠落
+    });
+    expect(html).toContain("新宿区");
+    // 渋谷区のrawRowがないので都市詳細セクションには表示されない
+    expect(html).toContain("<!doctype html>");
   });
 
   it("XSSエスケープが行われる", () => {
