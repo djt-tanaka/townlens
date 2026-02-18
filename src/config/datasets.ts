@@ -31,7 +31,7 @@ export const DATASETS = {
    * 国勢調査 地域メッシュ統計（3次メッシュ）。
    * --mesh-stats-id で上書き可能。
    * 実際のstatsDataIdはe-Stat検索で確定する必要がある。
-   * `estat-report search --keyword "地域メッシュ 人口"` で検索推奨。
+   * `townlens search --keyword "地域メッシュ 人口"` で検索推奨。
    */
   meshPopulation: {
     statsDataId: "0003448233",

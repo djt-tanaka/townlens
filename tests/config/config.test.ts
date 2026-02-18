@@ -123,7 +123,7 @@ describe("loadConfig", () => {
     });
     mockedFs.readFile.mockResolvedValue(configJson);
 
-    const config = await loadConfig("estat.config.json");
+    const config = await loadConfig("townlens.config.json");
     expect(config.defaultProfile).toBe("population");
     expect(config.profiles?.population?.statsDataId).toBe("12345");
   });
@@ -154,7 +154,7 @@ describe("writeInitFiles", () => {
     mockedFs.writeFile.mockResolvedValue();
 
     const created = await writeInitFiles();
-    expect(created).toContain("estat.config.json");
+    expect(created).toContain("townlens.config.json");
     expect(created).toContain(".env.example");
     expect(mockedFs.writeFile).toHaveBeenCalledTimes(2);
   });
@@ -168,9 +168,9 @@ describe("writeInitFiles", () => {
   });
 
   it("一方のファイルのみ存在しない場合はそれだけ作成する", async () => {
-    // estat.config.json は存在、.env.example は不在
+    // townlens.config.json は存在、.env.example は不在
     mockedFs.access
-      .mockResolvedValueOnce(undefined)  // estat.config.json exists
+      .mockResolvedValueOnce(undefined)  // townlens.config.json exists
       .mockRejectedValueOnce(new Error("ENOENT")); // .env.example missing
     mockedFs.writeFile.mockResolvedValue();
 

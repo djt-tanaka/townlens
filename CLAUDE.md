@@ -1,6 +1,6 @@
-# estat-city-report
+# TownLens
 
-e-Stat API と不動産情報ライブラリ API から市区町村データを取得し、比較PDFレポートを生成する CLI ツール。
+政府統計（e-Stat）・不動産情報ライブラリ API・災害データを統合し、市区町村の多角的比較スコアリング・PDFレポートを生成するツール。
 
 ## 開発コマンド
 
@@ -24,7 +24,7 @@ npm run test:coverage                              # カバレッジ測定（80%
 
 - [アーキテクチャ](docs/cli/architecture.md) — ディレクトリ構成・モジュール構成・データフロー
 - [レポートテンプレート](docs/cli/report-templates.md) — HTML→PDF変換・テンプレート構成・スタイル
-- [MVP仕様（初期）](docs/cli/estat-mvp-spec.md) — Phase 0 の初期仕様書
+- [MVP仕様（初期）](docs/cli/mvp-spec.md) — Phase 0 の初期仕様書
 
 ### Web
 

@@ -31,7 +31,7 @@ import { buildStationAreaRows, stationRowsToScoringInput } from "./station/area-
 dotenv.config();
 
 const program = new Command();
-program.name("estat-report").description("e-Stat 市区町村比較レポートCLI").version("0.1.0");
+program.name("townlens").description("市区町村比較スコアリングCLI — TownLens").version("0.1.0");
 
 function requireAppId(): string {
   const appId = process.env.ESTAT_APP_ID;
@@ -76,12 +76,12 @@ program
     await ensureDir("out");
 
     if (created.length === 0) {
-      console.log("初期ファイルは既に存在します: estat.config.json, .env.example");
+      console.log("初期ファイルは既に存在します: townlens.config.json, .env.example");
       return;
     }
 
     console.log(`作成: ${created.join(", ")}`);
-    console.log("次に estat.config.json の statsDataId と ESTAT_APP_ID を設定してください。");
+    console.log("次に townlens.config.json の statsDataId と ESTAT_APP_ID を設定してください。");
     console.log("");
     console.log("  export ESTAT_APP_ID=<YOUR_APP_ID>");
     console.log("");
@@ -148,7 +148,7 @@ program
   .option("--radius <meters>", "駅圏の半径（メートル）", "1000")
   .option("--mesh-stats-id <id>", "メッシュ統計の statsDataId")
   .option("--statsDataId <id>", "統計表ID")
-  .option("--profile <name>", "profile名 (estat.config.json)")
+  .option("--profile <name>", "profile名 (townlens.config.json)")
   .option("--out <path>", "PDF出力先")
   .option("--classId <id>", "年齢区分の分類ID (例: cat01)")
   .option("--totalCode <code>", "総数の分類コード")
@@ -543,7 +543,7 @@ async function handleMeshReport(
     throw new CliError("指定メッシュコードのデータが取得できませんでした", [
       "--mesh-stats-id が正しいか確認してください。",
       `現在の statsDataId: ${meshStatsId}`,
-      "estat-report search --keyword \"地域メッシュ 人口\" で適切なIDを検索してください。",
+      "townlens search --keyword \"地域メッシュ 人口\" で適切なIDを検索してください。",
     ]);
   }
 

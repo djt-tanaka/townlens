@@ -141,7 +141,7 @@ async function selectPreset(): Promise<string> {
 
 /** インタラクティブセッションを実行する */
 export async function runInteractiveSession(): Promise<InteractiveResult> {
-  console.log("=== estat-report インタラクティブモード ===\n");
+  console.log("=== TownLens インタラクティブモード ===\n");
 
   const mode = await selectGeoMode();
 

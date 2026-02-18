@@ -75,7 +75,7 @@ export class EstatApiClient {
           if (endpoint === "getMetaInfo") {
             throw new CliError(
               "該当するメタ情報がありません (statsDataId が無効または廃止)",
-              [errorMsg, "estat-report search --keyword \"人口\" で有効なIDを検索してください。"].filter(Boolean) as string[]
+              [errorMsg, "townlens search --keyword \"人口\" で有効なIDを検索してください。"].filter(Boolean) as string[]
             );
           }
           if (errorMsg) {

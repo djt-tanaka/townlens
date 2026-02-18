@@ -1,6 +1,6 @@
-# estat-city-report
+# TownLens
 
-e-Stat API から市区町村別の人口・犯罪統計データを取得し、引っ越し先比較PDFを出力する CLI ツールです。
+政府統計（e-Stat）・不動産情報ライブラリ API・災害データを統合し、市区町村の多角的比較スコアリング・PDFレポートを生成する CLI ツールです。
 
 ## セットアップ
 
@@ -8,25 +8,25 @@ e-Stat API から市区町村別の人口・犯罪統計データを取得し、
 npm install
 npx playwright install chromium
 npm run build
-npm link          # estat-report コマンドをグローバルに登録
+npm link          # townlens コマンドをグローバルに登録
 ```
 
 ```bash
-estat-report init
+townlens init
 # .env または環境変数で ESTAT_APP_ID を設定
 # 不動産価格・災害リスクデータも使う場合は REINFOLIB_API_KEY も設定
 ```
 
-> `estat-report init` が生成する `estat.config.json` にはデフォルトの統計表IDが設定済みです。通常は編集不要です。
+> `townlens init` が生成する `townlens.config.json` にはデフォルトの統計表IDが設定済みです。通常は編集不要です。
 
 ## コマンド
 
 ### report — 比較レポート生成
 
 ```bash
-estat-report report --cities "新宿区,横浜市,大阪市"
-estat-report report --cities "新宿区,横浜市,大阪市" --out ./out/report.pdf
-estat-report report --cities "新宿区,横浜市,大阪市" --no-scored  # スコアなし基本レポート
+townlens report --cities "新宿区,横浜市,大阪市"
+townlens report --cities "新宿区,横浜市,大阪市" --out ./out/report.pdf
+townlens report --cities "新宿区,横浜市,大阪市" --no-scored  # スコアなし基本レポート
 ```
 
 デフォルトでスコア付きレポート（人口・犯罪統計・不動産価格・災害リスク）を生成します。
@@ -36,7 +36,7 @@ estat-report report --cities "新宿区,横浜市,大阪市" --no-scored  # ス�
 ### search — 統計表の検索
 
 ```bash
-estat-report search --keyword "人口"
+townlens search --keyword "人口"
 ```
 
 ### inspect — 統計表の診断
@@ -44,14 +44,14 @@ estat-report search --keyword "人口"
 任意の統計表IDが自動検出に対応しているか診断します。
 
 ```bash
-estat-report inspect --statsDataId 0003448299
-estat-report inspect --statsDataId 0000032962 --json
+townlens inspect --statsDataId 0003448299
+townlens inspect --statsDataId 0000032962 --json
 ```
 
 `npm link` を使わない場合は `npx` 経由でも実行できます。
 
 ```bash
-npx estat-report report --cities "新宿区,横浜市,大阪市"
+npx townlens report --cities "新宿区,横浜市,大阪市"
 
 # 開発中は tsx で直接実行も可能
 npm run dev -- report --cities "新宿区,横浜市,大阪市"
@@ -61,7 +61,7 @@ npm run dev -- report --cities "新宿区,横浜市,大阪市"
 
 - `--cities "市区町村,市区町村,..."` (必須)
 - `--statsDataId <ID>` (省略時はビルトインデフォルトを使用)
-- `--profile <name>` (`estat.config.json` の profile)
+- `--profile <name>` (`townlens.config.json` の profile)
 - `--out <path>`
 - `--no-scored` (スコアなし基本レポートで生成)
 - `--no-price` (不動産価格データなしで実行)
@@ -82,7 +82,7 @@ npm run dev -- report --cities "新宿区,横浜市,大阪市"
 
 ## profile によるカスタマイズ
 
-`estat.config.json` で独自の統計表IDやセレクタを定義できます。通常は変更不要です。
+`townlens.config.json` で独自の統計表IDやセレクタを定義できます。通常は変更不要です。
 
 ```json
 {
