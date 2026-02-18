@@ -34,7 +34,7 @@ TownLens のWebアプリ化により、CLIツールの技術的価値（多指�
                   │              │              │
                   ▼              │         Recharts
            ┌───────────┐        │         shadcn/ui
-           │@estat/core │◀───────┘
+           │@townlens/core │◀───────┘
            └─────┬─────┘
                  │
         ┌────────┼────────┐
@@ -73,9 +73,9 @@ TownLens のWebアプリ化により、CLIツールの技術的価値（多指�
 ```
 TownLens/
 ├── packages/
-│   ├── core/                      # @estat/core — 共通コアロジック
+│   ├── core/                      # @townlens/core — 共通コアロジック
 │   │   ├── src/
-│   │   │   ├── scoring/           # ← 現 src/scoring/ をそのまま移行
+│   │   │   ├── scoring/           # スコアリングエンジン
 │   │   │   │   ├── index.ts       # scoreCities()
 │   │   │   │   ├── types.ts       # CityScoreResult, CityIndicators 等
 │   │   │   │   ├── presets.ts     # ALL_PRESETS, ALL_INDICATORS
@@ -83,13 +83,13 @@ TownLens/
 │   │   │   │   ├── percentile.ts
 │   │   │   │   ├── composite.ts
 │   │   │   │   └── confidence.ts
-│   │   │   ├── estat/             # ← 現 src/estat/ からAPI通信部分を移行
+│   │   │   ├── estat/             # e-Stat API通信 + データ変換
 │   │   │   │   ├── client.ts      # EstatApiClient
 │   │   │   │   ├── meta.ts        # resolveCities(), buildAreaEntries()
 │   │   │   │   ├── report-data.ts # buildReportData()
 │   │   │   │   ├── crime-data.ts  # buildCrimeData()
 │   │   │   │   └── merge-crime-scoring.ts
-│   │   │   ├── reinfo/            # ← 現 src/reinfo/ から移行
+│   │   │   ├── reinfo/            # 不動産情報ライブラリ API
 │   │   │   │   ├── client.ts      # ReinfoApiClient
 │   │   │   │   ├── types.ts
 │   │   │   │   ├── price-data.ts
@@ -97,27 +97,32 @@ TownLens/
 │   │   │   │   ├── disaster-data.ts
 │   │   │   │   ├── merge-scoring.ts
 │   │   │   │   └── merge-disaster-scoring.ts
-│   │   │   ├── narrative/         # ← 現 src/report/narrative.ts
+│   │   │   ├── narrative/         # ナラティブ生成
 │   │   │   │   └── index.ts       # generateCityNarrative(), generateComparisonNarrative()
-│   │   │   ├── charts/            # ← 現 src/report/templates/charts/colors.ts
-│   │   │   │   └── colors.ts      # カラーパレット定義（Web/CLI共有）
-│   │   │   ├── types.ts           # ← 現 src/types.ts (ReportRow)
-│   │   │   ├── errors.ts          # AppError（CliError から拡張）
+│   │   │   ├── charts/            # カラーパレット定義（Web/CLI共有）
+│   │   │   │   └── colors.ts
+│   │   │   ├── normalize/         # カナ・ラベル正規化、読み検索
+│   │   │   │   ├── kana.ts
+│   │   │   │   ├── label.ts
+│   │   │   │   └── readings.ts
+│   │   │   ├── config/
+│   │   │   │   └── datasets.ts    # ビルトインデータセットプリセット
+│   │   │   ├── types.ts           # ReportRow, SelectorConfig
+│   │   │   ├── errors.ts          # AppError
 │   │   │   ├── utils.ts           # 純粋ユーティリティ（fs依存なし）
-│   │   │   ├── cache.ts           # CacheAdapter インターフェース定義
+│   │   │   ├── cache.ts           # CacheAdapter インターフェース
 │   │   │   └── index.ts           # 公開API re-export
 │   │   ├── package.json
 │   │   ├── tsconfig.json
 │   │   └── vitest.config.ts
 │   │
-│   ├── cli/                       # CLIアプリ（既存動作を維持）
+│   ├── cli/                       # @townlens/cli — CLIアプリ（既存動作を維持）
 │   │   ├── src/
-│   │   │   ├── cli.ts             # ← 現 src/cli.ts（import先を@estat/coreに変更）
+│   │   │   ├── cli.ts             # ← 現 src/cli.ts（import先を@townlens/coreに変更）
 │   │   │   ├── config/            # ← 現 src/config/
-│   │   │   ├── cache/             # ファイルベースキャッシュ実装
-│   │   │   │   ├── file-cache.ts  # CacheAdapter のファイルシステム実装
-│   │   │   │   ├── estat-cache.ts # ← 現 src/estat/cache.ts
-│   │   │   │   └── reinfo-cache.ts # ← 現 src/reinfo/cache.ts
+│   │   │   ├── cache/
+│   │   │   │   └── file-cache.ts  # FileCacheAdapter（CacheAdapter のファイルシステム実装）
+│   │   │   ├── utils.ts           # ensureDir, resolveOutPath（fs依存ユーティリティ）
 │   │   │   ├── report/            # ← 現 src/report/ (HTML/PDF生成)
 │   │   │   │   ├── pdf.ts
 │   │   │   │   ├── html.ts
@@ -125,17 +130,17 @@ TownLens/
 │   │   │   ├── mesh/              # ← 現 src/mesh/
 │   │   │   ├── station/           # ← 現 src/station/
 │   │   │   ├── geo/               # ← 現 src/geo/
-│   │   │   ├── normalize/         # ← 現 src/normalize/
 │   │   │   └── interactive/       # ← 現 src/interactive/
 │   │   ├── package.json
 │   │   ├── tsconfig.json
 │   │   └── vitest.config.ts
 │   │
-│   └── web/                       # Next.js 15 Webアプリ（新規）
+│   └── web/                       # @townlens/web — Next.js 15 Webアプリ
 │       ├── src/
 │       │   ├── app/               # App Router
 │       │   │   ├── layout.tsx
-│       │   │   ├── page.tsx                    # トップページ
+│       │   │   ├── page.tsx                    # トップページ（プレースホルダー）
+│       │   │   ├── globals.css                 # Tailwind CSS v4
 │       │   │   ├── report/[id]/page.tsx        # レポート表示
 │       │   │   ├── dashboard/page.tsx          # ユーザーダッシュボード
 │       │   │   ├── pricing/page.tsx            # 料金プラン
@@ -185,7 +190,7 @@ TownLens/
 │       │   └── migrations/             # DB マイグレーション SQL
 │       ├── public/
 │       ├── next.config.ts
-│       ├── tailwind.config.ts
+│       ├── postcss.config.mjs     # @tailwindcss/postcss
 │       ├── package.json
 │       └── tsconfig.json
 │
@@ -207,8 +212,8 @@ TownLens/
 ### 2.3 パッケージ間の依存関係
 
 ```
-@estat/web ──depends──▶ @estat/core
-@estat/cli ──depends──▶ @estat/core
+@townlens/web ──depends──▶ @townlens/core
+@townlens/cli ──depends──▶ @townlens/core
 ```
 
 `turbo.json` 設定:
@@ -264,7 +269,7 @@ TownLens/
 | `radar.ts` (SVG文字列) | Recharts `<RadarChart>` | ホバーでスコア表示、アニメーション |
 | `bar.ts` (SVG文字列) | Recharts `<BarChart>` | インタラクティブ比較 |
 | `gauge.ts` (SVG文字列) | カスタム SVG React コンポーネント | Recharts にゲージがないため自作 |
-| `colors.ts` (カラー定義) | **@estat/core で共有** | Web/CLI 両方で利用 |
+| `colors.ts` (カラー定義) | **@townlens/core で共有** | Web/CLI 両方で利用 |
 
 既存SVGチャートは CLI の PDF 生成で引き続き使用する。
 
@@ -374,23 +379,23 @@ interface CreateReportResponse {
   │
   ▼
 Phase 0: 人口統計取得
-  └─ @estat/core: buildReportData() → ReportRow[]
+  └─ @townlens/core: buildReportData() → ReportRow[]
   │
   ▼
 Phase 1: 不動産価格取得（オプション）
-  └─ @estat/core: buildPriceData() → mergePriceIntoScoringInput()
+  └─ @townlens/core: buildPriceData() → mergePriceIntoScoringInput()
   │
   ▼
 Phase 2a: 犯罪統計取得（オプション）
-  └─ @estat/core: buildCrimeData() → mergeCrimeIntoScoringInput()
+  └─ @townlens/core: buildCrimeData() → mergeCrimeIntoScoringInput()
   │
   ▼
 Phase 2b: 災害リスク取得（オプション）
-  └─ @estat/core: buildDisasterData() → mergeDisasterIntoScoringInput()
+  └─ @townlens/core: buildDisasterData() → mergeDisasterIntoScoringInput()
   │
   ▼
 スコアリング
-  └─ @estat/core: scoreCities(cities, ALL_INDICATORS, preset) → CityScoreResult[]
+  └─ @townlens/core: scoreCities(cities, ALL_INDICATORS, preset) → CityScoreResult[]
   │
   ▼
 DB保存 → レスポンス返却
@@ -406,7 +411,7 @@ interface ReportResponse {
   readonly report: {
     readonly id: string;
     readonly cities: ReadonlyArray<string>;
-    readonly preset: WeightPreset;           // @estat/core の型
+    readonly preset: WeightPreset;           // @townlens/core の型
     readonly createdAt: string;
     readonly results: ReadonlyArray<CityScoreResult>;
     readonly definitions: ReadonlyArray<IndicatorDefinition>;
@@ -575,7 +580,7 @@ CREATE TRIGGER on_auth_user_created
 既存のファイルベースキャッシュ（`src/estat/cache.ts`, `src/reinfo/cache.ts`）を抽象化し、CLI/Web で実装を差し替える。
 
 ```typescript
-// @estat/core/src/cache.ts
+// @townlens/core/src/cache.ts
 
 /** キャッシュアダプタのインターフェース */
 export interface CacheAdapter {
@@ -608,7 +613,7 @@ reinfo:cities:{area}                        # 市区町村マスタ
 ### 6.4 API クライアントへの注入
 
 ```typescript
-// @estat/core/src/estat/client.ts（変更イメージ）
+// @townlens/core/src/estat/client.ts（変更イメージ）
 export class EstatApiClient {
   constructor(
     private readonly appId: string,
@@ -792,15 +797,13 @@ SSG（静的生成）。3プラン比較表:
 |-----------|--------|------|
 | `src/cli.ts` | `cli/src/cli.ts` | CLI 固有のコマンド定義 |
 | `src/config/` | `cli/src/config/` | CLI ローカル設定（`estat.config.json`） |
-| `src/estat/cache.ts` | `cli/src/cache/estat-cache.ts` | ファイルベースキャッシュ（CLI専用） |
-| `src/reinfo/cache.ts` | `cli/src/cache/reinfo-cache.ts` | ファイルベースキャッシュ（CLI専用） |
+| `src/estat/cache.ts` + `src/reinfo/cache.ts` | `cli/src/cache/file-cache.ts` | `FileCacheAdapter`: 統一ファイルベースキャッシュ（envelope 形式、TTL 管理） |
 | `src/report/pdf.ts` | `cli/src/report/pdf.ts` | Playwright PDF生成（CLI/M3以降Web） |
 | `src/report/html.ts` | `cli/src/report/html.ts` | 基本レポートHTML |
 | `src/report/templates/` | `cli/src/report/templates/` | SVGチャート含む全テンプレート |
 | `src/mesh/` | `cli/src/mesh/` | メッシュ統計（M3以降Web化） |
 | `src/station/` | `cli/src/station/` | 駅圏分析（M3以降Web化） |
 | `src/geo/` | `cli/src/geo/` | 地理情報 |
-| `src/normalize/` | `cli/src/normalize/` | カナ・ラベル正規化 |
 | `src/interactive/` | `cli/src/interactive/` | TTY依存のインタラクティブUI |
 
 ### 8.2 移行の原則
@@ -903,21 +906,23 @@ STRIPE_PRICE_PREMIUM=
 
 ### Week 1: モノレポ基盤
 
-- [ ] Turborepo + pnpm workspaces 初期設定
-- [ ] `tsconfig.base.json` 共有設定
-- [ ] `@estat/core` パッケージ骨格作成
-- [ ] `scoring/` (7ファイル) の移行 + テスト通過確認
-- [ ] `types.ts`, `errors.ts`, `utils.ts` の移行
+- [x] Turborepo + pnpm workspaces 初期設定
+- [x] `tsconfig.base.json` 共有設定
+- [x] `@townlens/core` パッケージ骨格作成
+- [x] `scoring/` (7ファイル) の移行 + テスト通過確認
+- [x] `types.ts`, `errors.ts`, `utils.ts` の移行
 
 ### Week 2: core完成 + Next.js骨格
 
-- [ ] `estat/`, `reinfo/` の core 移行
-- [ ] `narrative/`, `charts/colors.ts` の core 移行
-- [ ] `CacheAdapter` インターフェース定義 + CLI のファイルベース実装
-- [ ] CLI パッケージの import 先変更 + **全テスト通過確認**
-- [ ] Next.js 15 プロジェクト作成
-- [ ] shadcn/ui + Tailwind CSS v4 セットアップ
-- [ ] Supabase プロジェクト作成 + DB マイグレーション
+- [x] `estat/`, `reinfo/` の core 移行
+- [x] `narrative/`, `charts/colors.ts` の core 移行
+- [x] `CacheAdapter` インターフェース定義 + CLI のファイルベース実装
+- [x] CLI パッケージの import 先変更 + **全テスト通過確認（423テスト）**
+- [x] Next.js 15 プロジェクト作成
+- [x] Tailwind CSS v4 セットアップ
+- [ ] Supabase プロジェクト作成 + DB マイグレーション（Week 3 以降に延期）
+
+> **Note**: shadcn/ui のセットアップは Next.js 骨格の上に Week 4 で実施予定。Supabase の DB マイグレーションは API 実装と同時に進める方が効率的なため Week 3 に延期。
 
 ### Week 3: API + 認証
 
@@ -1009,7 +1014,7 @@ STRIPE_PRICE_PREMIUM=
 | ISR (`revalidate = 86400`) | §9.1, `/report/[id]` | 置き換え困難 | SSR + KVキャッシュへの設計変更が必要 |
 | Vercel Functions タイムアウト前提 | §4.3, §11 | 置き換え困難 | Cloudflare Workers は CPU時間制限の性質が異なる |
 
-**補足**: `@estat/core`（スコアリング、APIクライアント、ナラティブ生成）はプラットフォーム非依存であり、移行の影響を受けない。
+**補足**: `@townlens/core`（スコアリング、APIクライアント、ナラティブ生成）はプラットフォーム非依存であり、移行の影響を受けない。
 
 ### 12.2 代替手段マッピング
 
@@ -1184,12 +1189,60 @@ Phase E（要検討）: フレームワーク移行
 
 ---
 
-## 付録A: 主要な型定義（@estat/core からの re-export）
+## 13. 実装ノート（Week 1-2 モノレポ基盤構築）
 
-Web API のレスポンス型は `@estat/core` の型をそのまま使用する。
+### 13.1 完了した作業
+
+| Phase | 内容 | テスト数 |
+|-------|------|---------|
+| Phase 0 | pnpm workspace + Turborepo セットアップ、tsconfig.base.json | - |
+| Phase 1-4 | @townlens/core 構築（型、スコアリング、e-Stat、reinfo、ナラティブ、チャート色、正規化） | 289 |
+| Phase 5 | @townlens/cli 構築（CLI固有モジュール移行 + FileCacheAdapter） | 134 |
+| Phase 6 | @townlens/web Next.js 15 骨格 + 旧ソース削除 | - |
+
+**合計テスト: 423 テスト全パス**
+
+### 13.2 設計書からの変更点
+
+| 設計書の記載 | 実際の実装 | 理由 |
+|-------------|-----------|------|
+| `normalize/` は CLI に残す | **core に移行** | `label.ts` → `kana.ts` の依存があり、CLI の `fuzzy-search.ts` と `station/resolver.ts` も core の `normalizeLabel`/`katakanaToHiragana` を使用。Web でも都市名検索で必要になるため core が適切 |
+| `estat-cache.ts` + `reinfo-cache.ts` の2ファイル | **`file-cache.ts` の1ファイルに統合** | CacheAdapter パターンにより、キー名で使い分けるため実装を分ける必要がなくなった。envelope 形式（`{ data, expiresAt }`）で TTL を統一管理 |
+| `config/datasets.ts` は CLI に残す | **core に移行** | `SelectorConfig` 型が core の `types.ts` に定義されており、Web でもデータセットプリセットを参照するため |
+| `tailwind.config.ts` を作成 | **不要** | Tailwind CSS v4 は PostCSS プラグインベース（`@tailwindcss/postcss`）のため、設定ファイルが不要。`globals.css` に `@import "tailwindcss"` のみ |
+| shadcn/ui を Week 2 でセットアップ | **Week 4 に延期** | 骨格段階ではコンポーネントライブラリ不要。画面実装開始時にセットアップする方が効率的 |
+| Supabase を Week 2 でセットアップ | **Week 3 に延期** | DB マイグレーションは API 実装と同時に進める方が、スキーマ変更のイテレーションが少なくて済む |
+
+### 13.3 実装で得た知見
+
+1. **Turborepo v2.8+ は `packageManager` フィールドが必須**: ルート `package.json` に `"packageManager": "pnpm@10.29.2"` がないと `Could not resolve workspaces` エラーになる
+
+2. **キャッシュの DI パターンが効果的に機能**: `EstatApiClient` と `ReinfoApiClient` のコンストラクタに `CacheAdapter` をオプション注入する設計により、旧 `loadMetaInfoWithCache()` / `fetchTradesWithCache()` のような自由関数を排除。テストではキャッシュなしのクライアントを簡単に作成でき、Web では `SupabaseCacheAdapter` への差し替えもコンストラクタ引数の変更のみで完結する
+
+3. **バレルエクスポートの管理が重要**: `packages/core/src/index.ts` に全公開 API を re-export する設計。CLI 側で `@townlens/core` から直接インポートできるが、バレルに漏れがあるとビルドエラーになる。新モジュール追加時は index.ts の更新を忘れないこと
+
+4. **`normalize/` の移行は設計書から変更**: 当初 CLI に残す予定だったが、`label.ts` → `kana.ts` の内部依存と、Web の都市名検索でも正規化が必要になることから core に移行。結果的にこの判断は正しく、CLI の `fuzzy-search.ts` と `station/resolver.ts` が `@townlens/core` からクリーンにインポートできるようになった
+
+5. **Next.js 15 の `transpilePackages` 設定**: モノレポ内の TypeScript パッケージを Next.js から利用するには `next.config.ts` で `transpilePackages: ["@townlens/core"]` の指定が必要
+
+### 13.4 次のステップ（Week 3）
+
+- [ ] Supabase プロジェクト作成 + DB マイグレーション（§5 のスキーマ）
+- [ ] `GET /api/cities/search` 実装
+- [ ] `POST /api/reports` 実装（core パイプライン呼び出し）
+- [ ] `GET /api/reports/[id]` 実装
+- [ ] `GET /api/usage` 実装
+- [ ] Supabase Auth 統合
+- [ ] `SupabaseCacheAdapter` 実装
+
+---
+
+## 付録A: 主要な型定義（@townlens/core からの re-export）
+
+Web API のレスポンス型は `@townlens/core` の型をそのまま使用する。
 
 ```typescript
-// @estat/core/src/scoring/types.ts より
+// @townlens/core/src/scoring/types.ts より
 
 /** 都市ごとの全指標データ（API入力） */
 interface CityIndicators {

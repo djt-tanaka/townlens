@@ -1,70 +1,84 @@
 # アーキテクチャ
 
-## ディレクトリ構成
+## パッケージ構成
+
+CLI は `@townlens/cli` パッケージとして `packages/cli/` に配置される。
+ビジネスロジック・型定義・スコアリングエンジンは `@townlens/core` に分離されており、CLI はそれを利用する薄いアダプタ層。
 
 ```
-src/
-├── cli.ts                 # CLIエントリポイント（Commander.js）
-├── types.ts               # 共通型定義（ReportRow）
-├── errors.ts              # CliError カスタムエラー
-├── utils.ts               # ユーティリティ関数
-├── config/                # 設定管理
-│   ├── config.ts          # estat.config.json の読み書き
-│   └── datasets.ts        # ビルトインデータセットプリセット
-├── estat/                 # e-Stat API 連携
-│   ├── client.ts          # EstatApiClient（リトライ付きHTTP）
-│   ├── cache.ts           # メタ情報キャッシュ（7日TTL）
-│   ├── meta.ts            # メタ情報解析・都市名解決
-│   ├── report-data.ts     # 統計データ → ReportRow 変換
-│   ├── crime-data.ts      # 犯罪統計データ処理
-│   ├── inspect.ts         # 統計表の自動診断
-│   └── merge-crime-scoring.ts  # 犯罪指標マージ
-├── reinfo/                # 不動産情報ライブラリ API 連携
-│   ├── client.ts          # ReinfoApiClient（リトライ付き）
-│   ├── cache.ts           # 取引データキャッシュ（7日TTL）
-│   ├── types.ts           # API関連型定義
-│   ├── price-data.ts      # 取引価格統計
-│   ├── stats.ts           # フィルタリング・分位数計算
-│   ├── city-locations.ts  # 市区町村代表座標
-│   ├── disaster-client.ts # 災害タイルAPI（GeoJSON）
-│   ├── disaster-data.ts   # 災害リスク判定
-│   ├── merge-scoring.ts   # 価格指標マージ
-│   └── merge-disaster-scoring.ts  # 災害指標マージ
-├── scoring/               # スコアリングエンジン
-│   ├── index.ts           # scoreCities() メイン関数
-│   ├── types.ts           # スコアリング型定義
-│   ├── presets.ts         # 重みプリセット・指標定義
-│   ├── normalize.ts       # Min-Max正規化
-│   ├── percentile.ts      # パーセンタイル計算
-│   ├── composite.ts       # 複合スコア計算
-│   └── confidence.ts      # 信頼度評価
-└── report/                # レポート生成
-    ├── html.ts            # 基本HTML生成
-    ├── pdf.ts             # Playwright HTML→PDF変換
-    └── templates/         # スコアリング版テンプレート
-        ├── compose.ts     # レポート全体組成
-        ├── cover.ts       # カバーページ
-        ├── summary.ts     # ランキングサマリー
-        ├── dashboard.ts   # 指標ダッシュボード
-        ├── city-detail.ts # 都市詳細ページ
-        ├── disclaimer.ts  # 免責事項
-        └── styles.ts      # CSS定義
+packages/cli/
+├── src/
+│   ├── cli.ts                 # CLIエントリポイント（Commander.js）
+│   ├── utils.ts               # FS依存ユーティリティ（ensureDir, resolveOutPath）
+│   ├── cache/
+│   │   └── file-cache.ts      # FileCacheAdapter（CacheAdapter実装、7日TTL）
+│   ├── config/
+│   │   └── config.ts          # estat.config.json の読み書き
+│   ├── estat/
+│   │   └── inspect.ts         # 統計表の自動診断
+│   ├── geo/                   # 地理座標・メッシュ解決
+│   │   ├── resolver.ts        # GeoResolver
+│   │   └── types.ts           # 座標型定義
+│   ├── interactive/           # 対話式UI
+│   │   ├── prompts.ts         # inquirer プロンプト
+│   │   └── fuzzy-search.ts    # あいまい検索
+│   ├── mesh/                  # 地域メッシュ
+│   │   ├── types.ts           # メッシュ型定義
+│   │   ├── geometry.ts        # メッシュ幾何計算
+│   │   ├── lookup.ts          # メッシュ検索
+│   │   └── utils.ts           # メッシュユーティリティ
+│   ├── report/                # レポート生成
+│   │   ├── html.ts            # 基本HTML生成
+│   │   ├── pdf.ts             # Playwright HTML→PDF変換
+│   │   └── templates/         # スコアリング版テンプレート
+│   │       ├── compose.ts     # レポート全体組成
+│   │       ├── cover.ts       # カバーページ
+│   │       ├── summary.ts     # ランキングサマリー
+│   │       ├── dashboard.ts   # 指標ダッシュボード
+│   │       ├── city-detail.ts # 都市詳細ページ
+│   │       ├── disclaimer.ts  # 免責事項
+│   │       └── styles.ts      # CSS定義
+│   └── station/               # 駅・エリア情報
+│       ├── area-builder.ts    # エリア情報組成
+│       ├── loader.ts          # 駅データ読み込み
+│       └── types.ts           # 駅型定義
+└── tests/                     # テスト（134テスト）
+    ├── config/
+    ├── estat/
+    ├── geo/
+    ├── interactive/
+    ├── mesh/
+    ├── report/
+    └── station/
 ```
 
-## モジュール構成
+## @townlens/core との分担
+
+| パッケージ | 責務 |
+|-----------|------|
+| `@townlens/core` | 型定義、スコアリングエンジン、API クライアント、正規化、ナラティブ生成、チャートカラー |
+| `@townlens/cli` | CLI エントリポイント、ファイルI/O、PDF生成、対話式UI、設定管理、キャッシュ永続化 |
+
+### CLI 固有モジュール
 
 | モジュール | 責務 |
 |-----------|------|
-| `config` | 設定ファイルの読み書き、データセットプリセット管理 |
-| `estat` | e-Stat API との通信、メタ情報解析、人口・犯罪データ取得 |
-| `reinfo` | 不動産情報ライブラリ API との通信、価格統計・災害リスク取得 |
-| `scoring` | 多指標の正規化・パーセンタイル・複合スコア・信頼度評価 |
+| `cache` | `FileCacheAdapter` — `CacheAdapter` インターフェースのファイルシステム実装 |
+| `config` | 設定ファイルの読み書き（`@townlens/core` のデータセットプリセットを利用） |
+| `estat` | `inspect` コマンド（統計表の自動診断） |
+| `geo` | 座標解決・メッシュ変換 |
+| `interactive` | inquirer ベースの対話式都市選択 |
+| `mesh` | 地域メッシュコード処理 |
 | `report` | HTMLテンプレート描画、Playwright でのPDF変換 |
+| `station` | 駅・エリア情報の読み込みと組成 |
 
 ## データフロー
 
 ```
 CLI入力（--cities "世田谷区,渋谷区"）
+    │
+    ▼
+[初期化] FileCacheAdapter 生成 → EstatApiClient / ReinfoApiClient に注入
     │
     ▼
 [Phase 0] 人口統計 ─── e-Stat API (statsDataId: 0003448299)
@@ -86,7 +100,7 @@ CLI入力（--cities "世田谷区,渋谷区"）
     │  → mergeDisasterIntoScoringInput()
     │
     ▼
-[スコアリング] ─── scoring/index.ts
+[スコアリング] ─── @townlens/core scoring
     │  → Choice Score（候補内正規化）
     │  → Baseline Score（パーセンタイル）
     │  → Composite Score（重み付き総合スコア）
@@ -104,5 +118,6 @@ CLI入力（--cities "世田谷区,渋谷区"）
 
 - **不変性**: 全型定義に `readonly`、データマージはスプレッド演算子で新規オブジェクト生成
 - **段階的統合**: 各Phase（人口→価格→犯罪→災害）は独立したオプション。`--no-price`, `--no-crime`, `--no-disaster` で個別にスキップ可能
-- **キャッシュ戦略**: メタ情報・取引データを `.cache/` にファイルベースで7日間保持
+- **キャッシュDI**: `CacheAdapter` インターフェースを `@townlens/core` で定義し、CLI は `FileCacheAdapter`（ファイルベース、7日TTL、envelope方式）で実装。Web側は別のアダプタを注入可能
 - **レート制限対策**: 都市間200ms、タイル間300msのディレイ。APIリトライは指数バックオフ（最大3回）
+- **core依存**: ビジネスロジックは全て `@townlens/core` からインポート。CLI は I/O と UI のみ担当
