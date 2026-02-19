@@ -12,7 +12,7 @@ const notoSansJP = Noto_Sans_JP({
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://townlens.jp",
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://townlens-web.vercel.app",
   ),
   title: {
     default: "TownLens - 街えらびレポート",
