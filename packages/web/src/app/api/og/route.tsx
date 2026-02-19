@@ -12,8 +12,23 @@ interface StoredReportData {
   readonly preset: WeightPreset;
 }
 
-/** Google Fonts から Noto Sans JP (Bold) を取得 */
-async function loadNotoSansJP(): Promise<ArrayBuffer> {
+/** フォントデータのキャッシュ（ウォームインスタンス間で再利用） */
+let fontCache: Promise<ArrayBuffer> | null = null;
+
+/** Google Fonts から Noto Sans JP (Bold) を取得（キャッシュあり） */
+function loadNotoSansJP(): Promise<ArrayBuffer> {
+  if (fontCache) return fontCache;
+
+  fontCache = fetchNotoSansJP().catch((err) => {
+    // 失敗時はキャッシュをクリアして次回リトライ可能にする
+    fontCache = null;
+    throw err;
+  });
+
+  return fontCache;
+}
+
+async function fetchNotoSansJP(): Promise<ArrayBuffer> {
   const response = await fetch(
     "https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@700&display=swap",
     {
