@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -11,6 +12,7 @@ import {
   PLAN_LABELS,
   calculateUsagePercentage,
 } from "./utils";
+import { PortalButton } from "./portal-button";
 
 interface UsageCardProps {
   readonly plan: PlanType;
@@ -70,10 +72,13 @@ export function UsageCard({
 
         {/* アップグレード導線（フリープランのみ） */}
         {plan === "free" && (
-          <Button variant="outline" size="sm" className="w-full" disabled>
-            アップグレード（近日公開）
+          <Button variant="outline" size="sm" className="w-full" asChild>
+            <Link href="/pricing">アップグレード</Link>
           </Button>
         )}
+
+        {/* プラン管理（有料プランのみ） */}
+        {(plan === "standard" || plan === "premium") && <PortalButton />}
       </CardContent>
     </Card>
   );

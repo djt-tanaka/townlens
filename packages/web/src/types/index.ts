@@ -62,6 +62,21 @@ export interface UsageResponse {
   };
 }
 
+/** POST /api/stripe/checkout のリクエスト */
+export interface CheckoutRequest {
+  readonly priceId: string;
+}
+
+/** POST /api/stripe/checkout のレスポンス */
+export interface CheckoutResponse {
+  readonly url: string;
+}
+
+/** POST /api/stripe/portal のレスポンス */
+export interface PortalResponse {
+  readonly url: string;
+}
+
 /** 共通エラーレスポンス */
 export interface ApiErrorResponse {
   readonly error: string;

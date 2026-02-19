@@ -32,6 +32,12 @@ export const reportIdSchema = z.object({
   id: z.string().uuid("レポートIDが無効です"),
 });
 
+/** POST /api/stripe/checkout のリクエストボディ */
+export const checkoutSchema = z.object({
+  priceId: z.string().min(1, "priceId は必須です"),
+});
+
 export type CitySearchInput = z.infer<typeof citySearchSchema>;
 export type CreateReportInput = z.infer<typeof createReportSchema>;
 export type ReportIdInput = z.infer<typeof reportIdSchema>;
+export type CheckoutInput = z.infer<typeof checkoutSchema>;

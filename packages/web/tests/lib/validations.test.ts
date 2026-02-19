@@ -3,6 +3,7 @@ import {
   citySearchSchema,
   createReportSchema,
   reportIdSchema,
+  checkoutSchema,
 } from "@/lib/validations";
 
 describe("citySearchSchema", () => {
@@ -127,6 +128,23 @@ describe("reportIdSchema", () => {
 
   it("id フィールドが欠けている場合を拒否する", () => {
     const result = reportIdSchema.safeParse({});
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("checkoutSchema", () => {
+  it("有効な priceId を受け入れる", () => {
+    const result = checkoutSchema.safeParse({ priceId: "price_abc123" });
+    expect(result.success).toBe(true);
+  });
+
+  it("空の priceId を拒否する", () => {
+    const result = checkoutSchema.safeParse({ priceId: "" });
+    expect(result.success).toBe(false);
+  });
+
+  it("priceId フィールドが欠けている場合を拒否する", () => {
+    const result = checkoutSchema.safeParse({});
     expect(result.success).toBe(false);
   });
 });
