@@ -36,7 +36,7 @@ export default async function PricingPage() {
   return (
     <main className="mx-auto max-w-5xl px-4 py-16">
       <div className="mb-12 text-center">
-        <h1 className="text-3xl font-bold">料金プラン</h1>
+        <h1 className="text-3xl font-black">料金プラン</h1>
         <p className="mt-3 text-muted-foreground">
           無料プランで始めて、必要に応じてアップグレードできます。
         </p>

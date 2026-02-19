@@ -96,7 +96,7 @@ export function LoginForm() {
         </p>
       )}
 
-      <Button type="submit" className="w-full" disabled={loading}>
+      <Button type="submit" className="w-full bg-warm-coral text-white hover:bg-warm-coral/90" disabled={loading}>
         {loading
           ? "処理中..."
           : mode === "login"

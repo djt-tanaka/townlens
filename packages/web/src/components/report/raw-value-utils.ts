@@ -33,9 +33,9 @@ export function formatRawValue(
 
 /** スコアに応じた色を返す */
 export function getScoreColorHex(score: number): string {
-  if (score >= 70) return "#10b981";
-  if (score >= 40) return "#f59e0b";
-  return "#f43f5e";
+  if (score >= 70) return "#5a9e7a";
+  if (score >= 40) return "#c8883a";
+  return "#c26050";
 }
 
 /** 信頼度レベルに応じたバッジスタイルを返す */
@@ -43,10 +43,10 @@ export function getConfidenceStyle(level: string): {
   backgroundColor: string;
   color: string;
 } {
-  if (level === "high") return { backgroundColor: "#dcfce7", color: "#166534" };
+  if (level === "high") return { backgroundColor: "#e8f5ee", color: "#2d6b4a" };
   if (level === "medium")
-    return { backgroundColor: "#fef3c7", color: "#92400e" };
-  return { backgroundColor: "#fee2e2", color: "#991b1b" };
+    return { backgroundColor: "#fdf0e0", color: "#8a5a20" };
+  return { backgroundColor: "#fce8e4", color: "#8b3325" };
 }
 
 /** 信頼度の日本語ラベル */

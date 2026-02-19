@@ -125,7 +125,7 @@ export function CityDetail({
                           </div>
 
                           {/* プログレスバー */}
-                          <div className="mb-4 h-1.5 w-full rounded-full bg-slate-100">
+                          <div className="mb-4 h-1.5 w-full rounded-full bg-warm-surface">
                             <div
                               className="h-full rounded-full transition-all"
                               style={{
@@ -136,7 +136,7 @@ export function CityDetail({
                           </div>
 
                           {/* 指標詳細リスト */}
-                          <div className="space-y-0 divide-y divide-slate-100">
+                          <div className="space-y-0 divide-y divide-border">
                             {categoryDefs.map((def) => {
                               const cs = result.choice.find(
                                 (c) => c.indicatorId === def.id,
@@ -155,11 +155,11 @@ export function CityDetail({
                                   className="flex items-start justify-between py-3"
                                 >
                                   <div className="flex-1">
-                                    <div className="text-[13px] font-semibold text-slate-800">
+                                    <div className="text-[13px] font-semibold text-foreground">
                                       {def.label}
                                     </div>
                                     {rawRow && (
-                                      <div className="mt-0.5 text-lg font-bold text-slate-800">
+                                      <div className="mt-0.5 text-lg font-bold text-foreground">
                                         {formatRawValue(raw, def)}{" "}
                                         <span className="text-xs font-normal text-muted-foreground">
                                           {def.unit}
@@ -170,7 +170,7 @@ export function CityDetail({
                                     {def.id === "condo_price_median" &&
                                       rawRow?.condoPriceQ25 != null &&
                                       rawRow?.condoPriceQ75 != null && (
-                                        <div className="mt-1 rounded-lg bg-slate-50 px-3 py-2 text-xs">
+                                        <div className="mt-1 rounded-lg bg-warm-surface px-3 py-2 text-xs">
                                           価格レンジ (Q25-Q75):{" "}
                                           <strong>
                                             {jaNumberFormat.format(

@@ -60,7 +60,7 @@ export default async function DashboardPage() {
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold">ダッシュボード</h1>
+      <h1 className="mb-6 text-2xl font-black">ダッシュボード</h1>
 
       {/* 利用量 + プラン情報 */}
       <div className="mb-8 grid gap-6 sm:grid-cols-2">

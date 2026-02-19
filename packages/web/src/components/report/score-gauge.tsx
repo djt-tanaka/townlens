@@ -6,9 +6,9 @@ interface ScoreGaugeProps {
 
 /** スコアに応じた色を返す */
 export function getScoreColor(score: number): string {
-  if (score >= 70) return "#10b981";
-  if (score >= 40) return "#f59e0b";
-  return "#f43f5e";
+  if (score >= 70) return "#5a9e7a";
+  if (score >= 40) return "#c8883a";
+  return "#c26050";
 }
 
 /** 半円ゲージの SVG パスを計算する */

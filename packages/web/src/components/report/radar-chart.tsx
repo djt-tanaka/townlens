@@ -47,9 +47,9 @@ export function ReportRadarChart({
   return (
     <ResponsiveContainer width="100%" height={350}>
       <RadarChart data={data}>
-        <PolarGrid />
-        <PolarAngleAxis dataKey="indicator" tick={{ fontSize: 11 }} />
-        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10 }} />
+        <PolarGrid stroke="var(--border)" />
+        <PolarAngleAxis dataKey="indicator" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
+        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
         {results.map((result, i) => (
           <Radar
             key={result.cityName}

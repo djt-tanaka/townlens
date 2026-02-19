@@ -84,7 +84,7 @@ export function CitySearch() {
 
       {/* 都市検索 */}
       {selectedCities.length < MAX_CITIES && (
-        <Command className="rounded-lg border shadow-sm" shouldFilter={false}>
+        <Command className="rounded-xl border shadow-sm" shouldFilter={false}>
           <CommandInput
             placeholder="市区町村名を入力..."
             value={query}
@@ -149,7 +149,7 @@ export function CitySearch() {
 
       {/* 比較ボタン */}
       <Button
-        className="w-full"
+        className="w-full bg-warm-coral text-white hover:bg-warm-coral/90"
         size="lg"
         onClick={handleSubmit}
         disabled={selectedCities.length < 2 || isGenerating}
