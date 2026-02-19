@@ -4,6 +4,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { CityScoreResult, WeightPreset } from "@townlens/core";
 import { CITY_COLORS } from "@townlens/core";
 
+export const runtime = "edge";
+
 /** DB に保存された result_json の最小構造 */
 interface StoredReportData {
   readonly results: ReadonlyArray<CityScoreResult>;
@@ -14,11 +16,20 @@ interface StoredReportData {
 async function loadNotoSansJP(): Promise<ArrayBuffer> {
   const response = await fetch(
     "https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@700&display=swap",
+    {
+      headers: {
+        // woff2 形式を取得するためにブラウザ User-Agent を指定
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_8; de-at) AppleWebKit/533.21.1 (KHTML, like Gecko) Version/5.0.5 Safari/533.21.1",
+      },
+    },
   );
   const css = await response.text();
 
-  // CSS から woff2 URL を抽出
-  const match = css.match(/src:\s*url\(([^)]+\.woff2)\)/);
+  // CSS から フォント URL を抽出（woff2 優先、見つからなければ woff/ttf にフォールバック）
+  const match =
+    css.match(/src:\s*url\(([^)]+\.woff2)\)/) ??
+    css.match(/src:\s*url\(([^)]+\.(?:woff|ttf|otf))\)/);
   if (!match?.[1]) {
     throw new Error("Noto Sans JP フォント URL の取得に失敗しました");
   }
@@ -246,7 +257,7 @@ export async function GET(request: Request) {
                     color: CITY_COLORS[index % CITY_COLORS.length],
                   }}
                 >
-                  {result.compositeScore.toFixed(1)}
+                  {(result.compositeScore ?? 0).toFixed(1)}
                 </div>
                 <div style={{ fontSize: "16px", color: "#7a6955" }}>点</div>
               </div>
