@@ -21,7 +21,7 @@ interface ReportHistoryProps {
 }
 
 /** ISO 8601 日時文字列を "YYYY/MM/DD HH:mm" にフォーマット */
-function formatDate(isoString: string): string {
+export function formatDate(isoString: string): string {
   return new Intl.DateTimeFormat("ja-JP", {
     year: "numeric",
     month: "2-digit",
@@ -32,11 +32,11 @@ function formatDate(isoString: string): string {
 }
 
 /** プリセット名をラベルに変換（見つからない場合は生の名前を返す） */
-function getPresetLabel(presetName: string): string {
+export function getPresetLabel(presetName: string): string {
   return findPreset(presetName)?.label ?? presetName;
 }
 
-const STATUS_CONFIG = {
+export const STATUS_CONFIG = {
   completed: { label: "完了", variant: "default" as const },
   processing: { label: "生成中", variant: "secondary" as const },
   failed: { label: "失敗", variant: "destructive" as const },

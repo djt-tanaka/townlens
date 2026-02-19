@@ -13,11 +13,20 @@ interface UsageCardProps {
   readonly reportsLimit: number | null;
 }
 
-const PLAN_LABELS: Record<UsageCardProps["plan"], string> = {
+export const PLAN_LABELS: Record<UsageCardProps["plan"], string> = {
   free: "フリー",
   standard: "スタンダード",
   premium: "プレミアム",
 };
+
+/** 利用量パーセンテージを算出（上限なしまたは0の場合は0を返す） */
+export function calculateUsagePercentage(
+  reportsGenerated: number,
+  reportsLimit: number | null,
+): number {
+  if (reportsLimit === null || reportsLimit <= 0) return 0;
+  return Math.min((reportsGenerated / reportsLimit) * 100, 100);
+}
 
 /** 利用量 + プラン情報カード */
 export function UsageCard({
@@ -26,10 +35,7 @@ export function UsageCard({
   reportsLimit,
 }: UsageCardProps) {
   const planLabel = PLAN_LABELS[plan] ?? plan;
-  const percentage =
-    reportsLimit !== null && reportsLimit > 0
-      ? Math.min((reportsGenerated / reportsLimit) * 100, 100)
-      : 0;
+  const percentage = calculateUsagePercentage(reportsGenerated, reportsLimit);
 
   return (
     <Card>
