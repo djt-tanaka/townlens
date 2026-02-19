@@ -12,6 +12,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "ダッシュボード",
     description: "レポート履歴と利用量を確認できます。",
+    images: [{ url: "/api/og", width: 1200, height: 630 }],
   },
 };
 

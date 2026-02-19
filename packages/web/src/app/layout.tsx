@@ -12,7 +12,7 @@ const notoSansJP = Noto_Sans_JP({
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://townlens.jp",
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://townlens-web.vercel.app",
   ),
   title: {
     default: "TownLens - 街えらびレポート",
@@ -27,9 +27,18 @@ export const metadata: Metadata = {
     title: "TownLens - 街えらびレポート",
     description:
       "政府統計ベースの都市比較ツール。子育て世帯のための街えらびを支援します。",
+    images: [
+      {
+        url: "/api/og",
+        width: 1200,
+        height: 630,
+        alt: "TownLens - 街えらびレポート",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
+    images: ["/api/og"],
   },
 };
 

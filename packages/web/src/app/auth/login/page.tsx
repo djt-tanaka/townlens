@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "ログイン",
     description: "TownLens にログインして、街の比較レポートを作成しましょう。",
+    images: [{ url: "/api/og", width: 1200, height: 630 }],
   },
 };
 

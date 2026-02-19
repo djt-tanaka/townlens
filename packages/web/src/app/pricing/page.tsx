@@ -19,6 +19,7 @@ export const metadata: Metadata = {
     title: "料金プラン",
     description:
       "TownLens の料金プラン。無料プランから始めて、必要に応じてアップグレード。",
+    images: [{ url: "/api/og", width: 1200, height: 630 }],
   },
 };
 

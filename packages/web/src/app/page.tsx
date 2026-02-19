@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "TownLens - 街えらびレポート",
     description:
       "不動産サイトの口コミではなく、政府統計の数字で子育て・安全・価格・災害リスクを比べられます。",
+    images: [{ url: "/api/og", width: 1200, height: 630 }],
   },
 };
 
