@@ -44,7 +44,7 @@ export function Disclaimer({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[180px]">データソース</TableHead>
+            <TableHead className="w-[120px] sm:w-[180px]">データソース</TableHead>
             <TableHead>内容</TableHead>
           </TableRow>
         </TableHeader>
@@ -100,8 +100,8 @@ export function Disclaimer({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[140px]">指標</TableHead>
-            <TableHead className="w-[60px]">単位</TableHead>
+            <TableHead className="w-[100px] sm:w-[140px]">指標</TableHead>
+            <TableHead className="w-[50px] sm:w-[60px]">単位</TableHead>
             <TableHead>算出方法</TableHead>
           </TableRow>
         </TableHeader>

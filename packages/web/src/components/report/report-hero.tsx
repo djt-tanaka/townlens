@@ -39,8 +39,8 @@ export function ReportHero({
   return (
     <header className="space-y-6">
       {/* グラデーションバナー */}
-      <div className="rounded-2xl bg-gradient-to-r from-emerald-50 via-sky-50 to-violet-50 px-8 py-10 text-center">
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-800">
+      <div className="rounded-2xl bg-gradient-to-r from-emerald-50 via-sky-50 to-violet-50 px-4 py-6 text-center sm:px-8 sm:py-10">
+        <h1 className="text-xl font-extrabold tracking-tight text-slate-800 sm:text-3xl">
           {cityNames.join("・")} 比較レポート
         </h1>
         <p className="mt-2 text-base text-slate-500">
@@ -115,7 +115,7 @@ function MetaRow({
   return (
     <div className="flex items-start gap-3 text-sm">
       <span className="text-base">{emoji}</span>
-      <span className="min-w-[6rem] shrink-0 font-semibold text-slate-700">
+      <span className="min-w-[5rem] shrink-0 font-semibold text-slate-700 sm:min-w-[6rem]">
         {label}
       </span>
       <span className="text-slate-600">{children}</span>
