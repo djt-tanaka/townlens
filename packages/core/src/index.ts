@@ -25,6 +25,7 @@ export type {
   WeightPreset,
 } from "./scoring/types";
 export { scoreCities } from "./scoring";
+export { mergeIndicators } from "./scoring/merge-indicators";
 export { normalizeWithinCandidates } from "./scoring/normalize";
 export type { ChoiceScoreWithCity } from "./scoring/normalize";
 export { calculatePercentile } from "./scoring/percentile";
@@ -122,3 +123,7 @@ export {
   renderCategoryLegend,
 } from "./charts/colors";
 export type { CategoryColor } from "./charts/colors";
+
+// ─── パイプライン ───
+export { runReportPipeline } from "./pipeline/report-pipeline";
+export type { PipelineInput, PipelineResult, PipelineClients } from "./pipeline/report-pipeline";

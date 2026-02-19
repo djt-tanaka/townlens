@@ -1,5 +1,6 @@
-import { CityIndicators, IndicatorValue } from "../scoring/types";
-import { CityDisasterData } from "./disaster-data";
+import type { CityIndicators, IndicatorValue } from "../scoring/types";
+import type { CityDisasterData } from "./disaster-data";
+import { mergeIndicators } from "../scoring/merge-indicators";
 
 /**
  * 既存の CityIndicators に災害リスク指標を不変的に追加する。
@@ -9,8 +10,7 @@ export function mergeDisasterIntoScoringInput(
   cities: ReadonlyArray<CityIndicators>,
   disasterData: ReadonlyMap<string, CityDisasterData>,
 ): ReadonlyArray<CityIndicators> {
-  return cities.map((city) => {
-    const data = disasterData.get(city.areaCode);
+  return mergeIndicators(cities, disasterData, (data) => {
     const riskIndicator: IndicatorValue = {
       indicatorId: "flood_risk",
       rawValue: data?.riskScore ?? null,
@@ -23,9 +23,6 @@ export function mergeDisasterIntoScoringInput(
       dataYear: "",
       sourceId: "reinfolib",
     };
-    return {
-      ...city,
-      indicators: [...city.indicators, riskIndicator, evacuationIndicator],
-    };
+    return [riskIndicator, evacuationIndicator];
   });
 }
