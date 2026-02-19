@@ -7,7 +7,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // 静的ファイルと画像を除外し、それ以外の全ルートでセッションリフレッシュを実行
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // 静的ファイル・画像・OGPエンドポイントを除外し、それ以外の全ルートでセッションリフレッシュを実行
+    "/((?!_next/static|_next/image|favicon.ico|api/og|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
