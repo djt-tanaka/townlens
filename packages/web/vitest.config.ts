@@ -30,6 +30,11 @@ export default defineConfig({
         "src/lib/supabase/middleware.ts",
         "src/middleware.ts",
         "src/app/auth/callback/route.ts",
+        // SEO 関連（外部 DB アクセスあり、E2E で検証）
+        "src/app/sitemap.ts",
+        "src/app/robots.ts",
+        // OGP 画像生成（ImageResponse の描画テスト困難）
+        "src/app/api/og/route.tsx",
         // Recharts ラッパーコンポーネントは描画テスト困難
         "src/components/report/radar-chart.tsx",
         "src/components/report/bar-chart.tsx",

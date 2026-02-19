@@ -1,5 +1,17 @@
+import type { Metadata } from "next";
 import { BarChart3, Scale, Shield } from "lucide-react";
 import { CitySearch } from "@/components/search/city-search";
+
+export const metadata: Metadata = {
+  title: { absolute: "TownLens - 街えらびレポート" },
+  description:
+    "不動産サイトの口コミではなく、政府統計の数字で子育て・安全・価格・災害リスクを比べられます。",
+  openGraph: {
+    title: "TownLens - 街えらびレポート",
+    description:
+      "不動産サイトの口コミではなく、政府統計の数字で子育て・安全・価格・災害リスクを比べられます。",
+  },
+};
 
 export default function Home() {
   return (

@@ -11,9 +11,26 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  title: "TownLens - 街えらびレポート",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://townlens.jp",
+  ),
+  title: {
+    default: "TownLens - 街えらびレポート",
+    template: "%s | TownLens",
+  },
   description:
     "政府統計ベースの都市比較ツール。子育て世帯のための街えらびを支援します。",
+  openGraph: {
+    type: "website",
+    locale: "ja_JP",
+    siteName: "TownLens",
+    title: "TownLens - 街えらびレポート",
+    description:
+      "政府統計ベースの都市比較ツール。子育て世帯のための街えらびを支援します。",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 export default function RootLayout({
