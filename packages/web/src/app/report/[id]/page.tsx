@@ -10,7 +10,9 @@ import type {
   WeightPreset,
   ReportRow,
 } from "@townlens/core";
+import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { Button } from "@/components/ui/button";
 import { ReportHero } from "@/components/report/report-hero";
 import { ScoreSummary } from "@/components/report/score-summary";
 import { IndicatorDashboard } from "@/components/report/indicator-dashboard";
@@ -96,6 +98,14 @@ export default async function ReportPage({ params }: ReportPageProps) {
           <p className="text-muted-foreground">
             {report.error_message ?? "不明なエラーが発生しました。"}
           </p>
+          <div className="flex gap-3">
+            <Button asChild>
+              <Link href="/">新しい比較を作成</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/dashboard">ダッシュボード</Link>
+            </Button>
+          </div>
         </div>
       </main>
     );

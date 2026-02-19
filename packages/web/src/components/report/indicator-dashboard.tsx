@@ -65,7 +65,7 @@ export function IndicatorDashboard({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[140px]">指標</TableHead>
+                    <TableHead className="w-[100px] sm:w-[140px]">指標</TableHead>
                     {results.map((r) => (
                       <TableHead
                         key={`${r.cityName}-score`}

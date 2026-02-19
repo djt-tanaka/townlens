@@ -42,14 +42,14 @@ export function ReportBarChart({ results, definitions }: ReportBarChartProps) {
   const data = [...transformToBarData(results, definitions)];
 
   return (
-    <ResponsiveContainer width="100%" height={Math.max(300, definitions.length * 60)}>
+    <ResponsiveContainer width="100%" height={Math.max(250, definitions.length * 50)}>
       <BarChart data={data} layout="vertical">
         <CartesianGrid strokeDasharray="3 3" horizontal={false} />
         <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} />
         <YAxis
           type="category"
           dataKey="indicator"
-          width={180}
+          width={120}
           tick={{ fontSize: 11 }}
         />
         {results.map((result, i) => (

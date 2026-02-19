@@ -41,17 +41,19 @@ export function CityDetail({
     <section className="space-y-4">
       <h2 className="text-lg font-semibold">都市詳細</h2>
       <Tabs defaultValue={results[0]?.cityName}>
-        <TabsList className="w-full">
-          {results.map((result) => (
-            <TabsTrigger
-              key={result.cityName}
-              value={result.cityName}
-              className="flex-1"
-            >
-              {result.cityName}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        <div className="overflow-x-auto">
+          <TabsList className="w-full min-w-max">
+            {results.map((result) => (
+              <TabsTrigger
+                key={result.cityName}
+                value={result.cityName}
+                className="min-w-[80px] flex-1"
+              >
+                {result.cityName}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
         {results.map((result) => {
           const categoryScores = getCategoryScores(result, definitions);
           const rawRow = rawRows?.find(
