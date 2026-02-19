@@ -23,8 +23,10 @@ export function ErrorDisplay({
   return (
     <main className="mx-auto max-w-4xl px-4 py-12">
       <div className="flex flex-col items-center gap-4 text-center">
-        <AlertTriangle className="h-10 w-10 text-destructive" />
-        <h1 className="text-xl font-semibold text-destructive">{title}</h1>
+        <div className="rounded-full bg-warm-coral-bg p-4">
+          <AlertTriangle className="h-8 w-8 text-warm-coral" />
+        </div>
+        <h1 className="text-xl font-bold">{title}</h1>
         <p className="text-muted-foreground">{description}</p>
         <div className="flex gap-3">
           {onReset && (

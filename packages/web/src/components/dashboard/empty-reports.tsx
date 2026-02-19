@@ -11,8 +11,8 @@ export function EmptyReports() {
         <p className="text-sm text-muted-foreground">
           街を比較して最初のレポートを作成しましょう
         </p>
-        <Button asChild>
-          <Link href="/">レポートを作成する</Link>
+        <Button asChild className="bg-warm-coral text-white hover:bg-warm-coral/90">
+          <Link href="/">街を比べてみる</Link>
         </Button>
       </CardContent>
     </Card>

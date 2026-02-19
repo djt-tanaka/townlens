@@ -101,40 +101,40 @@ describe("formatRawValue", () => {
 
 describe("getScoreColorHex", () => {
   it("70以上はグリーン", () => {
-    expect(getScoreColorHex(70)).toBe("#10b981");
-    expect(getScoreColorHex(100)).toBe("#10b981");
+    expect(getScoreColorHex(70)).toBe("#5a9e7a");
+    expect(getScoreColorHex(100)).toBe("#5a9e7a");
   });
 
   it("40-69はアンバー", () => {
-    expect(getScoreColorHex(40)).toBe("#f59e0b");
-    expect(getScoreColorHex(69)).toBe("#f59e0b");
+    expect(getScoreColorHex(40)).toBe("#c8883a");
+    expect(getScoreColorHex(69)).toBe("#c8883a");
   });
 
   it("40未満はローズ", () => {
-    expect(getScoreColorHex(39)).toBe("#f43f5e");
-    expect(getScoreColorHex(0)).toBe("#f43f5e");
+    expect(getScoreColorHex(39)).toBe("#c26050");
+    expect(getScoreColorHex(0)).toBe("#c26050");
   });
 });
 
 describe("getConfidenceStyle", () => {
   it("high は緑背景", () => {
     expect(getConfidenceStyle("high")).toEqual({
-      backgroundColor: "#dcfce7",
-      color: "#166534",
+      backgroundColor: "#e8f5ee",
+      color: "#2d6b4a",
     });
   });
 
   it("medium は琥珀背景", () => {
     expect(getConfidenceStyle("medium")).toEqual({
-      backgroundColor: "#fef3c7",
-      color: "#92400e",
+      backgroundColor: "#fdf0e0",
+      color: "#8a5a20",
     });
   });
 
   it("low は赤背景", () => {
     expect(getConfidenceStyle("low")).toEqual({
-      backgroundColor: "#fee2e2",
-      color: "#991b1b",
+      backgroundColor: "#fce8e4",
+      color: "#8b3325",
     });
   });
 });

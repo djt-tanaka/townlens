@@ -9,10 +9,11 @@ export async function Header() {
   } = await supabase.auth.getUser();
 
   return (
-    <header className="border-b border-border bg-background">
+    <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-2 sm:px-4">
-        <Link href="/" className="text-lg font-bold tracking-tight">
+        <Link href="/" className="text-lg font-black tracking-tight">
           TownLens
+          <span className="ml-0.5 inline-block h-1.5 w-1.5 rounded-full bg-warm-coral align-middle" />
         </Link>
         <nav className="flex items-center gap-1 sm:gap-2">
           <Button variant="ghost" size="sm" asChild className="px-2 text-xs sm:px-3 sm:text-sm">

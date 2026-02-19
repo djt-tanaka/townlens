@@ -44,13 +44,13 @@ export function ReportBarChart({ results, definitions }: ReportBarChartProps) {
   return (
     <ResponsiveContainer width="100%" height={Math.max(250, definitions.length * 50)}>
       <BarChart data={data} layout="vertical">
-        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-        <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} />
+        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border)" />
+        <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
         <YAxis
           type="category"
           dataKey="indicator"
           width={120}
-          tick={{ fontSize: 11 }}
+          tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
         />
         {results.map((result, i) => (
           <Bar

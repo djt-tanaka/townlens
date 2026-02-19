@@ -4,49 +4,70 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  /* ベース: 和紙白 + 墨茶 */
+  --background: oklch(0.985 0.006 85);
+  --foreground: oklch(0.18 0.018 40);
+  --card: oklch(0.99 0.005 85);
+  --card-foreground: oklch(0.18 0.018 40);
+  --popover: oklch(0.99 0.004 85);
+  --popover-foreground: oklch(0.18 0.018 40);
+
+  /* プライマリ: 若草色 */
+  --primary: oklch(0.35 0.06 145);
+  --primary-foreground: oklch(0.98 0.005 85);
+
+  /* セカンダリ: 木の色ベージュ */
+  --secondary: oklch(0.93 0.022 65);
+  --secondary-foreground: oklch(0.28 0.025 40);
+
+  /* ミュート: 温かいグレージュ */
+  --muted: oklch(0.945 0.014 70);
+  --muted-foreground: oklch(0.52 0.018 50);
+
+  /* アクセント: muted同一 */
+  --accent: oklch(0.945 0.014 70);
+  --accent-foreground: oklch(0.22 0.025 40);
+
+  /* デストラクティブ: 温かいコーラル */
+  --destructive: oklch(0.58 0.19 22);
+  --destructive-foreground: oklch(0.58 0.19 22);
+
+  /* ボーダー・インプット: 木の色系 */
+  --border: oklch(0.89 0.015 65);
+  --input: oklch(0.89 0.015 65);
+  --ring: oklch(0.50 0.08 145);
+
+  /* チャート色 */
   --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-2: oklch(0.62 0.1 185);
+  --chart-3: oklch(0.42 0.065 220);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
 
-  /* レポートページ: PDF準拠の背景・テキスト色 */
-  --report-bg: #f8fafc;
-  --report-text: #1e293b;
-  --report-sub: #64748b;
+  --radius: 0.75rem;
 
-  /* スコア色（70+/40+/<40） */
-  --score-high: #10b981;
-  --score-medium: #f59e0b;
-  --score-low: #f43f5e;
+  /* レポートページ: 和紙白 + 墨茶 */
+  --report-bg: #faf8f5;
+  --report-text: #2c2218;
+  --report-sub: #7a6955;
+
+  /* スコア色（若草/アンバー/朱鷺色） */
+  --score-high: #5a9e7a;
+  --score-medium: #c8883a;
+  --score-low: #c26050;
 
   /* 信頼度バッジ */
-  --confidence-high-bg: #dcfce7;
-  --confidence-high-text: #166534;
-  --confidence-medium-bg: #fef3c7;
-  --confidence-medium-text: #92400e;
-  --confidence-low-bg: #fee2e2;
-  --confidence-low-text: #991b1b;
+  --confidence-high-bg: #e8f5ee;
+  --confidence-high-text: #2d6b4a;
+  --confidence-medium-bg: #fdf0e0;
+  --confidence-medium-text: #8a5a20;
+  --confidence-low-bg: #fce8e4;
+  --confidence-low-text: #8b3325;
+
+  /* ウォームアクセント */
+  --warm-surface: oklch(0.955 0.012 75);
+  --warm-coral: oklch(0.62 0.12 22);
+  --warm-coral-bg: oklch(0.95 0.04 22);
 }
 
 @theme inline {
@@ -84,6 +105,11 @@
   --color-score-high: var(--score-high);
   --color-score-medium: var(--score-medium);
   --color-score-low: var(--score-low);
+
+  /* ウォームアクセントユーティリティ */
+  --color-warm-surface: var(--warm-surface);
+  --color-warm-coral: var(--warm-coral);
+  --color-warm-coral-bg: var(--warm-coral-bg);
 }
 
 @layer base {
@@ -92,5 +118,11 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "palt" 1;
+  }
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.01em;
   }
 }

@@ -31,7 +31,7 @@ export function PlanCard({ plan, currentPlan, action }: PlanCardProps) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">{plan.name}</CardTitle>
-          {plan.highlighted && <Badge>おすすめ</Badge>}
+          {plan.highlighted && <Badge className="bg-warm-coral text-white border-transparent">おすすめ</Badge>}
           {isCurrent && <Badge variant="outline">利用中</Badge>}
         </div>
         <CardDescription>{plan.description}</CardDescription>

@@ -38,12 +38,21 @@ export function ReportHero({
 
   return (
     <header className="space-y-6">
-      {/* グラデーションバナー */}
-      <div className="rounded-2xl bg-gradient-to-r from-emerald-50 via-sky-50 to-violet-50 px-4 py-6 text-center sm:px-8 sm:py-10">
-        <h1 className="text-xl font-extrabold tracking-tight text-slate-800 sm:text-3xl">
+      {/* グラデーションバナー（和紙の温かいグラデーション） */}
+      <div
+        className="rounded-2xl px-4 py-6 text-center sm:px-8 sm:py-10"
+        style={{
+          background:
+            "linear-gradient(135deg, oklch(0.97 0.025 70) 0%, oklch(0.96 0.020 85) 50%, oklch(0.96 0.018 100) 100%)",
+        }}
+      >
+        <h1
+          className="text-xl font-extrabold tracking-tight sm:text-3xl"
+          style={{ color: "var(--report-text)" }}
+        >
           {cityNames.join("・")} 比較レポート
         </h1>
-        <p className="mt-2 text-base text-slate-500">
+        <p className="mt-2 text-base" style={{ color: "var(--report-sub)" }}>
           子育て世帯のための街えらびレポート
         </p>
       </div>
@@ -56,7 +65,7 @@ export function ReportHero({
               {cityNames.map((name) => (
                 <span
                   key={name}
-                  className="inline-block rounded-full bg-sky-50 px-3 py-1 text-sm font-semibold text-sky-800"
+                  className="inline-block rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary"
                 >
                   {name}
                 </span>
@@ -115,10 +124,10 @@ function MetaRow({
   return (
     <div className="flex items-start gap-3 text-sm">
       <span className="text-base">{emoji}</span>
-      <span className="min-w-[5rem] shrink-0 font-semibold text-slate-700 sm:min-w-[6rem]">
+      <span className="min-w-[5rem] shrink-0 font-semibold text-foreground sm:min-w-[6rem]">
         {label}
       </span>
-      <span className="text-slate-600">{children}</span>
+      <span className="text-muted-foreground">{children}</span>
     </div>
   );
 }

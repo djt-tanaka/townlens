@@ -6,21 +6,21 @@ import {
 
 describe("getScoreColor", () => {
   it("70以上は緑を返す", () => {
-    expect(getScoreColor(70)).toBe("#10b981");
-    expect(getScoreColor(100)).toBe("#10b981");
-    expect(getScoreColor(85)).toBe("#10b981");
+    expect(getScoreColor(70)).toBe("#5a9e7a");
+    expect(getScoreColor(100)).toBe("#5a9e7a");
+    expect(getScoreColor(85)).toBe("#5a9e7a");
   });
 
   it("40〜69は黄色を返す", () => {
-    expect(getScoreColor(40)).toBe("#f59e0b");
-    expect(getScoreColor(69)).toBe("#f59e0b");
-    expect(getScoreColor(55)).toBe("#f59e0b");
+    expect(getScoreColor(40)).toBe("#c8883a");
+    expect(getScoreColor(69)).toBe("#c8883a");
+    expect(getScoreColor(55)).toBe("#c8883a");
   });
 
   it("40未満は赤を返す", () => {
-    expect(getScoreColor(0)).toBe("#f43f5e");
-    expect(getScoreColor(39)).toBe("#f43f5e");
-    expect(getScoreColor(20)).toBe("#f43f5e");
+    expect(getScoreColor(0)).toBe("#c26050");
+    expect(getScoreColor(39)).toBe("#c26050");
+    expect(getScoreColor(20)).toBe("#c26050");
   });
 });
 
