@@ -27,13 +27,103 @@ async function loadNotoSansJP(): Promise<ArrayBuffer> {
   return fontResponse.arrayBuffer();
 }
 
+/** サイト全体用のデフォルト OGP 画像を生成 */
+async function generateDefaultImage(fontData: ArrayBuffer) {
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          height: "100%",
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#faf8f5",
+          fontFamily: "Noto Sans JP",
+          gap: "32px",
+        }}
+      >
+        {/* ロゴ */}
+        <div
+          style={{
+            fontSize: "56px",
+            fontWeight: "700",
+            color: "#2c2218",
+          }}
+        >
+          TownLens
+        </div>
+
+        {/* キャッチコピー */}
+        <div
+          style={{
+            fontSize: "32px",
+            fontWeight: "700",
+            color: "#2c2218",
+            lineHeight: 1.4,
+            textAlign: "center",
+          }}
+        >
+          家族で住む街を、丁寧に選ぼう。
+        </div>
+
+        {/* サブコピー */}
+        <div
+          style={{
+            fontSize: "20px",
+            color: "#7a6955",
+            textAlign: "center",
+            maxWidth: "800px",
+            lineHeight: 1.6,
+          }}
+        >
+          政府統計の数字で子育て・安全・価格・災害リスクを比較
+        </div>
+
+        {/* アクセント線 */}
+        <div
+          style={{
+            width: "80px",
+            height: "4px",
+            backgroundColor: "#b08d57",
+            borderRadius: "2px",
+          }}
+        />
+
+        {/* URL */}
+        <div style={{ fontSize: "18px", color: "#a09585" }}>townlens.jp</div>
+      </div>
+    ),
+    {
+      width: 1200,
+      height: 630,
+      fonts: [
+        {
+          name: "Noto Sans JP",
+          data: fontData,
+          weight: 700,
+          style: "normal",
+        },
+      ],
+    },
+  );
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
+    // id なし → サイト全体用デフォルト画像
     if (!id) {
-      return new Response("id パラメータが必要です", { status: 400 });
+      const fontData = await loadNotoSansJP();
+      const imageResponse = await generateDefaultImage(fontData);
+      imageResponse.headers.set(
+        "Cache-Control",
+        "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+      );
+      return imageResponse;
     }
 
     const supabase = createAdminClient();
