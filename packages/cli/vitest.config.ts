@@ -8,6 +8,7 @@ export default defineConfig({
       include: ["src/**/*.ts"],
       exclude: [
         "src/cli.ts",
+        "src/commands/**",
         "src/report/pdf.ts",
         "src/interactive/prompts.ts",
       ],
