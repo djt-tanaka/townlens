@@ -56,13 +56,34 @@ export async function generateMetadata({
   const report = await fetchReport(id);
 
   if (!report) {
-    return { title: "レポートが見つかりません | TownLens" };
+    return { title: "レポートが見つかりません" };
   }
 
   const cityNames = report.cities.join("・");
+  const title = `${cityNames} 比較レポート`;
+  const description = `${cityNames}の暮らしやすさを政府統計データに基づいて多角的に比較・分析したレポートです。`;
+
   return {
-    title: `${cityNames} 比較レポート | TownLens`,
-    description: `${cityNames}の暮らしやすさを政府統計データに基づいて多角的に比較・分析したレポートです。`,
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: [
+        {
+          url: `/api/og?id=${id}`,
+          width: 1200,
+          height: 630,
+          alt: `${cityNames} 比較レポート`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [`/api/og?id=${id}`],
+    },
   };
 }
 

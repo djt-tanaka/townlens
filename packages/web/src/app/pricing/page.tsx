@@ -12,9 +12,14 @@ import { CheckoutButton } from "@/components/pricing/checkout-button";
 import { PLAN_DEFINITIONS, type PlanDefinition } from "@/lib/pricing";
 
 export const metadata: Metadata = {
-  title: "料金プラン | TownLens",
+  title: "料金プラン",
   description:
     "TownLens の料金プラン。無料プランから始めて、必要に応じてアップグレード。",
+  openGraph: {
+    title: "料金プラン",
+    description:
+      "TownLens の料金プラン。無料プランから始めて、必要に応じてアップグレード。",
+  },
 };
 
 export default async function PricingPage() {

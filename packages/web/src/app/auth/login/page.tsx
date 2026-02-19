@@ -5,8 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { LoginForm } from "@/components/auth/login-form";
 
 export const metadata: Metadata = {
-  title: "ログイン | TownLens",
+  title: "ログイン",
   description: "TownLens にログインして、街の比較レポートを作成しましょう。",
+  openGraph: {
+    title: "ログイン",
+    description: "TownLens にログインして、街の比較レポートを作成しましょう。",
+  },
 };
 
 export default async function LoginPage() {

@@ -7,7 +7,12 @@ import { ReportHistory } from "@/components/dashboard/report-history";
 import { EmptyReports } from "@/components/dashboard/empty-reports";
 
 export const metadata: Metadata = {
-  title: "ダッシュボード | TownLens",
+  title: "ダッシュボード",
+  description: "レポート履歴と利用量を確認できます。",
+  openGraph: {
+    title: "ダッシュボード",
+    description: "レポート履歴と利用量を確認できます。",
+  },
 };
 
 export default async function DashboardPage() {
