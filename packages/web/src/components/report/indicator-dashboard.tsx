@@ -1,10 +1,10 @@
 import type {
   CityScoreResult,
   IndicatorDefinition,
-  IndicatorCategory,
   ReportRow,
 } from "@townlens/core";
 import { getCategoryColor } from "@townlens/core";
+import { groupByCategory } from "@/lib/category-utils";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -21,28 +21,6 @@ interface IndicatorDashboardProps {
   readonly results: ReadonlyArray<CityScoreResult>;
   readonly definitions: ReadonlyArray<IndicatorDefinition>;
   readonly rawRows?: ReadonlyArray<ReportRow>;
-}
-
-/** 指標をカテゴリ別にグループ化する */
-function groupByCategory(
-  definitions: ReadonlyArray<IndicatorDefinition>,
-): ReadonlyArray<{
-  readonly category: IndicatorCategory;
-  readonly indicators: ReadonlyArray<IndicatorDefinition>;
-}> {
-  const groups = new Map<IndicatorCategory, IndicatorDefinition[]>();
-  for (const def of definitions) {
-    const existing = groups.get(def.category);
-    if (existing) {
-      existing.push(def);
-    } else {
-      groups.set(def.category, [def]);
-    }
-  }
-  return [...groups.entries()].map(([category, indicators]) => ({
-    category,
-    indicators,
-  }));
 }
 
 /** 指標ダッシュボード。棒グラフ + カテゴリ別の指標テーブルを表示 */

@@ -3,10 +3,10 @@
 import type {
   CityScoreResult,
   IndicatorDefinition,
-  IndicatorCategory,
   ReportRow,
 } from "@townlens/core";
 import { getCategoryColor } from "@townlens/core";
+import { getCategoryScores } from "@/lib/category-utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,47 +29,6 @@ interface CityDetailProps {
 
 const jaNumberFormat = new Intl.NumberFormat("ja-JP");
 
-/** カテゴリごとのスコアと指標定義を集計する */
-function getCategoryScores(
-  result: CityScoreResult,
-  definitions: ReadonlyArray<IndicatorDefinition>,
-): ReadonlyArray<{
-  readonly category: IndicatorCategory;
-  readonly avgScore: number;
-  readonly count: number;
-  readonly categoryDefs: ReadonlyArray<IndicatorDefinition>;
-}> {
-  const categoryMap = new Map<
-    IndicatorCategory,
-    { total: number; count: number; defs: IndicatorDefinition[] }
-  >();
-  for (const choiceScore of result.choice) {
-    const def = definitions.find((d) => d.id === choiceScore.indicatorId);
-    if (!def) continue;
-    const existing = categoryMap.get(def.category);
-    if (existing) {
-      existing.total += choiceScore.score;
-      existing.count += 1;
-      if (!existing.defs.some((d) => d.id === def.id)) {
-        existing.defs.push(def);
-      }
-    } else {
-      categoryMap.set(def.category, {
-        total: choiceScore.score,
-        count: 1,
-        defs: [def],
-      });
-    }
-  }
-  return [...categoryMap.entries()].map(
-    ([category, { total, count, defs }]) => ({
-      category,
-      avgScore: total / count,
-      count,
-      categoryDefs: defs,
-    }),
-  );
-}
 
 /** 都市ごとの詳細表示。タブ切り替えでスコアゲージ・カテゴリカード・ナラティブを表示 */
 export function CityDetail({
