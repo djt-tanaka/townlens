@@ -926,22 +926,22 @@ STRIPE_PRICE_PREMIUM=
 
 ### Week 3: API + 認証
 
-- [ ] `GET /api/cities/search` 実装
-- [ ] `POST /api/reports` 実装（core パイプライン呼び出し）
-- [ ] `GET /api/reports/[id]` 実装
-- [ ] `GET /api/usage` 実装
-- [ ] Supabase Auth 統合（ログイン/ログアウト/セッション管理）
-- [ ] 認証ミドルウェア実装
-- [ ] Supabase キャッシュアダプタ実装
+- [x] `GET /api/cities/search` 実装
+- [x] `POST /api/reports` 実装（core パイプライン呼び出し）
+- [x] `GET /api/reports/[id]` 実装
+- [x] `GET /api/usage` 実装
+- [x] Supabase Auth 統合（ログイン/ログアウト/セッション管理）
+- [x] 認証ミドルウェア実装
+- [x] Supabase キャッシュアダプタ実装
 
 ### Week 4: フロントエンド - メイン画面
 
-- [ ] トップページ: CitySearch（オートコンプリート）
-- [ ] Recharts コンポーネント: RadarChart, BarChart
-- [ ] ScoreGauge（カスタム SVG）
-- [ ] レポート表示ページ: ScoreSummary, IndicatorDashboard, CityDetail
-- [ ] NarrativeBlock（core の `generateComparisonNarrative` 呼び出し）
-- [ ] Disclaimer
+- [x] トップページ: CitySearch（オートコンプリート）
+- [x] Recharts コンポーネント: RadarChart, BarChart
+- [x] ScoreGauge（カスタム SVG）
+- [x] レポート表示ページ: ScoreSummary, IndicatorDashboard, CityDetail
+- [x] NarrativeBlock（core の `generateComparisonNarrative` 呼び出し）
+- [x] Disclaimer
 
 ### Week 5: 決済 + 利用量管理
 
