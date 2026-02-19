@@ -945,12 +945,12 @@ STRIPE_PRICE_PREMIUM=
 
 ### Week 5: 決済 + 利用量管理
 
-- [ ] Stripe 統合: Checkout Session 作成 API
-- [ ] Stripe Webhook: subscription イベント処理
-- [ ] 利用量追跡: `usage_records` インクリメント
-- [ ] 無料プラン制限（月3件）のガード実装
-- [ ] 料金プランページ
-- [ ] Stripe Customer Portal 連携
+- [x] Stripe 統合: Checkout Session 作成 API
+- [x] Stripe Webhook: subscription イベント処理
+- [x] 利用量追跡: `usage_records` インクリメント
+- [x] 無料プラン制限（月3件）のガード実装
+- [x] 料金プランページ
+- [x] Stripe Customer Portal 連携
 
 ### Week 6: ダッシュボード + 仕上げ
 

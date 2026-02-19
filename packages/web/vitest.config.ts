@@ -35,9 +35,10 @@ export default defineConfig({
         "src/components/report/bar-chart.tsx",
         // shadcn/ui 自動生成コンポーネント
         "src/components/ui/**/*.tsx",
-        // Client Components（認証フォーム、検索UI等）は E2E テストで検証
+        // Client Components（認証フォーム、検索UI、料金プラン等）は E2E テストで検証
         "src/components/auth/**/*.tsx",
         "src/components/search/**/*.tsx",
+        "src/components/pricing/**/*.tsx",
         "src/components/report/city-detail.tsx",
         // 表示専用 Server Components（ロジックなし、E2E で検証）
         "src/components/layout/**/*.tsx",

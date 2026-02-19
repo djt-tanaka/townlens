@@ -15,6 +15,9 @@ export async function Header() {
           TownLens
         </Link>
         <nav className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/pricing">料金プラン</Link>
+          </Button>
           {user ? (
             <>
               <Button variant="ghost" size="sm" asChild>
