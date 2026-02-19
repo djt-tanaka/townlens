@@ -98,10 +98,12 @@ describe("GET /api/og", () => {
     );
   });
 
-  it("id パラメータがない場合に 400 を返す", async () => {
+  it("id パラメータがない場合にデフォルト OGP 画像を返す", async () => {
     const request = new Request("http://localhost/api/og");
     const response = await GET(request);
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("image/png");
+    expect(response.headers.get("Cache-Control")).toContain("s-maxage=86400");
   });
 
   it("存在しないレポートに対して 404 を返す", async () => {
