@@ -1,5 +1,6 @@
-import { CityIndicators, IndicatorValue } from "../scoring/types";
-import { CondoPriceStats } from "./types";
+import type { CityIndicators, IndicatorValue } from "../scoring/types";
+import type { CondoPriceStats } from "./types";
+import { mergeIndicators } from "../scoring/merge-indicators";
 
 const MAN_YEN = 10000;
 
@@ -11,17 +12,13 @@ export function mergePriceIntoScoringInput(
   cities: ReadonlyArray<CityIndicators>,
   priceData: ReadonlyMap<string, CondoPriceStats>,
 ): ReadonlyArray<CityIndicators> {
-  return cities.map((city) => {
-    const stats = priceData.get(city.areaCode);
-    const priceIndicator: IndicatorValue = {
+  return mergeIndicators(cities, priceData, (stats) => {
+    const indicator: IndicatorValue = {
       indicatorId: "condo_price_median",
       rawValue: stats ? Math.round(stats.median / MAN_YEN) : null,
       dataYear: stats?.year ?? "",
       sourceId: "reinfolib",
     };
-    return {
-      ...city,
-      indicators: [...city.indicators, priceIndicator],
-    };
+    return [indicator];
   });
 }

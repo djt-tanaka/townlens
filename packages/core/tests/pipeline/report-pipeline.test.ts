@@ -1,48 +1,79 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { runReportPipeline } from "@/lib/report-pipeline";
-import type { PipelineInput } from "@/lib/report-pipeline";
+import { runReportPipeline } from "../../src/pipeline/report-pipeline";
+import type { PipelineInput } from "../../src/pipeline/report-pipeline";
 
-// core モジュールのモック
-vi.mock("@townlens/core", () => {
-  const mockPreset = {
+const mockPreset = {
+  name: "childcare",
+  label: "子育て重視",
+  weights: { population_density: 1.0 },
+};
+
+// 各モジュールのモック
+vi.mock("../../src/estat/report-data", () => ({
+  buildReportData: vi.fn().mockResolvedValue({
+    timeLabel: "2024年",
+    rows: [
+      { areaCode: "13112", cityResolved: "世田谷区" },
+      { areaCode: "13113", cityResolved: "渋谷区" },
+    ],
+  }),
+  toScoringInput: vi.fn().mockReturnValue([
+    { areaCode: "13112", cityName: "世田谷区", indicators: {} },
+    { areaCode: "13113", cityName: "渋谷区", indicators: {} },
+  ]),
+}));
+
+vi.mock("../../src/reinfo/price-data", () => ({
+  buildPriceData: vi.fn().mockResolvedValue(new Map()),
+}));
+
+vi.mock("../../src/reinfo/merge-scoring", () => ({
+  mergePriceIntoScoringInput: vi.fn().mockImplementation((input) => input),
+}));
+
+vi.mock("../../src/estat/crime-data", () => ({
+  buildCrimeData: vi.fn().mockResolvedValue(new Map()),
+}));
+
+vi.mock("../../src/estat/merge-crime-scoring", () => ({
+  mergeCrimeIntoScoringInput: vi.fn().mockImplementation((input) => input),
+}));
+
+vi.mock("../../src/reinfo/disaster-data", () => ({
+  buildDisasterData: vi.fn().mockResolvedValue(new Map()),
+}));
+
+vi.mock("../../src/reinfo/merge-disaster-scoring", () => ({
+  mergeDisasterIntoScoringInput: vi.fn().mockImplementation((input) => input),
+}));
+
+vi.mock("../../src/scoring", () => ({
+  scoreCities: vi.fn().mockReturnValue([
+    { areaCode: "13112", cityName: "世田谷区", totalScore: 75 },
+    { areaCode: "13113", cityName: "渋谷区", totalScore: 80 },
+  ]),
+}));
+
+vi.mock("../../src/scoring/presets", () => {
+  const preset = {
     name: "childcare",
     label: "子育て重視",
     weights: { population_density: 1.0 },
   };
-
   return {
-    buildReportData: vi.fn().mockResolvedValue({
-      timeLabel: "2024年",
-      rows: [
-        { areaCode: "13112", cityResolved: "世田谷区" },
-        { areaCode: "13113", cityResolved: "渋谷区" },
-      ],
-    }),
-    toScoringInput: vi.fn().mockReturnValue([
-      { areaCode: "13112", cityName: "世田谷区", indicators: {} },
-      { areaCode: "13113", cityName: "渋谷区", indicators: {} },
-    ]),
-    buildPriceData: vi.fn().mockResolvedValue(new Map()),
-    mergePriceIntoScoringInput: vi.fn().mockImplementation((input) => input),
-    buildCrimeData: vi.fn().mockResolvedValue(new Map()),
-    mergeCrimeIntoScoringInput: vi.fn().mockImplementation((input) => input),
-    buildDisasterData: vi.fn().mockResolvedValue(new Map()),
-    mergeDisasterIntoScoringInput: vi.fn().mockImplementation((input) => input),
-    scoreCities: vi.fn().mockReturnValue([
-      { areaCode: "13112", cityName: "世田谷区", totalScore: 75 },
-      { areaCode: "13113", cityName: "渋谷区", totalScore: 80 },
-    ]),
-    findPreset: vi.fn().mockReturnValue(mockPreset),
-    extractClassObjects: vi.fn().mockReturnValue({}),
-    DATASETS: {
-      population: { statsDataId: "0003411595", selectors: {} },
-      crime: { statsDataId: "0003421913" },
-    },
+    findPreset: vi.fn().mockReturnValue(preset),
     POPULATION_INDICATORS: [],
     ALL_INDICATORS: [],
-    CHILDCARE_FOCUSED: mockPreset,
+    CHILDCARE_FOCUSED: preset,
   };
 });
+
+vi.mock("../../src/config/datasets", () => ({
+  DATASETS: {
+    population: { statsDataId: "0003411595", selectors: {} },
+    crime: { statsDataId: "0003421913" },
+  },
+}));
 
 describe("runReportPipeline", () => {
   const baseInput: PipelineInput = {
@@ -84,7 +115,7 @@ describe("runReportPipeline", () => {
   });
 
   it("犯罪統計を含む場合に buildCrimeData が呼ばれる", async () => {
-    const { buildCrimeData } = await import("@townlens/core");
+    const { buildCrimeData } = await import("../../src/estat/crime-data");
     const input = { ...baseInput, includeCrime: true };
 
     await runReportPipeline(input, {
@@ -95,7 +126,7 @@ describe("runReportPipeline", () => {
   });
 
   it("reinfoClient 未指定時に不動産価格データ取得をスキップする", async () => {
-    const { buildPriceData } = await import("@townlens/core");
+    const { buildPriceData } = await import("../../src/reinfo/price-data");
     const input = { ...baseInput, includePrice: true };
 
     await runReportPipeline(input, {
@@ -107,7 +138,7 @@ describe("runReportPipeline", () => {
   });
 
   it("災害データを含む場合で reinfoClient がある場合に buildDisasterData が呼ばれる", async () => {
-    const { buildDisasterData } = await import("@townlens/core");
+    const { buildDisasterData } = await import("../../src/reinfo/disaster-data");
     const mockReinfoClient = { getTransaction: vi.fn() };
     const input = { ...baseInput, includeDisaster: true };
 
@@ -120,7 +151,8 @@ describe("runReportPipeline", () => {
   });
 
   it("不動産価格取得でデータありの場合に hasPriceData が true になる", async () => {
-    const { buildPriceData, mergePriceIntoScoringInput } = await import("@townlens/core");
+    const { buildPriceData } = await import("../../src/reinfo/price-data");
+    const { mergePriceIntoScoringInput } = await import("../../src/reinfo/merge-scoring");
     vi.mocked(buildPriceData).mockResolvedValue(
       new Map([["13112", { avgPrice: 5000 }]]) as any,
     );
@@ -137,7 +169,8 @@ describe("runReportPipeline", () => {
   });
 
   it("犯罪統計でデータありの場合に hasCrimeData が true になる", async () => {
-    const { buildCrimeData, mergeCrimeIntoScoringInput } = await import("@townlens/core");
+    const { buildCrimeData } = await import("../../src/estat/crime-data");
+    const { mergeCrimeIntoScoringInput } = await import("../../src/estat/merge-crime-scoring");
     vi.mocked(buildCrimeData).mockResolvedValue(
       new Map([["13112", { crimeRate: 0.5 }]]) as any,
     );
@@ -152,7 +185,8 @@ describe("runReportPipeline", () => {
   });
 
   it("災害データでデータありの場合に hasDisasterData が true になる", async () => {
-    const { buildDisasterData, mergeDisasterIntoScoringInput } = await import("@townlens/core");
+    const { buildDisasterData } = await import("../../src/reinfo/disaster-data");
+    const { mergeDisasterIntoScoringInput } = await import("../../src/reinfo/merge-disaster-scoring");
     vi.mocked(buildDisasterData).mockResolvedValue(
       new Map([["13112", { riskScore: 3 }]]) as any,
     );
@@ -169,7 +203,7 @@ describe("runReportPipeline", () => {
   });
 
   it("不動産価格取得失敗時にエラーを握りつぶして続行する", async () => {
-    const { buildPriceData } = await import("@townlens/core");
+    const { buildPriceData } = await import("../../src/reinfo/price-data");
     vi.mocked(buildPriceData).mockRejectedValue(new Error("API error"));
     const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const mockReinfoClient = { getTransaction: vi.fn() };
@@ -186,7 +220,7 @@ describe("runReportPipeline", () => {
   });
 
   it("犯罪統計取得失敗時にエラーを握りつぶして続行する", async () => {
-    const { buildCrimeData } = await import("@townlens/core");
+    const { buildCrimeData } = await import("../../src/estat/crime-data");
     vi.mocked(buildCrimeData).mockRejectedValue(new Error("API error"));
     const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const input = { ...baseInput, includeCrime: true };
@@ -201,7 +235,7 @@ describe("runReportPipeline", () => {
   });
 
   it("災害データ取得失敗時にエラーを握りつぶして続行する", async () => {
-    const { buildDisasterData } = await import("@townlens/core");
+    const { buildDisasterData } = await import("../../src/reinfo/disaster-data");
     vi.mocked(buildDisasterData).mockRejectedValue(new Error("API error"));
     const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const mockReinfoClient = { getTransaction: vi.fn() };
@@ -218,7 +252,7 @@ describe("runReportPipeline", () => {
   });
 
   it("findPreset が null を返した場合に CHILDCARE_FOCUSED がフォールバックされる", async () => {
-    const { findPreset } = await import("@townlens/core");
+    const { findPreset } = await import("../../src/scoring/presets");
     vi.mocked(findPreset).mockReturnValue(undefined as any);
 
     const result = await runReportPipeline(baseInput, {
