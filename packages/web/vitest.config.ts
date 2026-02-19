@@ -19,7 +19,10 @@ export default defineConfig({
         "src/app/**/page.tsx",
         "src/app/**/loading.tsx",
         "src/app/**/error.tsx",
+        "src/app/**/global-error.tsx",
         "src/app/**/not-found.tsx",
+        // エラー表示共通コンポーネント（error.tsx から利用、E2E で検証）
+        "src/components/error/**/*.tsx",
         // Supabase クライアント・ミドルウェアは外部依存が強く単体テスト対象外
         "src/lib/supabase/client.ts",
         "src/lib/supabase/server.ts",
