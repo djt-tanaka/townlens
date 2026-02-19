@@ -8,8 +8,10 @@ import type {
   CityScoreResult,
   IndicatorDefinition,
   WeightPreset,
+  ReportRow,
 } from "@townlens/core";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { ReportHero } from "@/components/report/report-hero";
 import { ScoreSummary } from "@/components/report/score-summary";
 import { IndicatorDashboard } from "@/components/report/indicator-dashboard";
 import { CityDetail } from "@/components/report/city-detail";
@@ -27,6 +29,8 @@ interface StoredReportData {
   readonly hasPriceData: boolean;
   readonly hasCrimeData: boolean;
   readonly hasDisasterData: boolean;
+  readonly rawRows?: ReadonlyArray<ReportRow>;
+  readonly timeLabel?: string;
 }
 
 /** レポートデータを DB から取得する */
@@ -119,19 +123,18 @@ export default async function ReportPage({ params }: ReportPageProps) {
     );
   }
 
-  const cityNames = results.map((r) => r.cityName).join("・");
-
   return (
-    <main className="mx-auto max-w-4xl space-y-8 px-4 py-8">
-      {/* ヘッダー */}
-      <header>
-        <h1 className="text-2xl font-bold">{cityNames} 比較レポート</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          作成日: {new Date(report.created_at).toLocaleDateString("ja-JP")}
-          {" / "}
-          プリセット: {preset.label}
-        </p>
-      </header>
+    <main className="mx-auto min-h-screen max-w-4xl space-y-8 bg-report-bg px-4 py-8">
+      {/* カバーセクション */}
+      <ReportHero
+        cityNames={results.map((r) => r.cityName)}
+        preset={preset}
+        createdAt={report.created_at}
+        hasPriceData={stored.hasPriceData}
+        hasCrimeData={stored.hasCrimeData}
+        hasDisasterData={stored.hasDisasterData}
+        timeLabel={stored.timeLabel}
+      />
 
       {/* サマリー（ランキング + レーダーチャート + 比較ナラティブ） */}
       <ScoreSummary
@@ -142,17 +145,27 @@ export default async function ReportPage({ params }: ReportPageProps) {
       />
 
       {/* 指標ダッシュボード（棒グラフ + カテゴリ別テーブル） */}
-      <IndicatorDashboard results={results} definitions={definitions} />
+      <IndicatorDashboard
+        results={results}
+        definitions={definitions}
+        rawRows={stored.rawRows}
+      />
 
       {/* 都市詳細（タブ切替 + スコアゲージ + カテゴリカード + ナラティブ） */}
       <CityDetail
         results={results}
         definitions={definitions}
         cityNarratives={cityNarratives}
+        rawRows={stored.rawRows}
       />
 
       {/* 免責事項 */}
-      <Disclaimer />
+      <Disclaimer
+        hasPriceData={stored.hasPriceData}
+        hasCrimeData={stored.hasCrimeData}
+        hasDisasterData={stored.hasDisasterData}
+        timeLabel={stored.timeLabel}
+      />
     </main>
   );
 }

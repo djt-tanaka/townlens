@@ -3,26 +3,39 @@
 import type {
   CityScoreResult,
   IndicatorDefinition,
+  ReportRow,
 } from "@townlens/core";
 import { getCategoryColor } from "@townlens/core";
 import { getCategoryScores } from "@/lib/category-utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScoreGauge } from "./score-gauge";
 import { NarrativeBlock } from "./narrative-block";
+import {
+  getRawValue,
+  formatRawValue,
+  getScoreColorHex,
+  getConfidenceStyle,
+  getConfidenceLabel,
+} from "./raw-value-utils";
 
 interface CityDetailProps {
   readonly results: ReadonlyArray<CityScoreResult>;
   readonly definitions: ReadonlyArray<IndicatorDefinition>;
   readonly cityNarratives: Readonly<Record<string, string>>;
+  readonly rawRows?: ReadonlyArray<ReportRow>;
 }
+
+const jaNumberFormat = new Intl.NumberFormat("ja-JP");
+
 
 /** 都市ごとの詳細表示。タブ切り替えでスコアゲージ・カテゴリカード・ナラティブを表示 */
 export function CityDetail({
   results,
   definitions,
   cityNarratives,
+  rawRows,
 }: CityDetailProps) {
   return (
     <section className="space-y-4">
@@ -41,52 +54,183 @@ export function CityDetail({
         </TabsList>
         {results.map((result) => {
           const categoryScores = getCategoryScores(result, definitions);
+          const rawRow = rawRows?.find(
+            (r) => r.areaCode === result.areaCode,
+          );
           return (
             <TabsContent
               key={result.cityName}
               value={result.cityName}
               className="space-y-4"
             >
-              {/* スコアゲージ */}
-              <div className="flex justify-center py-4">
+              {/* スコアゲージ + メタ情報 */}
+              <div className="flex flex-wrap items-center justify-center gap-6 py-4">
                 <ScoreGauge
                   score={result.compositeScore}
-                  size={160}
-                  label={`総合スコア（${result.rank}位）`}
+                  size={180}
+                  label={`総合スコア（${result.rank}位 / ${results.length}市区町村）`}
                 />
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">
+                    総合スコア:{" "}
+                    <strong className="text-lg text-foreground">
+                      {result.compositeScore.toFixed(1)}
+                    </strong>{" "}
+                    / 100
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    信頼度:{" "}
+                    <Badge
+                      className="border-0"
+                      style={getConfidenceStyle(result.confidence.level)}
+                    >
+                      {getConfidenceLabel(result.confidence.level)}
+                    </Badge>
+                  </p>
+                </div>
               </div>
 
               {/* カテゴリ別スコアカード */}
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {categoryScores.map(({ category, avgScore }) => {
-                  const color = getCategoryColor(category);
-                  return (
-                    <Card key={category}>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="flex items-center gap-2 text-sm">
-                          <Badge
-                            style={{
-                              backgroundColor: color.light,
-                              color: color.dark,
-                              borderColor: `${color.primary}33`,
-                            }}
-                            className="border"
-                          >
-                            {color.emoji} {color.label}
-                          </Badge>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-2xl font-bold">
-                          {(Math.round(avgScore * 10) / 10).toFixed(1)}
-                          <span className="ml-1 text-sm font-normal text-muted-foreground">
-                            点
-                          </span>
-                        </p>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+              <div className="space-y-4">
+                {categoryScores.map(
+                  ({ category, avgScore, categoryDefs }) => {
+                    const color = getCategoryColor(category);
+                    return (
+                      <Card
+                        key={category}
+                        style={{
+                          borderLeft: `4px solid ${color.primary}`,
+                        }}
+                      >
+                        <CardContent className="pt-4">
+                          {/* カテゴリヘッダー + 平均スコア */}
+                          <div className="mb-3 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg">{color.emoji}</span>
+                              <span
+                                className="text-[15px] font-bold"
+                                style={{ color: color.dark }}
+                              >
+                                {color.label}
+                              </span>
+                            </div>
+                            <span className="text-sm text-muted-foreground">
+                              平均{" "}
+                              <strong style={{ color: color.primary }}>
+                                {avgScore.toFixed(1)}
+                              </strong>
+                            </span>
+                          </div>
+
+                          {/* プログレスバー */}
+                          <div className="mb-4 h-1.5 w-full rounded-full bg-slate-100">
+                            <div
+                              className="h-full rounded-full transition-all"
+                              style={{
+                                width: `${Math.min(avgScore, 100)}%`,
+                                backgroundColor: color.primary,
+                              }}
+                            />
+                          </div>
+
+                          {/* 指標詳細リスト */}
+                          <div className="space-y-0 divide-y divide-slate-100">
+                            {categoryDefs.map((def) => {
+                              const cs = result.choice.find(
+                                (c) => c.indicatorId === def.id,
+                              );
+                              const bs = result.baseline.find(
+                                (b) => b.indicatorId === def.id,
+                              );
+                              const raw = rawRow
+                                ? getRawValue(def.id, rawRow)
+                                : undefined;
+                              const score = cs?.score ?? 0;
+
+                              return (
+                                <div
+                                  key={def.id}
+                                  className="flex items-start justify-between py-3"
+                                >
+                                  <div className="flex-1">
+                                    <div className="text-[13px] font-semibold text-slate-800">
+                                      {def.label}
+                                    </div>
+                                    {rawRow && (
+                                      <div className="mt-0.5 text-lg font-bold text-slate-800">
+                                        {formatRawValue(raw, def)}{" "}
+                                        <span className="text-xs font-normal text-muted-foreground">
+                                          {def.unit}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {/* 価格レンジ情報 */}
+                                    {def.id === "condo_price_median" &&
+                                      rawRow?.condoPriceQ25 != null &&
+                                      rawRow?.condoPriceQ75 != null && (
+                                        <div className="mt-1 rounded-lg bg-slate-50 px-3 py-2 text-xs">
+                                          価格レンジ (Q25-Q75):{" "}
+                                          <strong>
+                                            {jaNumberFormat.format(
+                                              rawRow.condoPriceQ25,
+                                            )}{" "}
+                                            〜{" "}
+                                            {jaNumberFormat.format(
+                                              rawRow.condoPriceQ75,
+                                            )}{" "}
+                                            万円
+                                          </strong>
+                                          {rawRow.condoPriceCount != null && (
+                                            <span className="text-muted-foreground">
+                                              （取引件数:{" "}
+                                              {jaNumberFormat.format(
+                                                rawRow.condoPriceCount,
+                                              )}
+                                              件）
+                                            </span>
+                                          )}
+                                          {rawRow.affordabilityRate !=
+                                            null && (
+                                            <div className="mt-1">
+                                              予算内取引割合:{" "}
+                                              <strong>
+                                                {rawRow.affordabilityRate.toFixed(
+                                                  1,
+                                                )}
+                                                %
+                                              </strong>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                  </div>
+                                  <div className="min-w-[70px] text-right">
+                                    <div
+                                      className="text-xl font-extrabold"
+                                      style={{
+                                        color: getScoreColorHex(score),
+                                      }}
+                                    >
+                                      {cs ? cs.score.toFixed(1) : "-"}
+                                    </div>
+                                    <div className="text-[11px] text-muted-foreground">
+                                      スコア
+                                    </div>
+                                    {bs && (
+                                      <div className="text-[11px] text-muted-foreground">
+                                        {bs.percentile.toFixed(1)}%
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  },
+                )}
               </div>
 
               {/* 都市別ナラティブ */}
@@ -103,7 +247,7 @@ export function CityDetail({
                   <p className="mb-1 text-xs font-semibold text-muted-foreground">
                     注意事項
                   </p>
-                  <ul className="space-y-1 text-xs text-muted-foreground">
+                  <ul className="list-inside list-disc space-y-1 text-xs text-muted-foreground">
                     {result.notes.map((note, i) => (
                       <li key={i}>{note}</li>
                     ))}

@@ -4,7 +4,7 @@ import type {
   IndicatorCategory,
 } from "@townlens/core";
 
-/** カテゴリごとのスコアを集計する */
+/** カテゴリごとのスコアと指標定義を集計する */
 export function getCategoryScores(
   result: CityScoreResult,
   definitions: ReadonlyArray<IndicatorDefinition>,
@@ -12,10 +12,11 @@ export function getCategoryScores(
   readonly category: IndicatorCategory;
   readonly avgScore: number;
   readonly count: number;
+  readonly categoryDefs: ReadonlyArray<IndicatorDefinition>;
 }> {
   const categoryMap = new Map<
     IndicatorCategory,
-    { total: number; count: number }
+    { total: number; count: number; defs: IndicatorDefinition[] }
   >();
   for (const choiceScore of result.choice) {
     const def = definitions.find((d) => d.id === choiceScore.indicatorId);
@@ -24,18 +25,25 @@ export function getCategoryScores(
     if (existing) {
       existing.total += choiceScore.score;
       existing.count += 1;
+      if (!existing.defs.some((d) => d.id === def.id)) {
+        existing.defs.push(def);
+      }
     } else {
       categoryMap.set(def.category, {
         total: choiceScore.score,
         count: 1,
+        defs: [def],
       });
     }
   }
-  return [...categoryMap.entries()].map(([category, { total, count }]) => ({
-    category,
-    avgScore: total / count,
-    count,
-  }));
+  return [...categoryMap.entries()].map(
+    ([category, { total, count, defs }]) => ({
+      category,
+      avgScore: total / count,
+      count,
+      categoryDefs: defs,
+    }),
+  );
 }
 
 /** 指標をカテゴリ別にグループ化する */

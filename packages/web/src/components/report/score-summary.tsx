@@ -8,6 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ReportRadarChart } from "./radar-chart";
 import { NarrativeBlock } from "./narrative-block";
+import {
+  getScoreColorHex,
+  getConfidenceStyle,
+  getConfidenceLabel,
+} from "./raw-value-utils";
 
 interface ScoreSummaryProps {
   readonly results: ReadonlyArray<CityScoreResult>;
@@ -16,21 +21,12 @@ interface ScoreSummaryProps {
   readonly comparisonNarrative: string;
 }
 
-/** 順位に応じたラベルを返す */
-function getRankLabel(rank: number): string {
-  if (rank === 1) return "1位";
-  if (rank === 2) return "2位";
-  if (rank === 3) return "3位";
+/** 順位に応じたメダル絵文字またはラベルを返す */
+function getRankDisplay(rank: number): string {
+  if (rank === 1) return "\u{1F947}";
+  if (rank === 2) return "\u{1F948}";
+  if (rank === 3) return "\u{1F949}";
   return `${rank}位`;
-}
-
-/** 信頼度に応じたバリアントを返す */
-function getConfidenceVariant(
-  level: string,
-): "default" | "secondary" | "outline" {
-  if (level === "high") return "default";
-  if (level === "medium") return "secondary";
-  return "outline";
 }
 
 /** レポートのサマリーセクション。ランキング・レーダーチャート・比較ナラティブを表示 */
@@ -50,39 +46,47 @@ export function ScoreSummary({
           <h2 className="text-lg font-semibold">
             ランキング（{preset.label}）
           </h2>
-          {sortedResults.map((result, i) => (
-            <Card key={result.cityName}>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <span
-                    className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white"
-                    style={{ backgroundColor: getCityColor(i) }}
-                  >
-                    {getRankLabel(result.rank)}
-                  </span>
-                  <span>{result.cityName}</span>
-                  <Badge
-                    variant={getConfidenceVariant(result.confidence.level)}
-                    className="ml-auto"
-                  >
-                    {result.confidence.level === "high"
-                      ? "信頼度: 高"
-                      : result.confidence.level === "medium"
-                        ? "信頼度: 中"
-                        : "信頼度: 低"}
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold">
-                  {Math.round(result.compositeScore * 10) / 10}
-                  <span className="ml-1 text-sm font-normal text-muted-foreground">
-                    点
-                  </span>
-                </p>
-              </CardContent>
-            </Card>
-          ))}
+          {sortedResults.map((result) => {
+            const cityIdx = results.findIndex(
+              (r) => r.areaCode === result.areaCode,
+            );
+            const scoreColor = getScoreColorHex(result.compositeScore);
+            const confidenceStyle = getConfidenceStyle(
+              result.confidence.level,
+            );
+
+            return (
+              <Card
+                key={result.cityName}
+                style={{ borderLeft: `5px solid ${getCityColor(cityIdx)}` }}
+              >
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <span className="text-2xl leading-none">
+                      {getRankDisplay(result.rank)}
+                    </span>
+                    <span className="font-bold">{result.cityName}</span>
+                    <Badge className="ml-auto border-0" style={confidenceStyle}>
+                      {getConfidenceLabel(result.confidence.level)}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-extrabold" style={{ color: scoreColor }}>
+                    {(Math.round(result.compositeScore * 10) / 10).toFixed(1)}
+                    <span className="ml-1 text-sm font-normal text-muted-foreground">
+                      総合スコア
+                    </span>
+                  </p>
+                  {result.notes.length > 0 && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {result.notes[0]}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* レーダーチャート */}
@@ -100,6 +104,13 @@ export function ScoreSummary({
       {comparisonNarrative && (
         <NarrativeBlock narrative={comparisonNarrative} variant="comparison" />
       )}
+
+      {/* 注記 */}
+      <p className="text-xs text-muted-foreground">
+        ※ 総合スコアは候補内での相対比較値（0-100）です。全国基準ではありません。
+        <br />
+        ※ 信頼度はデータの鮮度・欠損率に基づく参考値です。
+      </p>
     </section>
   );
 }
