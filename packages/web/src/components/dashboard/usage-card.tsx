@@ -6,26 +6,16 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  type PlanType,
+  PLAN_LABELS,
+  calculateUsagePercentage,
+} from "./utils";
 
 interface UsageCardProps {
-  readonly plan: "free" | "standard" | "premium";
+  readonly plan: PlanType;
   readonly reportsGenerated: number;
   readonly reportsLimit: number | null;
-}
-
-export const PLAN_LABELS: Record<UsageCardProps["plan"], string> = {
-  free: "フリー",
-  standard: "スタンダード",
-  premium: "プレミアム",
-};
-
-/** 利用量パーセンテージを算出（上限なしまたは0の場合は0を返す） */
-export function calculateUsagePercentage(
-  reportsGenerated: number,
-  reportsLimit: number | null,
-): number {
-  if (reportsLimit === null || reportsLimit <= 0) return 0;
-  return Math.min((reportsGenerated / reportsLimit) * 100, 100);
 }
 
 /** 利用量 + プラン情報カード */

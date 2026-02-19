@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   PLAN_LABELS,
   calculateUsagePercentage,
-} from "@/components/dashboard/usage-card";
+} from "@/components/dashboard/utils";
 
 describe("calculateUsagePercentage", () => {
   it("通常の使用量でパーセンテージを返す", () => {

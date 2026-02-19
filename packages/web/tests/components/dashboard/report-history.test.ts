@@ -3,7 +3,7 @@ import {
   formatDate,
   getPresetLabel,
   STATUS_CONFIG,
-} from "@/components/dashboard/report-history";
+} from "@/components/dashboard/utils";
 
 describe("formatDate", () => {
   it("ISO 8601 文字列を日本語形式にフォーマットする", () => {

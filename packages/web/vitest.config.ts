@@ -38,7 +38,7 @@ export default defineConfig({
         "src/components/report/city-detail.tsx",
         // 表示専用 Server Components（ロジックなし、E2E で検証）
         "src/components/layout/**/*.tsx",
-        "src/components/dashboard/empty-reports.tsx",
+        "src/components/dashboard/*.tsx",
         "src/components/report/narrative-block.tsx",
         "src/components/report/disclaimer.tsx",
         "src/components/report/score-summary.tsx",
