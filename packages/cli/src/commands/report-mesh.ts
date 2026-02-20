@@ -126,7 +126,14 @@ export async function handleMeshReport(
     console.log(`メッシュスコア付きPDFを出力しました: ${outPath}`);
     console.log(`プリセット: ${preset.label}`);
     for (const r of [...results].sort((a, b) => a.rank - b.rank)) {
-      console.log(`  ${r.rank}位: ${r.cityName} (スコア: ${r.compositeScore.toFixed(1)})`);
+      if (r.starRating != null) {
+        const filled = "\u2605";
+        const empty = "\u2606";
+        const rounded = Math.round(r.starRating);
+        console.log(`  ${r.rank}位: ${r.cityName} (${filled.repeat(rounded)}${empty.repeat(5 - rounded)} ${r.starRating.toFixed(1)}/5.0)`);
+      } else {
+        console.log(`  ${r.rank}位: ${r.cityName} (スコア: ${r.compositeScore.toFixed(1)})`);
+      }
     }
   } else {
     html = renderReportHtml({

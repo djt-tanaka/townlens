@@ -70,6 +70,15 @@ export interface WeightPreset {
   readonly weights: Readonly<Record<IndicatorCategory, number>>;
 }
 
+/** 指標別のスター評価 */
+export interface IndicatorStarRating {
+  readonly indicatorId: string;
+  /** 1-5 のスター評価 */
+  readonly stars: 1 | 2 | 3 | 4 | 5;
+  /** 全国パーセンタイル（0-100） */
+  readonly nationalPercentile: number;
+}
+
 /** 都市ごとの総合スコア結果 */
 export interface CityScoreResult {
   readonly cityName: string;
@@ -80,4 +89,8 @@ export interface CityScoreResult {
   readonly confidence: ConfidenceResult;
   readonly rank: number;
   readonly notes: ReadonlyArray<string>;
+  /** 全国ベースライン基準の5段階スター評価（1.0-5.0） */
+  readonly starRating?: number;
+  /** 指標別のスター評価（全国ベースライン基準） */
+  readonly indicatorStars?: ReadonlyArray<IndicatorStarRating>;
 }

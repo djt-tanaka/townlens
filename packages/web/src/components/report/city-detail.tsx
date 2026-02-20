@@ -5,7 +5,7 @@ import type {
   IndicatorDefinition,
   ReportRow,
 } from "@townlens/core";
-import { getCategoryColor } from "@townlens/core";
+import { getCategoryColor, starColor } from "@townlens/core";
 import { getCategoryScores } from "@/lib/category-utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -70,16 +70,29 @@ export function CityDetail({
                 <ScoreGauge
                   score={result.compositeScore}
                   size={180}
-                  label={`総合スコア（${result.rank}位 / ${results.length}市区町村）`}
+                  label={result.starRating != null
+                    ? `総合評価（${result.rank}位 / ${results.length}市区町村）`
+                    : `総合スコア（${result.rank}位 / ${results.length}市区町村）`}
+                  starRating={result.starRating}
                 />
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">
-                    総合スコア:{" "}
-                    <strong className="text-lg text-foreground">
-                      {result.compositeScore.toFixed(1)}
-                    </strong>{" "}
-                    / 100
-                  </p>
+                  {result.starRating != null ? (
+                    <p className="text-sm text-muted-foreground">
+                      総合評価:{" "}
+                      <strong className="text-lg text-foreground">
+                        {result.starRating.toFixed(1)}
+                      </strong>{" "}
+                      / 5.0
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      総合スコア:{" "}
+                      <strong className="text-lg text-foreground">
+                        {result.compositeScore.toFixed(1)}
+                      </strong>{" "}
+                      / 100
+                    </p>
+                  )}
                   <p className="text-sm text-muted-foreground">
                     信頼度:{" "}
                     <Badge
@@ -207,22 +220,48 @@ export function CityDetail({
                                       )}
                                   </div>
                                   <div className="min-w-[70px] text-right">
-                                    <div
-                                      className="text-xl font-extrabold"
-                                      style={{
-                                        color: getScoreColorHex(score),
-                                      }}
-                                    >
-                                      {cs ? cs.score.toFixed(1) : "-"}
-                                    </div>
-                                    <div className="text-[11px] text-muted-foreground">
-                                      スコア
-                                    </div>
-                                    {bs && (
-                                      <div className="text-[11px] text-muted-foreground">
-                                        {bs.percentile.toFixed(1)}%
-                                      </div>
-                                    )}
+                                    {(() => {
+                                      const indicatorStar = result.indicatorStars?.find(
+                                        (s) => s.indicatorId === def.id,
+                                      );
+                                      if (indicatorStar) {
+                                        const stColor = starColor(indicatorStar.stars);
+                                        return (
+                                          <>
+                                            <div
+                                              className="text-lg tracking-wide"
+                                              style={{ color: stColor }}
+                                            >
+                                              {"\u2605".repeat(indicatorStar.stars)}
+                                              {"\u2606".repeat(5 - indicatorStar.stars)}
+                                            </div>
+                                            <div className="text-[11px] text-muted-foreground">
+                                              全国上位 {indicatorStar.nationalPercentile.toFixed(0)}%
+                                            </div>
+                                          </>
+                                        );
+                                      }
+                                      return (
+                                        <>
+                                          <div
+                                            className="text-xl font-extrabold"
+                                            style={{
+                                              color: getScoreColorHex(score),
+                                            }}
+                                          >
+                                            {cs ? cs.score.toFixed(1) : "-"}
+                                          </div>
+                                          <div className="text-[11px] text-muted-foreground">
+                                            スコア
+                                          </div>
+                                          {bs && (
+                                            <div className="text-[11px] text-muted-foreground">
+                                              {bs.percentile.toFixed(1)}%
+                                            </div>
+                                          )}
+                                        </>
+                                      );
+                                    })()}
                                   </div>
                                 </div>
                               );

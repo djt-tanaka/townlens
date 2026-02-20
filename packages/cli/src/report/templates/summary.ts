@@ -3,6 +3,7 @@ import {
   generateComparisonNarrative,
   CATEGORY_COLORS,
   getCityColor,
+  starColor,
 } from "@townlens/core";
 import type {
   CityScoreResult,
@@ -101,12 +102,26 @@ export function renderSummary(model: SummaryModel): string {
         (res) => res.areaCode === r.areaCode,
       );
       const cityColor = getCityColor(cityIdx);
-      const scoreColor =
-        r.compositeScore >= 70
+      const hasStars = r.starRating != null;
+      const displayColor = hasStars
+        ? starColor(r.starRating!)
+        : r.compositeScore >= 70
           ? "#10b981"
           : r.compositeScore >= 40
             ? "#f59e0b"
             : "#f43f5e";
+
+      // スター表示
+      const starDisplay = hasStars
+        ? (() => {
+            const rounded = Math.round(r.starRating!);
+            const filled = "\u2605";
+            const empty = "\u2606";
+            return `
+          <div style="font-size:28px;letter-spacing:2px;color:${displayColor};line-height:1.1;">${filled.repeat(rounded)}${empty.repeat(5 - rounded)}</div>
+          <div style="font-size:14px;font-weight:700;color:${displayColor};margin-top:2px;">${r.starRating!.toFixed(1)} / 5.0</div>`;
+          })()
+        : `<div style="font-size:32px;font-weight:800;color:${displayColor};line-height:1.1;">${r.compositeScore.toFixed(1)}</div>`;
 
       return `
         <div class="ranking-card" style="border-left:5px solid ${cityColor};flex:1;min-width:140px;">
@@ -114,8 +129,8 @@ export function renderSummary(model: SummaryModel): string {
             ${rankMedal(r.rank)}
             <span style="font-size:16px;font-weight:700;color:#1e293b;">${escapeHtml(r.cityName)}</span>
           </div>
-          <div style="font-size:32px;font-weight:800;color:${scoreColor};line-height:1.1;">${r.compositeScore.toFixed(1)}</div>
-          <div style="font-size:11px;color:#64748b;margin:4px 0 8px 0;">\u7dcf\u5408\u30b9\u30b3\u30a2</div>
+          ${starDisplay}
+          <div style="font-size:11px;color:#64748b;margin:4px 0 8px 0;">${hasStars ? "\u7dcf\u5408\u8a55\u4fa1\uff08\u5168\u56fd\u57fa\u6e96\uff09" : "\u7dcf\u5408\u30b9\u30b3\u30a2"}</div>
           ${confidenceBadge(r.confidence.level)}
           ${r.notes.length > 0 ? `<div class="note" style="margin-top:6px;">${escapeHtml(r.notes[0])}</div>` : ""}
         </div>`;
@@ -140,7 +155,7 @@ export function renderSummary(model: SummaryModel): string {
       </div>
 
       <div class="note" style="margin-top:12px;">
-        \u203b \u7dcf\u5408\u30b9\u30b3\u30a2\u306f\u5019\u88dc\u5185\u3067\u306e\u76f8\u5bfe\u6bd4\u8f03\u5024\uff080-100\uff09\u3067\u3059\u3002\u5168\u56fd\u57fa\u6e96\u3067\u306f\u3042\u308a\u307e\u305b\u3093\u3002<br>
+        \u203b \u30b9\u30bf\u30fc\u8a55\u4fa1\u306f\u5168\u56fd\u5e02\u533a\u753a\u6751\u306e\u7d71\u8a08\u5206\u5e03\u3092\u57fa\u6e96\u3068\u3057\u305f5\u6bb5\u968e\u8a55\u4fa1\u3067\u3059\u3002<br>
         \u203b \u4fe1\u983c\u5ea6\u306f\u30c7\u30fc\u30bf\u306e\u9bae\u5ea6\u30fb\u6b20\u640d\u7387\u306b\u57fa\u3065\u304f\u53c2\u8003\u5024\u3067\u3059\u3002
       </div>
     </section>`;
