@@ -23,6 +23,7 @@ export type {
   ConfidenceLevel,
   BaselineScore,
   WeightPreset,
+  IndicatorStarRating,
 } from "./scoring/types";
 export { scoreCities } from "./scoring";
 export { mergeIndicators } from "./scoring/merge-indicators";
@@ -31,6 +32,21 @@ export type { ChoiceScoreWithCity } from "./scoring/normalize";
 export { calculatePercentile } from "./scoring/percentile";
 export { calculateCompositeScore } from "./scoring/composite";
 export { evaluateConfidence } from "./scoring/confidence";
+export {
+  percentileToStars,
+  renderStarText,
+  renderStarTextFloat,
+  starLabel,
+  starColor,
+  computeCompositeStars,
+} from "./scoring/star-rating";
+export type { StarRating } from "./scoring/star-rating";
+export {
+  NATIONAL_BASELINES,
+  getNationalBaseline,
+  computeNationalPercentile,
+} from "./scoring/national-baseline";
+export type { NationalBaselineEntry } from "./scoring/national-baseline";
 export {
   CHILDCARE_FOCUSED,
   PRICE_FOCUSED,

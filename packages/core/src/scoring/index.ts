@@ -2,17 +2,21 @@ import { normalizeWithinCandidates } from "./normalize";
 import { calculatePercentile } from "./percentile";
 import { calculateCompositeScore } from "./composite";
 import { evaluateConfidence } from "./confidence";
+import { computeNationalPercentile } from "./national-baseline";
+import { percentileToStars, computeCompositeStars } from "./star-rating";
+import type { StarRating } from "./star-rating";
 import {
   CityIndicators,
   CityScoreResult,
-  ConfidenceInput,
   IndicatorDefinition,
+  IndicatorStarRating,
   WeightPreset,
 } from "./types";
 
 /**
  * 全都市のスコアを一括計算する
- * Phase 0: 候補セット内でのChoice Scoreとパーセンタイルを算出
+ * 候補セット内でのChoice Scoreとパーセンタイルに加え、
+ * 全国ベースライン基準の5段階スター評価を算出する。
  */
 export function scoreCities(
   cities: ReadonlyArray<CityIndicators>,
@@ -81,6 +85,37 @@ export function scoreCities(
 
     const composite = calculateCompositeScore(choiceScores, definitions, preset);
 
+    // 全国ベースライン基準のスター評価を計算
+    const indicatorStars: IndicatorStarRating[] = [];
+    for (const def of definitions) {
+      const indicator = city.indicators.find((i) => i.indicatorId === def.id);
+      if (!indicator || indicator.rawValue === null) {
+        continue;
+      }
+      const nationalPct = computeNationalPercentile(
+        indicator.rawValue,
+        def.id,
+        def.direction,
+      );
+      indicatorStars.push({
+        indicatorId: def.id,
+        stars: percentileToStars(nationalPct),
+        nationalPercentile: nationalPct,
+      });
+    }
+
+    // 加重平均のコンポジットスター値を計算
+    const defMap = new Map(definitions.map((d) => [d.id, d]));
+    const starWeights = indicatorStars.map((is) => {
+      const def = defMap.get(is.indicatorId);
+      const weight = def ? (preset.weights[def.category] ?? 0) : 0;
+      return { indicatorId: is.indicatorId, weight };
+    });
+    const starRating =
+      indicatorStars.length > 0
+        ? computeCompositeStars(indicatorStars, starWeights)
+        : undefined;
+
     // 信頼度: 全指標の情報を集約
     const dataYears = city.indicators
       .map((i) => i.dataYear)
@@ -117,6 +152,8 @@ export function scoreCities(
       confidence,
       rank: 0,
       notes,
+      starRating,
+      indicatorStars,
     };
   });
 

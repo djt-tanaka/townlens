@@ -3,8 +3,11 @@ import {
   ChoiceScore,
   IndicatorCategory,
   IndicatorDefinition,
+  IndicatorStarRating,
   WeightPreset,
 } from "../scoring/types";
+import { renderStarText } from "../scoring/star-rating";
+import type { StarRating } from "../scoring/star-rating";
 import { ReportRow } from "../types";
 
 /** スコア分類の閾値 */
@@ -134,11 +137,41 @@ interface CityNarrativeInput {
   readonly definitions: ReadonlyArray<IndicatorDefinition>;
   readonly confidenceLevel: "high" | "medium" | "low";
   readonly missingIndicatorCount: number;
+  readonly starRating?: number;
+}
+
+/** スター評価の日本語ラベル */
+function starRatingLabel(stars: number): string {
+  const rounded = Math.round(stars);
+  if (rounded >= 5) return "とても良い";
+  if (rounded >= 4) return "良い";
+  if (rounded >= 3) return "普通";
+  if (rounded >= 2) return "やや低い";
+  return "要注意";
 }
 
 /** 総合評価文 */
 function buildOverallSentence(input: CityNarrativeInput): string {
-  const { cityName, compositeScore, rank, totalCities } = input;
+  const { cityName, compositeScore, rank, totalCities, starRating } = input;
+
+  // スター評価がある場合はスターベースのナラティブ
+  if (starRating != null) {
+    const stars = renderStarText(Math.round(starRating) as StarRating);
+    const label = starRatingLabel(starRating);
+
+    if (totalCities === 1) {
+      return `${cityName}の総合評価は${stars}（${starRating.toFixed(1)}/5.0・${label}）です。`;
+    }
+    if (rank === 1) {
+      return `${cityName}は総合評価${stars}（${starRating.toFixed(1)}/5.0・${label}）で、候補${totalCities}市区町村の中で最も高い評価となりました。`;
+    }
+    if (rank === totalCities) {
+      return `${cityName}は総合評価${stars}（${starRating.toFixed(1)}/5.0・${label}）で、候補${totalCities}市区町村の中で最も低い評価となりました。`;
+    }
+    return `${cityName}は総合評価${stars}（${starRating.toFixed(1)}/5.0・${label}）で、候補${totalCities}市区町村中${rank}位の評価です。`;
+  }
+
+  // レガシー: 数値スコアベース
   const score = compositeScore.toFixed(1);
 
   if (totalCities === 1) {
@@ -271,6 +304,7 @@ export function generateCityNarrative(
     definitions,
     confidenceLevel: result.confidence.level,
     missingIndicatorCount: missingCount,
+    starRating: result.starRating,
   };
 
   const sentences: string[] = [
@@ -318,6 +352,30 @@ function buildWinnerSentence(
   }
 
   const second = sorted[1];
+
+  // スター評価がある場合
+  if (first.starRating != null && second.starRating != null) {
+    const firstStars = renderStarText(Math.round(first.starRating) as StarRating);
+    const secondStars = renderStarText(Math.round(second.starRating) as StarRating);
+    const starGap = first.starRating - second.starRating;
+
+    const allSame = sorted.every(
+      (c) => c.starRating === first.starRating,
+    );
+    if (allSame) {
+      return `候補間の総合評価に差はなく、いずれも${firstStars}（${first.starRating.toFixed(1)}/5.0）の同等の評価となりました。`;
+    }
+
+    if (Math.abs(starGap) < 0.3) {
+      return `${first.cityName}が総合1位ですが、${second.cityName}との差はわずかであり、実質的にほぼ同等の評価です。`;
+    }
+    if (Math.abs(starGap) >= 1.0) {
+      return `${first.cityName}が${firstStars}（${first.starRating.toFixed(1)}/5.0）で総合1位、2位の${second.cityName}は${secondStars}（${second.starRating.toFixed(1)}/5.0）です。`;
+    }
+    return `総合的に${first.cityName}（${firstStars} ${first.starRating.toFixed(1)}/5.0）が最も高い評価で、${second.cityName}（${secondStars} ${second.starRating.toFixed(1)}/5.0）が続きます。`;
+  }
+
+  // レガシー: 数値スコアベース
   const gap = first.compositeScore - second.compositeScore;
 
   // 全都市同スコア

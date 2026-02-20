@@ -285,7 +285,14 @@ async function buildScoredReport(
     console.log("教育統計データ: 有効");
   }
   for (const r of [...results].sort((a, b) => a.rank - b.rank)) {
-    console.log(`  ${r.rank}位: ${r.cityName} (スコア: ${r.compositeScore.toFixed(1)}, 信頼度: ${r.confidence.level})`);
+    if (r.starRating != null) {
+      const filled = "\u2605";
+      const empty = "\u2606";
+      const rounded = Math.round(r.starRating);
+      console.log(`  ${r.rank}位: ${r.cityName} (${filled.repeat(rounded)}${empty.repeat(5 - rounded)} ${r.starRating.toFixed(1)}/5.0, 信頼度: ${r.confidence.level})`);
+    } else {
+      console.log(`  ${r.rank}位: ${r.cityName} (スコア: ${r.compositeScore.toFixed(1)}, 信頼度: ${r.confidence.level})`);
+    }
   }
 
   return renderScoredReportHtml({

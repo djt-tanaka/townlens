@@ -1,4 +1,4 @@
-import { escapeHtml, CATEGORY_COLORS, getCityColor } from "@townlens/core";
+import { escapeHtml, CATEGORY_COLORS, getCityColor, starColor } from "@townlens/core";
 import type { CityScoreResult, IndicatorCategory, IndicatorDefinition } from "@townlens/core";
 import { renderHorizontalBarChart, BarChartItem } from "./charts/bar";
 
@@ -64,16 +64,30 @@ export function renderDashboard(model: DashboardModel): string {
             labelWidth: 90,
           });
 
-          // パーセンタイル情報
-          const percentileInfo = model.results
+          // スター評価情報（全国ベースライン）
+          const starInfo = model.results
             .map((r) => {
-              const bs = r.baseline.find((b) => b.indicatorId === def.id);
-              return bs
-                ? `${escapeHtml(r.cityName)}: ${bs.percentile.toFixed(1)}%`
-                : null;
+              const is = r.indicatorStars?.find((s) => s.indicatorId === def.id);
+              if (!is) return null;
+              const filled = "\u2605";
+              const empty = "\u2606";
+              return `${escapeHtml(r.cityName)}: ${filled.repeat(is.stars)}${empty.repeat(5 - is.stars)}`;
             })
             .filter(Boolean)
             .join(" / ");
+
+          // パーセンタイル情報（フォールバック）
+          const percentileInfo = !starInfo
+            ? model.results
+                .map((r) => {
+                  const bs = r.baseline.find((b) => b.indicatorId === def.id);
+                  return bs
+                    ? `${escapeHtml(r.cityName)}: ${bs.percentile.toFixed(1)}%`
+                    : null;
+                })
+                .filter(Boolean)
+                .join(" / ")
+            : "";
 
           return `
             <div class="indicator-card" style="border-left:3px solid ${catColor.primary};">
@@ -82,6 +96,7 @@ export function renderDashboard(model: DashboardModel): string {
                 <span class="note">${escapeHtml(def.unit)}</span>
               </div>
               ${barSvg}
+              ${starInfo ? `<div class="note" style="margin-top:4px;">\u5168\u56fd\u8a55\u4fa1: ${starInfo}</div>` : ""}
               ${percentileInfo ? `<div class="note" style="margin-top:4px;">\u30d1\u30fc\u30bb\u30f3\u30bf\u30a4\u30eb: ${percentileInfo}</div>` : ""}
             </div>`;
         })
@@ -101,10 +116,10 @@ export function renderDashboard(model: DashboardModel): string {
   return `
     <section class="page">
       <h2>\u6307\u6a19\u30c0\u30c3\u30b7\u30e5\u30dc\u30fc\u30c9</h2>
-      <p class="meta">\u5019\u88dc\u5185\u6bd4\u8f03\u30b9\u30b3\u30a2\uff08Choice Score: 0-100\uff09\u306b\u3088\u308b\u6307\u6a19\u5225\u306e\u90fd\u5e02\u6bd4\u8f03</p>
+      <p class="meta">\u5168\u56fd\u30d9\u30fc\u30b9\u30e9\u30a4\u30f3\u57fa\u6e96\u306e5\u6bb5\u968e\u30b9\u30bf\u30fc\u8a55\u4fa1\u306b\u3088\u308b\u6307\u6a19\u5225\u306e\u90fd\u5e02\u6bd4\u8f03</p>
       ${sections}
       <div class="note" style="margin-top:12px;">
-        \u203b \u5019\u88dc\u30bb\u30c3\u30c8\u5185\u3067\u306e\u76f8\u5bfe\u30d1\u30fc\u30bb\u30f3\u30bf\u30a4\u30eb\u3067\u3059\u3002
+        \u203b \u30b9\u30bf\u30fc\u8a55\u4fa1\u306f\u5168\u56fd\u5e02\u533a\u753a\u6751\u306e\u7d71\u8a08\u5206\u5e03\u3092\u57fa\u6e96\u3068\u3057\u305f5\u6bb5\u968e\u8a55\u4fa1\u3067\u3059\u3002\u30d0\u30fc\u30c1\u30e3\u30fc\u30c8\u306f\u5019\u88dc\u5185\u6bd4\u8f03\u30b9\u30b3\u30a2\u3067\u3059\u3002
       </div>
     </section>`;
 }

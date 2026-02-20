@@ -212,6 +212,73 @@ describe("generateCityNarrative", () => {
   });
 });
 
+// ─── スター評価ナラティブテスト ───
+
+describe("generateCityNarrative with starRating", () => {
+  it("スター評価がある場合にスターベースのナラティブを生成する（1位）", () => {
+    const result = makeResult({
+      cityName: "世田谷区",
+      compositeScore: 78.5,
+      rank: 1,
+      starRating: 4.2,
+      choice: [
+        { indicatorId: "population_total", score: 85 },
+        { indicatorId: "kids_ratio", score: 75 },
+      ],
+    });
+    const text = generateCityNarrative(result, definitions, 3);
+    expect(text).toContain("★");
+    expect(text).toContain("4.2/5.0");
+    expect(text).toContain("最も高い評価");
+  });
+
+  it("スター評価がある場合の最下位ナラティブ", () => {
+    const result = makeResult({
+      cityName: "中野区",
+      compositeScore: 35.2,
+      rank: 3,
+      starRating: 2.1,
+      choice: [
+        { indicatorId: "population_total", score: 15 },
+      ],
+    });
+    const text = generateCityNarrative(result, definitions, 3);
+    expect(text).toContain("★");
+    expect(text).toContain("2.1/5.0");
+    expect(text).toContain("最も低い評価");
+  });
+
+  it("スター評価がある場合の中間順位ナラティブ", () => {
+    const result = makeResult({
+      cityName: "渋谷区",
+      compositeScore: 55.0,
+      rank: 2,
+      starRating: 3.5,
+      choice: [
+        { indicatorId: "population_total", score: 50 },
+      ],
+    });
+    const text = generateCityNarrative(result, definitions, 3);
+    expect(text).toContain("3.5/5.0");
+    expect(text).toContain("2位");
+  });
+
+  it("スター評価がある場合の単独都市ナラティブ", () => {
+    const result = makeResult({
+      cityName: "世田谷区",
+      compositeScore: 60.0,
+      rank: 1,
+      starRating: 3.8,
+      choice: [
+        { indicatorId: "population_total", score: 80 },
+      ],
+    });
+    const text = generateCityNarrative(result, definitions, 1);
+    expect(text).toContain("3.8/5.0");
+    expect(text).not.toContain("候補");
+  });
+});
+
 // ─── 実値付きナラティブテスト ───
 
 describe("generateCityNarrative with rawRows", () => {
@@ -467,6 +534,103 @@ describe("generateComparisonNarrative", () => {
     expect(text).toContain(
       "世田谷区は全ての指標で候補内最高値を記録しています",
     );
+  });
+});
+
+// ─── 比較ナラティブスター評価テスト ───
+
+describe("generateComparisonNarrative with starRating", () => {
+  it("スター評価で大きな差がある場合", () => {
+    const results: ReadonlyArray<CityScoreResult> = [
+      makeResult({
+        cityName: "世田谷区",
+        compositeScore: 85.0,
+        rank: 1,
+        starRating: 4.5,
+        choice: [
+          { indicatorId: "population_total", score: 100 },
+          { indicatorId: "kids_ratio", score: 90 },
+        ],
+      }),
+      makeResult({
+        cityName: "中野区",
+        compositeScore: 30.0,
+        rank: 2,
+        starRating: 2.0,
+        choice: [
+          { indicatorId: "population_total", score: 10 },
+          { indicatorId: "kids_ratio", score: 20 },
+        ],
+      }),
+    ];
+    const text = generateComparisonNarrative(results, definitions);
+    expect(text).toContain("★");
+    expect(text).toContain("4.5/5.0");
+    expect(text).toContain("2.0/5.0");
+  });
+
+  it("スター評価で僅差の場合", () => {
+    const results: ReadonlyArray<CityScoreResult> = [
+      makeResult({
+        cityName: "世田谷区",
+        compositeScore: 55.0,
+        rank: 1,
+        starRating: 3.5,
+        choice: [{ indicatorId: "population_total", score: 60 }],
+      }),
+      makeResult({
+        cityName: "渋谷区",
+        compositeScore: 50.0,
+        rank: 2,
+        starRating: 3.3,
+        choice: [{ indicatorId: "population_total", score: 40 }],
+      }),
+    ];
+    const text = generateComparisonNarrative(results, definitions);
+    expect(text).toContain("ほぼ同等");
+  });
+
+  it("スター評価が全都市同一の場合", () => {
+    const results: ReadonlyArray<CityScoreResult> = [
+      makeResult({
+        cityName: "世田谷区",
+        compositeScore: 50.0,
+        rank: 1,
+        starRating: 3.0,
+        choice: [{ indicatorId: "population_total", score: 50 }],
+      }),
+      makeResult({
+        cityName: "渋谷区",
+        compositeScore: 50.0,
+        rank: 1,
+        starRating: 3.0,
+        choice: [{ indicatorId: "population_total", score: 50 }],
+      }),
+    ];
+    const text = generateComparisonNarrative(results, definitions);
+    expect(text).toContain("同等の評価");
+  });
+
+  it("スター評価で中程度の差がある場合", () => {
+    const results: ReadonlyArray<CityScoreResult> = [
+      makeResult({
+        cityName: "世田谷区",
+        compositeScore: 65.0,
+        rank: 1,
+        starRating: 4.0,
+        choice: [{ indicatorId: "population_total", score: 80 }],
+      }),
+      makeResult({
+        cityName: "渋谷区",
+        compositeScore: 50.0,
+        rank: 2,
+        starRating: 3.3,
+        choice: [{ indicatorId: "population_total", score: 40 }],
+      }),
+    ];
+    const text = generateComparisonNarrative(results, definitions);
+    expect(text).toContain("最も高い評価");
+    expect(text).toContain("続きます");
   });
 });
 
