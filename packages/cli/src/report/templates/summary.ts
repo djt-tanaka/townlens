@@ -9,6 +9,8 @@ import type {
   ConfidenceLevel,
   IndicatorCategory,
   IndicatorDefinition,
+  ReportRow,
+  WeightPreset,
 } from "@townlens/core";
 import { renderRadarChart, RadarChartData } from "./charts/radar";
 
@@ -16,6 +18,8 @@ export interface SummaryModel {
   readonly results: ReadonlyArray<CityScoreResult>;
   readonly presetLabel: string;
   readonly definitions: ReadonlyArray<IndicatorDefinition>;
+  readonly rawRows?: ReadonlyArray<ReportRow>;
+  readonly preset?: WeightPreset;
 }
 
 function confidenceBadge(level: ConfidenceLevel): string {
@@ -132,7 +136,7 @@ export function renderSummary(model: SummaryModel): string {
 
       <div class="narrative" style="margin-top:16px;">
         <h3>\u7dcf\u5408\u8a55\u4fa1</h3>
-        <p>${escapeHtml(generateComparisonNarrative(model.results, model.definitions))}</p>
+        <p>${escapeHtml(generateComparisonNarrative(model.results, model.definitions, { rawRows: model.rawRows, preset: model.preset }))}</p>
       </div>
 
       <div class="note" style="margin-top:12px;">

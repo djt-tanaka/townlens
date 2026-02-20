@@ -5,6 +5,7 @@ import type {
   IndicatorDefinition,
   ConfidenceLevel,
   ReportRow,
+  WeightPreset,
 } from "@townlens/core";
 import { renderScoreGauge } from "./charts/gauge";
 
@@ -13,6 +14,8 @@ export interface CityDetailModel {
   readonly definition: ReadonlyArray<IndicatorDefinition>;
   readonly rawRow: ReportRow;
   readonly totalCities: number;
+  readonly rawRows?: ReadonlyArray<ReportRow>;
+  readonly preset?: WeightPreset;
 }
 
 function confidenceLabel(level: ConfidenceLevel): string {
@@ -205,7 +208,7 @@ export function renderCityDetail(model: CityDetailModel): string {
 
       <div class="narrative" style="margin-top:16px;">
         <h3>\u8a55\u4fa1\u30b3\u30e1\u30f3\u30c8</h3>
-        <p>${escapeHtml(generateCityNarrative(result, model.definition, model.totalCities))}</p>
+        <p>${escapeHtml(generateCityNarrative(result, model.definition, model.totalCities, { rawRows: model.rawRows, preset: model.preset }))}</p>
       </div>
 
       <h3 style="margin-top:16px;">\u6ce8\u610f\u4e8b\u9805</h3>
