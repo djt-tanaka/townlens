@@ -27,7 +27,7 @@ export const PLAN_DEFINITIONS: ReadonlyArray<PlanDefinition> = [
     priceNote: "無料",
     description: "まずは試してみたい方に",
     features: [
-      { text: "月間レポート 3件", included: true },
+      { text: "月間レポート 100件", included: true },
       { text: "比較都市数 2都市", included: true },
       { text: "総合スコアのみ", included: true },
       { text: "固定プリセット", included: true },

@@ -91,7 +91,7 @@ describe("GET /api/usage", () => {
     const body = await response.json();
     expect(body.plan).toBe("free");
     expect(body.currentMonth.reportsGenerated).toBe(2);
-    expect(body.currentMonth.reportsLimit).toBe(3);
+    expect(body.currentMonth.reportsLimit).toBe(100);
   });
 
   it("利用量レコードがない場合は 0 件を返す", async () => {

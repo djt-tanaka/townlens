@@ -177,7 +177,7 @@ describe("POST /api/reports", () => {
         eq: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             single: vi.fn().mockResolvedValue({
-              data: { report_count: 3 },
+              data: { report_count: 100 },
               error: null,
             }),
           }),
