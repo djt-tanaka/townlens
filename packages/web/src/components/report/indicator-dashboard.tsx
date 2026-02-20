@@ -49,10 +49,10 @@ export function IndicatorDashboard({
       {groups.map(({ category, indicators }) => {
         const color = getCategoryColor(category);
         return (
-          <Card key={category}>
+          <Card key={category} className="overflow-hidden py-0 gap-0">
             {/* カテゴリヘッダー（PDF準拠） */}
             <div
-              className="flex items-center gap-3 rounded-t-lg px-4 py-3 text-[15px] font-bold"
+              className="flex items-center gap-3 px-4 py-3 text-[15px] font-bold"
               style={{
                 backgroundColor: color.light,
                 color: color.dark,
@@ -61,7 +61,7 @@ export function IndicatorDashboard({
               <span className="text-xl">{color.emoji}</span>
               {color.label}
             </div>
-            <CardContent className="pt-4">
+            <CardContent className="pt-4 pb-4">
               <Table>
                 <TableHeader>
                   <TableRow>
