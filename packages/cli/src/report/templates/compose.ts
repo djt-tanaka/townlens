@@ -51,6 +51,8 @@ export function renderScoredReportHtml(model: ScoredReportModel): string {
     results: model.results,
     presetLabel: model.preset.label,
     definitions: model.definitions,
+    rawRows: model.rawRows,
+    preset: model.preset,
   });
 
   const dashboard = renderDashboard({
@@ -69,6 +71,8 @@ export function renderScoredReportHtml(model: ScoredReportModel): string {
         definition: model.definitions,
         rawRow,
         totalCities: model.results.length,
+        rawRows: model.rawRows,
+        preset: model.preset,
       });
     })
     .join("\n");

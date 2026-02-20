@@ -141,10 +141,15 @@ export default async function ReportPage({ params }: ReportPageProps) {
 
   const { results, definitions, preset } = stored;
 
-  // サーバーサイドでナラティブを生成
+  // サーバーサイドでナラティブを生成（実値・プリセット連動）
+  const narrativeOptions = {
+    rawRows: stored.rawRows,
+    preset,
+  };
   const comparisonNarrative = generateComparisonNarrative(
     results,
     definitions,
+    narrativeOptions,
   );
   const cityNarratives: Record<string, string> = {};
   for (const result of results) {
@@ -152,6 +157,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
       result,
       definitions,
       results.length,
+      narrativeOptions,
     );
   }
 

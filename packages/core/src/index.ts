@@ -115,6 +115,7 @@ export { mergeDisasterIntoScoringInput } from "./reinfo/merge-disaster-scoring";
 
 // ─── ナラティブ ───
 export { generateCityNarrative, generateComparisonNarrative } from "./narrative";
+export type { NarrativeOptions } from "./narrative";
 
 // ─── チャート ───
 export {

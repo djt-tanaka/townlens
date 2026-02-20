@@ -6,7 +6,9 @@ import {
 import {
   CityScoreResult,
   IndicatorDefinition,
+  WeightPreset,
 } from "../../src/scoring/types";
+import { ReportRow } from "../../src/types";
 
 const definitions: ReadonlyArray<IndicatorDefinition> = [
   {
@@ -36,7 +38,7 @@ const definitions: ReadonlyArray<IndicatorDefinition> = [
 ];
 
 function makeResult(
-  overrides: Partial<CityScoreResult> & { cityName: string }
+  overrides: Partial<CityScoreResult> & { cityName: string },
 ): CityScoreResult {
   return {
     areaCode: "13000",
@@ -49,6 +51,50 @@ function makeResult(
     ...overrides,
   };
 }
+
+function makeRawRow(
+  overrides: Partial<ReportRow> & { cityResolved: string; areaCode: string },
+): ReportRow {
+  return {
+    cityInput: overrides.cityResolved,
+    cityResolved: overrides.cityResolved,
+    areaCode: overrides.areaCode,
+    total: 0,
+    kids: 0,
+    ratio: 0,
+    totalRank: 1,
+    ratioRank: 1,
+    ...overrides,
+  };
+}
+
+const childcarePreset: WeightPreset = {
+  name: "childcare",
+  label: "子育て重視",
+  weights: {
+    childcare: 0.35,
+    price: 0.2,
+    safety: 0.15,
+    disaster: 0.05,
+    transport: 0.05,
+    education: 0.2,
+  },
+};
+
+const pricePreset: WeightPreset = {
+  name: "price",
+  label: "価格重視",
+  weights: {
+    childcare: 0.1,
+    price: 0.5,
+    safety: 0.1,
+    disaster: 0.1,
+    transport: 0.1,
+    education: 0.1,
+  },
+};
+
+// ─── 後方互換テスト（options なし） ───
 
 describe("generateCityNarrative", () => {
   it("1位の都市のナラティブを生成する", () => {
@@ -145,9 +191,7 @@ describe("generateCityNarrative", () => {
       compositeScore: 45.0,
       rank: 2,
       confidence: { level: "low", reason: "データが古い" },
-      choice: [
-        { indicatorId: "population_total", score: 50 },
-      ],
+      choice: [{ indicatorId: "population_total", score: 50 }],
     });
     const text = generateCityNarrative(result, definitions, 2);
     expect(text).toContain("参考値としてご確認ください");
@@ -160,15 +204,126 @@ describe("generateCityNarrative", () => {
       compositeScore: 55.0,
       rank: 1,
       confidence: { level: "high", reason: "良好" },
-      choice: [
-        { indicatorId: "population_total", score: 60 },
-      ],
+      choice: [{ indicatorId: "population_total", score: 60 }],
     });
     const text = generateCityNarrative(result, definitions, 2);
     // definitions は3つだが choice は1つなので欠損2件
     expect(text).toContain("2件の指標データが欠損");
   });
 });
+
+// ─── 実値付きナラティブテスト ───
+
+describe("generateCityNarrative with rawRows", () => {
+  it("強み・弱みに実値を付記する", () => {
+    const result = makeResult({
+      cityName: "世田谷区",
+      areaCode: "13112",
+      compositeScore: 78.5,
+      rank: 1,
+      choice: [
+        { indicatorId: "population_total", score: 85 },
+        { indicatorId: "kids_ratio", score: 75 },
+        { indicatorId: "condo_price_median", score: 20 },
+      ],
+    });
+    const rawRows: ReportRow[] = [
+      makeRawRow({
+        cityResolved: "世田谷区",
+        areaCode: "13112",
+        total: 939099,
+        ratio: 11.5,
+        condoPriceMedian: 4800,
+      }),
+    ];
+    const text = generateCityNarrative(result, definitions, 3, { rawRows });
+    expect(text).toContain("939,099人");
+    expect(text).toContain("11.5%");
+    expect(text).toContain("4,800万円");
+    expect(text).toContain("強み");
+    expect(text).toContain("課題");
+  });
+
+  it("rawRow が見つからない場合はラベルのみ（従来と同じ）", () => {
+    const result = makeResult({
+      cityName: "世田谷区",
+      areaCode: "13112",
+      compositeScore: 78.5,
+      rank: 1,
+      choice: [
+        { indicatorId: "population_total", score: 85 },
+      ],
+    });
+    const text = generateCityNarrative(result, definitions, 3, {
+      rawRows: [],
+    });
+    expect(text).toContain("総人口が強み");
+    expect(text).not.toContain("人）");
+  });
+});
+
+// ─── プリセット連動テスト ───
+
+describe("generateCityNarrative with preset", () => {
+  it("最重要カテゴリが強みの場合にプリセットコメントを生成する", () => {
+    const result = makeResult({
+      cityName: "世田谷区",
+      areaCode: "13112",
+      compositeScore: 78.5,
+      rank: 1,
+      choice: [
+        { indicatorId: "population_total", score: 85 },
+        { indicatorId: "kids_ratio", score: 75 },
+        { indicatorId: "condo_price_median", score: 20 },
+      ],
+    });
+    const text = generateCityNarrative(result, definitions, 3, {
+      preset: childcarePreset,
+    });
+    expect(text).toContain("子育て重視");
+    expect(text).toContain("子育て");
+    expect(text).toContain("押し上げ");
+  });
+
+  it("最重要カテゴリが弱みの場合にプリセットコメントを生成する", () => {
+    const result = makeResult({
+      cityName: "中野区",
+      areaCode: "13114",
+      compositeScore: 35.2,
+      rank: 2,
+      choice: [
+        { indicatorId: "population_total", score: 15 },
+        { indicatorId: "kids_ratio", score: 25 },
+        { indicatorId: "condo_price_median", score: 80 },
+      ],
+    });
+    const text = generateCityNarrative(result, definitions, 3, {
+      preset: childcarePreset,
+    });
+    expect(text).toContain("子育て重視");
+    expect(text).toContain("下げる要因");
+  });
+
+  it("最重要カテゴリが中立の場合はプリセットコメントなし", () => {
+    const result = makeResult({
+      cityName: "渋谷区",
+      areaCode: "13113",
+      compositeScore: 55.0,
+      rank: 2,
+      choice: [
+        { indicatorId: "population_total", score: 50 },
+        { indicatorId: "kids_ratio", score: 55 },
+        { indicatorId: "condo_price_median", score: 40 },
+      ],
+    });
+    const text = generateCityNarrative(result, definitions, 3, {
+      preset: childcarePreset,
+    });
+    expect(text).not.toContain("子育て重視");
+  });
+});
+
+// ─── 比較ナラティブ後方互換テスト ───
 
 describe("generateComparisonNarrative", () => {
   it("僅差の場合のナラティブを生成する", () => {
@@ -309,6 +464,132 @@ describe("generateComparisonNarrative", () => {
       }),
     ];
     const text = generateComparisonNarrative(results, definitions);
-    expect(text).toContain("世田谷区は全ての指標で候補内最高値を記録しています");
+    expect(text).toContain(
+      "世田谷区は全ての指標で候補内最高値を記録しています",
+    );
+  });
+});
+
+// ─── 比較ナラティブ実値付きテスト ───
+
+describe("generateComparisonNarrative with rawRows", () => {
+  it("トレードオフに実値比較を含める", () => {
+    const results: ReadonlyArray<CityScoreResult> = [
+      makeResult({
+        cityName: "世田谷区",
+        areaCode: "13112",
+        compositeScore: 65.0,
+        rank: 1,
+        choice: [
+          { indicatorId: "population_total", score: 90 },
+          { indicatorId: "kids_ratio", score: 80 },
+          { indicatorId: "condo_price_median", score: 30 },
+        ],
+      }),
+      makeResult({
+        cityName: "中野区",
+        areaCode: "13114",
+        compositeScore: 55.0,
+        rank: 2,
+        choice: [
+          { indicatorId: "population_total", score: 40 },
+          { indicatorId: "kids_ratio", score: 50 },
+          { indicatorId: "condo_price_median", score: 90 },
+        ],
+      }),
+    ];
+    const rawRows: ReportRow[] = [
+      makeRawRow({
+        cityResolved: "世田谷区",
+        areaCode: "13112",
+        total: 939099,
+        ratio: 11.5,
+        condoPriceMedian: 4800,
+      }),
+      makeRawRow({
+        cityResolved: "中野区",
+        areaCode: "13114",
+        total: 344880,
+        ratio: 9.1,
+        condoPriceMedian: 2600,
+      }),
+    ];
+    const text = generateComparisonNarrative(results, definitions, {
+      rawRows,
+    });
+    // 実値が含まれること
+    expect(text).toContain("939,099人");
+    expect(text).toContain("344,880人");
+    expect(text).toContain("4,800万円");
+    expect(text).toContain("2,600万円");
+    expect(text).toContain("vs");
+    expect(text).toContain("優先する観点によって選択が分かれます");
+  });
+});
+
+// ─── 比較ナラティブプリセット連動テスト ───
+
+describe("generateComparisonNarrative with preset", () => {
+  it("プリセットの重みが比較結果に影響する説明を含む", () => {
+    const results: ReadonlyArray<CityScoreResult> = [
+      makeResult({
+        cityName: "世田谷区",
+        areaCode: "13112",
+        compositeScore: 75.0,
+        rank: 1,
+        choice: [
+          { indicatorId: "population_total", score: 90 },
+          { indicatorId: "kids_ratio", score: 85 },
+          { indicatorId: "condo_price_median", score: 20 },
+        ],
+      }),
+      makeResult({
+        cityName: "中野区",
+        areaCode: "13114",
+        compositeScore: 45.0,
+        rank: 2,
+        choice: [
+          { indicatorId: "population_total", score: 20 },
+          { indicatorId: "kids_ratio", score: 25 },
+          { indicatorId: "condo_price_median", score: 90 },
+        ],
+      }),
+    ];
+    const text = generateComparisonNarrative(results, definitions, {
+      preset: childcarePreset,
+    });
+    expect(text).toContain("子育て重視");
+    expect(text).toContain("子育てカテゴリ");
+    expect(text).toContain("重み");
+  });
+
+  it("プリセットコメントが不要な場合は含まれない", () => {
+    const results: ReadonlyArray<CityScoreResult> = [
+      makeResult({
+        cityName: "世田谷区",
+        compositeScore: 55.0,
+        rank: 1,
+        choice: [
+          { indicatorId: "population_total", score: 55 },
+          { indicatorId: "kids_ratio", score: 50 },
+          { indicatorId: "condo_price_median", score: 45 },
+        ],
+      }),
+      makeResult({
+        cityName: "中野区",
+        compositeScore: 45.0,
+        rank: 2,
+        choice: [
+          { indicatorId: "population_total", score: 45 },
+          { indicatorId: "kids_ratio", score: 50 },
+          { indicatorId: "condo_price_median", score: 55 },
+        ],
+      }),
+    ];
+    const text = generateComparisonNarrative(results, definitions, {
+      preset: childcarePreset,
+    });
+    // カテゴリ平均が中立帯なのでプリセットコメントは出ない
+    expect(text).not.toContain("子育て重視");
   });
 });
