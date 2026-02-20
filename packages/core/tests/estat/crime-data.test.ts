@@ -240,11 +240,11 @@ describe("buildCrimeData", () => {
     expect(result.size).toBe(0);
   });
 
-  it("tab クラスの指標（刑法犯認知件数）を自動検出する", async () => {
+  it("tab クラスの指標（刑法犯認知件数）を自動検出し千人当たりを優先する", async () => {
     const mockClient = createMockClient(tabMetaInfo);
     mockClient.getStatsData.mockResolvedValue(
       createStatsResponse([
-        { area: "13104", time: "2009100000", cat01: "R3110", tab: "K4201", value: "15.2" },
+        { area: "13104", time: "2009100000", cat01: "R3120", tab: "K4201", value: "15.2" },
       ]),
     );
 
@@ -254,8 +254,9 @@ describe("buildCrimeData", () => {
     expect(result.get("13104")!.crimeRate).toBe(15.2);
     expect(result.get("13104")!.dataYear).toBe("2009");
     // tab クラスから K4201（刑法犯認知件数）が検出され cdTab に設定される
+    // cat01 は「人口千人当たり」(R3120) が優先される
     expect(mockClient.getStatsData).toHaveBeenCalledWith(
-      expect.objectContaining({ cdTab: "K4201" }),
+      expect.objectContaining({ cdTab: "K4201", cdCat01: "R3120" }),
     );
   });
 
@@ -266,8 +267,8 @@ describe("buildCrimeData", () => {
       .mockResolvedValueOnce(createStatsResponse([]))
       .mockResolvedValueOnce(
         createStatsResponse([
-          { area: "13104", time: "2008100000", cat01: "R3110", tab: "K4201", value: "10.5" },
-          { area: "13113", time: "2008100000", cat01: "R3110", tab: "K4201", value: "7.8" },
+          { area: "13104", time: "2008100000", cat01: "R3120", tab: "K4201", value: "10.5" },
+          { area: "13113", time: "2008100000", cat01: "R3120", tab: "K4201", value: "7.8" },
         ]),
       );
 
@@ -281,21 +282,21 @@ describe("buildCrimeData", () => {
     expect(mockClient.getStatsData).toHaveBeenCalledTimes(2);
   });
 
-  it("tab 指標検出時に resolveDefaultFilters が適用される", async () => {
+  it("tab 指標検出時に「千人当たり」が実数より優先される", async () => {
     const mockClient = createMockClient(tabMetaInfo);
     mockClient.getStatsData.mockResolvedValue(
       createStatsResponse([
-        { area: "13104", time: "2009100000", cat01: "R3110", tab: "K4201", value: "15.2" },
+        { area: "13104", time: "2009100000", cat01: "R3120", tab: "K4201", value: "15.2" },
       ]),
     );
 
     await buildCrimeData(mockClient, ["13104"], baseConfig);
 
-    // tab の K4201 と cat01 の「実数」がデフォルトフィルタとして適用される
+    // tab の K4201 と cat01 の「人口千人当たり」(R3120) が適用される
     expect(mockClient.getStatsData).toHaveBeenCalledWith(
       expect.objectContaining({
         cdTab: "K4201",
-        cdCat01: "R3110",
+        cdCat01: "R3120",
       }),
     );
   });

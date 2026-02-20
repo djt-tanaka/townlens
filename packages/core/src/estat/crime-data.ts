@@ -80,6 +80,33 @@ function resolveIndicatorClass(
   return null;
 }
 
+/**
+ * 「千人当たり」（人口比率）の分類項目を優先検出する。
+ *
+ * e-Stat「社会・人口統計体系」の K安全データでは、指標が tab クラスに格納され、
+ * cat01 クラスに "実数" / "人口千人当たり" の区分がある。
+ * resolveDefaultFilters は "実数" を選択してしまうため、犯罪統計では
+ * "千人当たり" を明示的に優先する必要がある。
+ */
+function resolvePerCapitaOverrides(
+  classObjs: ReadonlyArray<{ id: string; name: string; items: ReadonlyArray<{ code: string; name: string }> }>,
+  excludeClassIds: ReadonlySet<string>,
+): Record<string, string> {
+  const overrides: Record<string, string> = {};
+  for (const cls of classObjs) {
+    if (excludeClassIds.has(cls.id)) continue;
+    if (!cls.id.startsWith("cat") && cls.id !== "tab") continue;
+
+    const perCapitaItem = cls.items.find(
+      (item) => normalizeLabel(item.name).includes("千人当たり"),
+    );
+    if (perCapitaItem) {
+      overrides[toCdParamName(cls.id)] = perCapitaItem.code;
+    }
+  }
+  return overrides;
+}
+
 /** メタ情報のtimeコード最新年にデータがない場合、最大何年まで遡るか */
 const MAX_TIME_FALLBACK = 5;
 
@@ -132,6 +159,11 @@ export async function buildCrimeData(
   const extraParams = Object.fromEntries(
     extraFilters.map((f) => [f.paramName, f.code]),
   );
+
+  // 「千人当たり」を優先: resolveDefaultFilters は「実数」を選ぶが、
+  // 犯罪統計では人口比率が必要
+  const perCapitaOverrides = resolvePerCapitaOverrides(classObjs, excludeIds);
+  Object.assign(extraParams, perCapitaOverrides);
 
   for (const timeSelection of timeCandidates) {
     const dataYear = timeSelection.code.replace(/\D/g, "").slice(0, 4);
