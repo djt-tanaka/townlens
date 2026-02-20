@@ -527,6 +527,116 @@ describe("generateComparisonNarrative with rawRows", () => {
   });
 });
 
+describe("generateComparisonNarrative with rawRows - edge cases", () => {
+  it("3都市以上の場合に都市名付き実値比較を含める", () => {
+    const results: ReadonlyArray<CityScoreResult> = [
+      makeResult({
+        cityName: "世田谷区",
+        areaCode: "13112",
+        compositeScore: 75.0,
+        rank: 1,
+        choice: [
+          { indicatorId: "population_total", score: 90 },
+          { indicatorId: "condo_price_median", score: 30 },
+        ],
+      }),
+      makeResult({
+        cityName: "中野区",
+        areaCode: "13114",
+        compositeScore: 55.0,
+        rank: 2,
+        choice: [
+          { indicatorId: "population_total", score: 50 },
+          { indicatorId: "condo_price_median", score: 90 },
+        ],
+      }),
+      makeResult({
+        cityName: "渋谷区",
+        areaCode: "13113",
+        compositeScore: 45.0,
+        rank: 3,
+        choice: [
+          { indicatorId: "population_total", score: 40 },
+          { indicatorId: "condo_price_median", score: 50 },
+        ],
+      }),
+    ];
+    const rawRows: ReportRow[] = [
+      makeRawRow({
+        cityResolved: "世田谷区",
+        areaCode: "13112",
+        total: 939099,
+        condoPriceMedian: 4800,
+      }),
+      makeRawRow({
+        cityResolved: "中野区",
+        areaCode: "13114",
+        total: 344880,
+        condoPriceMedian: 2600,
+      }),
+      makeRawRow({
+        cityResolved: "渋谷区",
+        areaCode: "13113",
+        total: 243000,
+        condoPriceMedian: 3200,
+      }),
+    ];
+    const text = generateComparisonNarrative(results, definitions, {
+      rawRows,
+    });
+    // 3都市なので都市名付き比較
+    expect(text).toContain("vs");
+    expect(text).toContain("優位");
+  });
+
+  it("rawRow が見つからない指標はラベルのみ表示", () => {
+    const results: ReadonlyArray<CityScoreResult> = [
+      makeResult({
+        cityName: "世田谷区",
+        areaCode: "13112",
+        compositeScore: 65.0,
+        rank: 1,
+        choice: [
+          { indicatorId: "population_total", score: 90 },
+          { indicatorId: "condo_price_median", score: 30 },
+        ],
+      }),
+      makeResult({
+        cityName: "中野区",
+        areaCode: "13114",
+        compositeScore: 55.0,
+        rank: 2,
+        choice: [
+          { indicatorId: "population_total", score: 40 },
+          { indicatorId: "condo_price_median", score: 90 },
+        ],
+      }),
+    ];
+    // rawRows はあるが世田谷区の condoPriceMedian が null
+    const rawRows: ReportRow[] = [
+      makeRawRow({
+        cityResolved: "世田谷区",
+        areaCode: "13112",
+        total: 939099,
+        condoPriceMedian: null,
+      }),
+      makeRawRow({
+        cityResolved: "中野区",
+        areaCode: "13114",
+        total: 344880,
+        condoPriceMedian: 2600,
+      }),
+    ];
+    const text = generateComparisonNarrative(results, definitions, {
+      rawRows,
+    });
+    // 世田谷区の人口は実値あり
+    expect(text).toContain("939,099人");
+    // 中野区のマンション価格は実値あるが比較対象のリーダー値がnullなのでフォールバック
+    expect(text).toContain("優位");
+  });
+});
+
 // ─── 比較ナラティブプリセット連動テスト ───
 
 describe("generateComparisonNarrative with preset", () => {
@@ -561,6 +671,39 @@ describe("generateComparisonNarrative with preset", () => {
     expect(text).toContain("子育て重視");
     expect(text).toContain("子育てカテゴリ");
     expect(text).toContain("重み");
+  });
+
+  it("1位が最重要カテゴリで負けている場合のプリセットコメント", () => {
+    // 価格重視プリセットで、1位は価格カテゴリで負けているが他で補って1位
+    const results: ReadonlyArray<CityScoreResult> = [
+      makeResult({
+        cityName: "世田谷区",
+        areaCode: "13112",
+        compositeScore: 60.0,
+        rank: 1,
+        choice: [
+          { indicatorId: "population_total", score: 90 },
+          { indicatorId: "kids_ratio", score: 85 },
+          { indicatorId: "condo_price_median", score: 10 },
+        ],
+      }),
+      makeResult({
+        cityName: "中野区",
+        areaCode: "13114",
+        compositeScore: 40.0,
+        rank: 2,
+        choice: [
+          { indicatorId: "population_total", score: 10 },
+          { indicatorId: "kids_ratio", score: 15 },
+          { indicatorId: "condo_price_median", score: 90 },
+        ],
+      }),
+    ];
+    const text = generateComparisonNarrative(results, definitions, {
+      preset: pricePreset,
+    });
+    expect(text).toContain("価格重視");
+    expect(text).toContain("他の分野で補って");
   });
 
   it("プリセットコメントが不要な場合は含まれない", () => {
