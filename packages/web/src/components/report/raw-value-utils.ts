@@ -18,6 +18,8 @@ export function getRawValue(
       return (rawRow.floodRisk ? 1 : 0) + (rawRow.landslideRisk ? 1 : 0);
     },
     evacuation_sites: () => rawRow.evacuationSiteCount,
+    elementary_schools_per_capita: () => rawRow.elementarySchoolsPerCapita,
+    junior_high_schools_per_capita: () => rawRow.juniorHighSchoolsPerCapita,
   };
   return mapping[indicatorId]?.() ?? undefined;
 }

@@ -17,6 +17,10 @@ import type { WeightPreset } from "../scoring/types";
 import type { ReportRow } from "../types";
 import type { EstatApiClient } from "../estat/client";
 import type { ReinfoApiClient } from "../reinfo/client";
+import type { CondoPriceStats } from "../reinfo/types";
+import type { CrimeStats } from "../estat/crime-data";
+import type { CityDisasterData } from "../reinfo/disaster-data";
+import type { EducationStats } from "../estat/education-data";
 import { buildReportData, toScoringInput } from "../estat/report-data";
 import { buildPriceData } from "../reinfo/price-data";
 import { mergePriceIntoScoringInput } from "../reinfo/merge-scoring";
@@ -29,6 +33,60 @@ import { mergeEducationIntoScoringInput } from "../estat/merge-education-scoring
 import { scoreCities } from "../scoring";
 import { findPreset, POPULATION_INDICATORS, ALL_INDICATORS, CHILDCARE_FOCUSED } from "../scoring/presets";
 import { DATASETS } from "../config/datasets";
+
+const MAN_YEN = 10000;
+
+/** 各フェーズのデータを ReportRow にマージする */
+function enrichRows(
+  rows: ReadonlyArray<ReportRow>,
+  priceData?: ReadonlyMap<string, CondoPriceStats>,
+  crimeData?: ReadonlyMap<string, CrimeStats>,
+  disasterData?: ReadonlyMap<string, CityDisasterData>,
+  educationData?: ReadonlyMap<string, EducationStats>,
+): ReadonlyArray<ReportRow> {
+  return rows.map((row) => {
+    let enriched: ReportRow = { ...row };
+
+    const price = priceData?.get(row.areaCode);
+    if (price) {
+      enriched = {
+        ...enriched,
+        condoPriceMedian: Math.round(price.median / MAN_YEN),
+        condoPriceQ25: Math.round(price.q25 / MAN_YEN),
+        condoPriceQ75: Math.round(price.q75 / MAN_YEN),
+        condoPriceCount: price.count,
+        affordabilityRate: price.affordabilityRate ?? null,
+        propertyTypeLabel: price.propertyTypeLabel ?? null,
+      };
+    }
+
+    const crime = crimeData?.get(row.areaCode);
+    if (crime) {
+      enriched = { ...enriched, crimeRate: crime.crimeRate };
+    }
+
+    const disaster = disasterData?.get(row.areaCode);
+    if (disaster) {
+      enriched = {
+        ...enriched,
+        floodRisk: disaster.floodRisk,
+        landslideRisk: disaster.landslideRisk,
+        evacuationSiteCount: disaster.evacuationSiteCount,
+      };
+    }
+
+    const education = educationData?.get(row.areaCode);
+    if (education) {
+      enriched = {
+        ...enriched,
+        elementarySchoolsPerCapita: education.elementarySchoolsPerCapita,
+        juniorHighSchoolsPerCapita: education.juniorHighSchoolsPerCapita,
+      };
+    }
+
+    return enriched;
+  });
+}
 
 export interface PipelineInput {
   readonly cityNames: ReadonlyArray<string>;
@@ -93,6 +151,12 @@ export async function runReportPipeline(
 
   const areaCodes = reportData.rows.map((r) => r.areaCode);
 
+  // 各フェーズのデータを保持（rawRows へのマージ用）
+  let priceDataMap: ReadonlyMap<string, CondoPriceStats> | undefined;
+  let crimeDataMap: ReadonlyMap<string, CrimeStats> | undefined;
+  let disasterDataMap: ReadonlyMap<string, CityDisasterData> | undefined;
+  let educationDataMap: ReadonlyMap<string, EducationStats> | undefined;
+
   // Phase 1: 不動産価格取得
   if (input.includePrice && reinfoClient) {
     try {
@@ -106,6 +170,7 @@ export async function runReportPipeline(
         scoringInput = mergePriceIntoScoringInput(scoringInput, priceData);
         definitions = ALL_INDICATORS;
         hasPriceData = true;
+        priceDataMap = priceData;
       }
     } catch (err) {
       console.warn(
@@ -124,6 +189,7 @@ export async function runReportPipeline(
         scoringInput = mergeCrimeIntoScoringInput(scoringInput, crimeData);
         definitions = ALL_INDICATORS;
         hasCrimeData = true;
+        crimeDataMap = crimeData;
       }
     } catch (err) {
       console.warn(
@@ -150,6 +216,7 @@ export async function runReportPipeline(
         );
         definitions = ALL_INDICATORS;
         hasDisasterData = true;
+        disasterDataMap = disasterData;
       }
     } catch (err) {
       console.warn(
@@ -175,6 +242,7 @@ export async function runReportPipeline(
         scoringInput = mergeEducationIntoScoringInput(scoringInput, educationData);
         definitions = ALL_INDICATORS;
         hasEducationData = true;
+        educationDataMap = educationData;
       }
     } catch (err) {
       console.warn(
@@ -186,10 +254,19 @@ export async function runReportPipeline(
   // スコアリング
   const results = scoreCities(scoringInput, definitions, preset);
 
+  // 各フェーズのデータを rawRows にマージ
+  const rawRows = enrichRows(
+    reportData.rows,
+    priceDataMap,
+    crimeDataMap,
+    disasterDataMap,
+    educationDataMap,
+  );
+
   return {
     results,
     definitions,
-    rawRows: reportData.rows,
+    rawRows,
     hasPriceData,
     hasCrimeData,
     hasDisasterData,
