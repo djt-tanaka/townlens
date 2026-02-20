@@ -27,6 +27,11 @@ export const DATASETS = {
     statsDataId: "0000020211",
     label: "社会・人口統計体系 K安全（市区町村）",
   },
+  /** 社会・人口統計体系 市区町村データ E教育（小学校数・中学校数等） */
+  education: {
+    statsDataId: "0000020205",
+    label: "社会・人口統計体系 E教育（市区町村）",
+  },
   /**
    * 国勢調査 地域メッシュ統計（3次メッシュ）。
    * --mesh-stats-id で上書き可能。

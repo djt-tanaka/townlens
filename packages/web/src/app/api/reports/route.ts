@@ -87,6 +87,7 @@ export async function POST(request: Request) {
     const includePrice = options?.includePrice ?? true;
     const includeCrime = options?.includeCrime ?? true;
     const includeDisaster = options?.includeDisaster ?? true;
+    const includeEducation = options?.includeEducation ?? true;
 
     let reinfoClient;
     try {
@@ -97,7 +98,7 @@ export async function POST(request: Request) {
 
     try {
       const result = await runReportPipeline(
-        { cityNames: cities, preset, includePrice, includeCrime, includeDisaster },
+        { cityNames: cities, preset, includePrice, includeCrime, includeDisaster, includeEducation },
         { estatClient: createEstatClient(), reinfoClient },
       );
 
@@ -114,6 +115,7 @@ export async function POST(request: Request) {
               hasPriceData: result.hasPriceData,
               hasCrimeData: result.hasCrimeData,
               hasDisasterData: result.hasDisasterData,
+              hasEducationData: result.hasEducationData,
               preset: result.preset,
               timeLabel: result.timeLabel,
             }),

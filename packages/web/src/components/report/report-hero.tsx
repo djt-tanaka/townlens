@@ -10,11 +10,13 @@ interface ReportHeroProps {
   readonly hasPriceData: boolean;
   readonly hasCrimeData: boolean;
   readonly hasDisasterData: boolean;
+  readonly hasEducationData: boolean;
   readonly timeLabel?: string;
 }
 
 const categoryOrder: ReadonlyArray<IndicatorCategory> = [
   "childcare",
+  "education",
   "price",
   "safety",
   "disaster",
@@ -29,6 +31,7 @@ export function ReportHero({
   hasPriceData,
   hasCrimeData,
   hasDisasterData,
+  hasEducationData,
   timeLabel,
 }: ReportHeroProps) {
   const dataSources = ["e-Stat（政府統計総合窓口）"];

@@ -41,6 +41,7 @@ export {
   PRICE_INDICATORS,
   SAFETY_INDICATORS,
   DISASTER_INDICATORS,
+  EDUCATION_INDICATORS,
   ALL_INDICATORS,
 } from "./scoring/presets";
 
@@ -75,6 +76,9 @@ export type { BuildReportInput, BuildReportResult } from "./estat/report-data";
 export { buildCrimeData } from "./estat/crime-data";
 export type { CrimeDataConfig, CrimeStats } from "./estat/crime-data";
 export { mergeCrimeIntoScoringInput } from "./estat/merge-crime-scoring";
+export { buildEducationData } from "./estat/education-data";
+export type { EducationDataConfig, EducationStats } from "./estat/education-data";
+export { mergeEducationIntoScoringInput } from "./estat/merge-education-scoring";
 
 // ─── データセット定義 ───
 export { DATASETS } from "./config/datasets";

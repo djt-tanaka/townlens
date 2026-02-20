@@ -31,6 +31,7 @@ interface StoredReportData {
   readonly hasPriceData: boolean;
   readonly hasCrimeData: boolean;
   readonly hasDisasterData: boolean;
+  readonly hasEducationData?: boolean;
   readonly rawRows?: ReadonlyArray<ReportRow>;
   readonly timeLabel?: string;
 }
@@ -164,6 +165,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
         hasPriceData={stored.hasPriceData}
         hasCrimeData={stored.hasCrimeData}
         hasDisasterData={stored.hasDisasterData}
+        hasEducationData={stored.hasEducationData ?? false}
         timeLabel={stored.timeLabel}
       />
 

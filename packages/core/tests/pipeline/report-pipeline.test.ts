@@ -47,6 +47,14 @@ vi.mock("../../src/reinfo/merge-disaster-scoring", () => ({
   mergeDisasterIntoScoringInput: vi.fn().mockImplementation((input) => input),
 }));
 
+vi.mock("../../src/estat/education-data", () => ({
+  buildEducationData: vi.fn().mockResolvedValue(new Map()),
+}));
+
+vi.mock("../../src/estat/merge-education-scoring", () => ({
+  mergeEducationIntoScoringInput: vi.fn().mockImplementation((input) => input),
+}));
+
 vi.mock("../../src/scoring", () => ({
   scoreCities: vi.fn().mockReturnValue([
     { areaCode: "13112", cityName: "世田谷区", totalScore: 75 },
@@ -72,6 +80,7 @@ vi.mock("../../src/config/datasets", () => ({
   DATASETS: {
     population: { statsDataId: "0003411595", selectors: {} },
     crime: { statsDataId: "0003421913" },
+    education: { statsDataId: "0000020205" },
   },
 }));
 
@@ -82,6 +91,7 @@ describe("runReportPipeline", () => {
     includePrice: false,
     includeCrime: false,
     includeDisaster: false,
+    includeEducation: false,
   };
 
   const mockEstatClient = {
@@ -103,6 +113,7 @@ describe("runReportPipeline", () => {
     expect(result.hasPriceData).toBe(false);
     expect(result.hasCrimeData).toBe(false);
     expect(result.hasDisasterData).toBe(false);
+    expect(result.hasEducationData).toBe(false);
     expect(result.timeLabel).toBe("2024年");
   });
 
@@ -200,6 +211,48 @@ describe("runReportPipeline", () => {
 
     expect(result.hasDisasterData).toBe(true);
     expect(mergeDisasterIntoScoringInput).toHaveBeenCalled();
+  });
+
+  it("教育統計を含む場合に buildEducationData が呼ばれる", async () => {
+    const { buildEducationData } = await import("../../src/estat/education-data");
+    const input = { ...baseInput, includeEducation: true };
+
+    await runReportPipeline(input, {
+      estatClient: mockEstatClient as any,
+    });
+
+    expect(buildEducationData).toHaveBeenCalled();
+  });
+
+  it("教育統計でデータありの場合に hasEducationData が true になる", async () => {
+    const { buildEducationData } = await import("../../src/estat/education-data");
+    const { mergeEducationIntoScoringInput } = await import("../../src/estat/merge-education-scoring");
+    vi.mocked(buildEducationData).mockResolvedValue(
+      new Map([["13112", { elementarySchoolsPerCapita: 0.7, juniorHighSchoolsPerCapita: 0.33, dataYear: "2022" }]]) as any,
+    );
+    const input = { ...baseInput, includeEducation: true };
+
+    const result = await runReportPipeline(input, {
+      estatClient: mockEstatClient as any,
+    });
+
+    expect(result.hasEducationData).toBe(true);
+    expect(mergeEducationIntoScoringInput).toHaveBeenCalled();
+  });
+
+  it("教育統計取得失敗時にエラーを握りつぶして続行する", async () => {
+    const { buildEducationData } = await import("../../src/estat/education-data");
+    vi.mocked(buildEducationData).mockRejectedValue(new Error("API error"));
+    const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const input = { ...baseInput, includeEducation: true };
+
+    const result = await runReportPipeline(input, {
+      estatClient: mockEstatClient as any,
+    });
+
+    expect(result.hasEducationData).toBe(false);
+    expect(consoleSpy).toHaveBeenCalled();
+    consoleSpy.mockRestore();
   });
 
   it("不動産価格取得失敗時にエラーを握りつぶして続行する", async () => {

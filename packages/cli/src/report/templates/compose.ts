@@ -27,6 +27,8 @@ export interface ScoredReportModel {
   readonly hasCrimeData?: boolean;
   /** Phase 2b: 災害リスクデータが含まれるか */
   readonly hasDisasterData?: boolean;
+  /** Phase 3: 教育統計データが含まれるか */
+  readonly hasEducationData?: boolean;
 }
 
 /**

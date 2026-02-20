@@ -9,6 +9,7 @@ import {
   PRICE_INDICATORS,
   SAFETY_INDICATORS,
   DISASTER_INDICATORS,
+  EDUCATION_INDICATORS,
   ALL_INDICATORS,
 } from "../../src/scoring/presets";
 
@@ -115,10 +116,32 @@ describe("DISASTER_INDICATORS", () => {
   });
 });
 
+describe("EDUCATION_INDICATORS", () => {
+  it("Phase 3用の教育指標が定義されている", () => {
+    expect(EDUCATION_INDICATORS).toHaveLength(2);
+    const ids = EDUCATION_INDICATORS.map((d) => d.id);
+    expect(ids).toContain("elementary_schools_per_capita");
+    expect(ids).toContain("junior_high_schools_per_capita");
+  });
+
+  it("教育指標はhigher_betterかつeducationカテゴリ", () => {
+    for (const def of EDUCATION_INDICATORS) {
+      expect(def.direction).toBe("higher_better");
+      expect(def.category).toBe("education");
+    }
+  });
+
+  it("単位が校/万人", () => {
+    for (const def of EDUCATION_INDICATORS) {
+      expect(def.unit).toBe("校/万人");
+    }
+  });
+});
+
 describe("ALL_INDICATORS", () => {
   it("全フェーズの指標を統合している", () => {
     expect(ALL_INDICATORS.length).toBe(
-      POPULATION_INDICATORS.length + PRICE_INDICATORS.length + SAFETY_INDICATORS.length + DISASTER_INDICATORS.length,
+      POPULATION_INDICATORS.length + PRICE_INDICATORS.length + SAFETY_INDICATORS.length + DISASTER_INDICATORS.length + EDUCATION_INDICATORS.length,
     );
   });
 

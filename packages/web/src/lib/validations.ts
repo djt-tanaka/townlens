@@ -23,6 +23,7 @@ export const createReportSchema = z.object({
       includePrice: z.boolean().default(true),
       includeCrime: z.boolean().default(true),
       includeDisaster: z.boolean().default(true),
+      includeEducation: z.boolean().default(true),
     })
     .optional(),
 });

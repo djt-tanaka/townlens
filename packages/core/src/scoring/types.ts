@@ -4,7 +4,8 @@ export type IndicatorCategory =
   | "price"
   | "safety"
   | "disaster"
-  | "transport";
+  | "transport"
+  | "education";
 
 /** 指標のメタ定義 */
 export interface IndicatorDefinition {
