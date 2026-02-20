@@ -6,6 +6,7 @@
  * Phase 1: 不動産価格取得（buildPriceData → mergePriceIntoScoringInput）
  * Phase 2a: 犯罪統計取得（buildCrimeData → mergeCrimeIntoScoringInput）
  * Phase 2b: 災害リスク取得（buildDisasterData → mergeDisasterIntoScoringInput）
+ * Phase 3: 教育統計取得（buildEducationData → mergeEducationIntoScoringInput）
  * スコアリング: scoreCities()
  */
 
@@ -23,6 +24,8 @@ import { buildCrimeData } from "../estat/crime-data";
 import { mergeCrimeIntoScoringInput } from "../estat/merge-crime-scoring";
 import { buildDisasterData } from "../reinfo/disaster-data";
 import { mergeDisasterIntoScoringInput } from "../reinfo/merge-disaster-scoring";
+import { buildEducationData } from "../estat/education-data";
+import { mergeEducationIntoScoringInput } from "../estat/merge-education-scoring";
 import { scoreCities } from "../scoring";
 import { findPreset, POPULATION_INDICATORS, ALL_INDICATORS, CHILDCARE_FOCUSED } from "../scoring/presets";
 import { DATASETS } from "../config/datasets";
@@ -33,6 +36,7 @@ export interface PipelineInput {
   readonly includePrice: boolean;
   readonly includeCrime: boolean;
   readonly includeDisaster: boolean;
+  readonly includeEducation: boolean;
 }
 
 export interface PipelineResult {
@@ -42,6 +46,7 @@ export interface PipelineResult {
   readonly hasPriceData: boolean;
   readonly hasCrimeData: boolean;
   readonly hasDisasterData: boolean;
+  readonly hasEducationData: boolean;
   readonly preset: WeightPreset;
   readonly timeLabel: string;
   readonly cities: ReadonlyArray<string>;
@@ -84,6 +89,7 @@ export async function runReportPipeline(
   let hasPriceData = false;
   let hasCrimeData = false;
   let hasDisasterData = false;
+  let hasEducationData = false;
 
   const areaCodes = reportData.rows.map((r) => r.areaCode);
 
@@ -152,6 +158,31 @@ export async function runReportPipeline(
     }
   }
 
+  // Phase 3: 教育統計取得
+  if (input.includeEducation) {
+    try {
+      // 人口あたりの算出に使うため、Phase 0 の人口データを抽出
+      const populationMap = new Map<string, number>(
+        reportData.rows.map((r) => [r.areaCode, r.total]),
+      );
+      const educationData = await buildEducationData(
+        estatClient,
+        areaCodes,
+        { statsDataId: DATASETS.education.statsDataId },
+        populationMap,
+      );
+      if (educationData.size > 0) {
+        scoringInput = mergeEducationIntoScoringInput(scoringInput, educationData);
+        definitions = ALL_INDICATORS;
+        hasEducationData = true;
+      }
+    } catch (err) {
+      console.warn(
+        `教育統計データの取得に失敗しました: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }
+
   // スコアリング
   const results = scoreCities(scoringInput, definitions, preset);
 
@@ -162,6 +193,7 @@ export async function runReportPipeline(
     hasPriceData,
     hasCrimeData,
     hasDisasterData,
+    hasEducationData,
     preset,
     timeLabel: reportData.timeLabel,
     cities: [...input.cityNames],

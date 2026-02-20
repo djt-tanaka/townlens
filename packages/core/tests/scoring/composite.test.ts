@@ -25,11 +25,12 @@ const preset: WeightPreset = {
   name: "childcare",
   label: "子育て重視",
   weights: {
-    childcare: 0.6,
-    price: 0.2,
+    childcare: 0.5,
+    price: 0.15,
     safety: 0.1,
     disaster: 0.05,
     transport: 0.05,
+    education: 0.15,
   },
 };
 
@@ -41,10 +42,10 @@ describe("calculateCompositeScore", () => {
     ];
 
     const result = calculateCompositeScore(scores, definitions, preset);
-    // childcare(0.6) * 80 + price(0.2) * 60 = 48 + 12 = 60
-    // 有効重み合計 = 0.6 + 0.2 = 0.8
-    // 再正規化: 60 / 0.8 = 75
-    expect(result.score).toBeCloseTo(75, 0);
+    // childcare(0.5) * 80 + price(0.15) * 60 = 40 + 9 = 49
+    // 有効重み合計 = 0.5 + 0.15 = 0.65
+    // 再正規化: 49 / 0.65 ≈ 75.38
+    expect(result.score).toBeCloseTo(75.38, 0);
     expect(result.usedIndicatorCount).toBe(2);
     expect(result.totalIndicatorCount).toBe(2);
   });
@@ -55,7 +56,7 @@ describe("calculateCompositeScore", () => {
     ];
 
     const result = calculateCompositeScore(scores, definitions, preset);
-    // childcare(0.6) * 90 = 54, 有効重み = 0.6, 再正規化: 54 / 0.6 = 90
+    // childcare(0.5) * 90 = 45, 有効重み = 0.5, 再正規化: 45 / 0.5 = 90
     expect(result.score).toBeCloseTo(90, 0);
     expect(result.usedIndicatorCount).toBe(1);
   });
@@ -81,7 +82,7 @@ describe("calculateCompositeScore", () => {
     const zeroPreset: WeightPreset = {
       name: "zero",
       label: "全て0",
-      weights: { childcare: 0, price: 0, safety: 0, disaster: 0, transport: 0 },
+      weights: { childcare: 0, price: 0, safety: 0, disaster: 0, transport: 0, education: 0 },
     };
     const scores: ReadonlyArray<ChoiceScore> = [
       { indicatorId: "kids_ratio", score: 80 },

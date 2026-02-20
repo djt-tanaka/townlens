@@ -20,6 +20,8 @@ import {
   mergeCrimeIntoScoringInput,
   buildDisasterData,
   mergeDisasterIntoScoringInput,
+  buildEducationData,
+  mergeEducationIntoScoringInput,
   DATASETS,
 } from "@townlens/core";
 import type { CacheAdapter, EstatApiClient, PropertyType } from "@townlens/core";
@@ -231,6 +233,42 @@ async function buildScoredReport(
     }
   }
 
+  // 教育統計データ
+  let hasEducationData = false;
+
+  if (options.education) {
+    try {
+      const areaCodes = reportData.rows.map((r) => r.areaCode);
+      const populationMap = new Map<string, number>(
+        reportData.rows.map((r) => [r.areaCode, r.total]),
+      );
+      const educationData = await buildEducationData(
+        client, areaCodes,
+        { statsDataId: DATASETS.education.statsDataId },
+        populationMap,
+      );
+
+      if (educationData.size > 0) {
+        scoringInput = mergeEducationIntoScoringInput(scoringInput, educationData);
+        definitions = ALL_INDICATORS;
+        hasEducationData = true;
+        enrichedRows = enrichedRows.map((row) => {
+          const stats = educationData.get(row.areaCode);
+          if (!stats) return row;
+          return {
+            ...row,
+            elementarySchoolsPerCapita: stats.elementarySchoolsPerCapita,
+            juniorHighSchoolsPerCapita: stats.juniorHighSchoolsPerCapita,
+          };
+        });
+      } else {
+        console.warn("[warn] 教育統計データが0件でした");
+      }
+    } catch (err) {
+      console.warn(`[warn] 教育統計データの取得に失敗しました: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
   const results = scoreCities(scoringInput, definitions, preset);
 
   console.log(`プリセット: ${preset.label}`);
@@ -242,6 +280,9 @@ async function buildScoredReport(
   }
   if (hasDisasterData) {
     console.log("災害リスクデータ: 有効");
+  }
+  if (hasEducationData) {
+    console.log("教育統計データ: 有効");
   }
   for (const r of [...results].sort((a, b) => a.rank - b.rank)) {
     console.log(`  ${r.rank}位: ${r.cityName} (スコア: ${r.compositeScore.toFixed(1)}, 信頼度: ${r.confidence.level})`);
@@ -262,5 +303,6 @@ async function buildScoredReport(
     budgetLimit: hasPriceData ? budgetLimit : undefined,
     hasCrimeData,
     hasDisasterData,
+    hasEducationData,
   });
 }

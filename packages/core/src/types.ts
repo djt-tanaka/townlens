@@ -31,4 +31,8 @@ export interface ReportRow {
   readonly landslideRisk?: boolean | null;
   /** Phase 2b: 指定緊急避難場所数 */
   readonly evacuationSiteCount?: number | null;
+  /** Phase 3: 小学校数（人口1万人あたり） */
+  readonly elementarySchoolsPerCapita?: number | null;
+  /** Phase 3: 中学校数（人口1万人あたり） */
+  readonly juniorHighSchoolsPerCapita?: number | null;
 }

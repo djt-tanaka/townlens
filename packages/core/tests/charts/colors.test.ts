@@ -16,9 +16,9 @@ const definitions: ReadonlyArray<IndicatorDefinition> = [
 ];
 
 describe("CATEGORY_COLORS", () => {
-  it("5カテゴリ全てが定義されている", () => {
+  it("6カテゴリ全てが定義されている", () => {
     expect(Object.keys(CATEGORY_COLORS)).toEqual(
-      expect.arrayContaining(["childcare", "price", "safety", "disaster", "transport"]),
+      expect.arrayContaining(["childcare", "education", "price", "safety", "disaster", "transport"]),
     );
   });
 

@@ -47,6 +47,13 @@ export const CATEGORY_COLORS: Readonly<Record<IndicatorCategory, CategoryColor>>
     emoji: "\u{1F683}",
     label: "\u4ea4\u901a",
   },
+  education: {
+    primary: "#06b6d4",
+    light: "#cffafe",
+    dark: "#155e75",
+    emoji: "\u{1F393}",
+    label: "\u6559\u80b2",
+  },
 };
 
 /** 都市ごとのチャートカラー（最大7都市対応） */
