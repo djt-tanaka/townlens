@@ -48,11 +48,11 @@ export function getReportLimit(
 ): number | null {
   switch (plan) {
     case "free":
-      return 3;
+      return 100;
     case "standard":
     case "premium":
       return null; // 無制限
     default:
-      return 3;
+      return 100;
   }
 }

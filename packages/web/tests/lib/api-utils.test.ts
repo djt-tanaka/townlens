@@ -54,8 +54,8 @@ describe("getCurrentMonth", () => {
 });
 
 describe("getReportLimit", () => {
-  it("free プランは 3 件", () => {
-    expect(getReportLimit("free")).toBe(3);
+  it("free プランは 100 件", () => {
+    expect(getReportLimit("free")).toBe(100);
   });
 
   it("standard プランは無制限（null）", () => {
@@ -67,7 +67,7 @@ describe("getReportLimit", () => {
   });
 
   it("不明なプランは free と同じ上限", () => {
-    expect(getReportLimit("unknown")).toBe(3);
+    expect(getReportLimit("unknown")).toBe(100);
   });
 });
 
