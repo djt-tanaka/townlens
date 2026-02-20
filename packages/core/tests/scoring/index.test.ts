@@ -144,4 +144,69 @@ describe("scoreCities", () => {
     expect(shinjuku.notes.length).toBeGreaterThan(0);
     expect(shinjuku.notes[0]).toContain("欠損");
   });
+
+  it("全指標にnull値を持つ都市はstarRatingがundefinedになる", () => {
+    const citiesAllNull: ReadonlyArray<CityIndicators> = [
+      {
+        cityName: "テスト市",
+        areaCode: "99999",
+        indicators: [
+          { indicatorId: "population_total", rawValue: null, dataYear: "2020", sourceId: "estat" },
+          { indicatorId: "kids_ratio", rawValue: null, dataYear: "2020", sourceId: "estat" },
+        ],
+      },
+      {
+        cityName: "渋谷区",
+        areaCode: "13113",
+        indicators: [
+          { indicatorId: "population_total", rawValue: 227850, dataYear: "2020", sourceId: "estat" },
+          { indicatorId: "kids_ratio", rawValue: 9.7, dataYear: "2020", sourceId: "estat" },
+        ],
+      },
+    ];
+    const results = scoreCities(citiesAllNull, definitions, preset);
+    const testCity = results.find((r) => r.cityName === "テスト市")!;
+    expect(testCity.starRating).toBeUndefined();
+    expect(testCity.indicatorStars).toHaveLength(0);
+  });
+
+  it("スター評価と全国パーセンタイルが計算される", () => {
+    const results = scoreCities(makeCities(), definitions, preset);
+    for (const result of results) {
+      expect(result.starRating).toBeDefined();
+      expect(result.starRating).toBeGreaterThanOrEqual(1);
+      expect(result.starRating).toBeLessThanOrEqual(5);
+      expect(result.indicatorStars!.length).toBeGreaterThan(0);
+      for (const is of result.indicatorStars!) {
+        expect(is.stars).toBeGreaterThanOrEqual(1);
+        expect(is.stars).toBeLessThanOrEqual(5);
+        expect(is.nationalPercentile).toBeGreaterThanOrEqual(0);
+        expect(is.nationalPercentile).toBeLessThanOrEqual(100);
+      }
+    }
+  });
+
+  it("dataYearが空の場合でも信頼度が計算される", () => {
+    const citiesNoYear: ReadonlyArray<CityIndicators> = [
+      {
+        cityName: "テスト市",
+        areaCode: "99999",
+        indicators: [
+          { indicatorId: "population_total", rawValue: 100000, dataYear: "", sourceId: "estat" },
+        ],
+      },
+      {
+        cityName: "渋谷区",
+        areaCode: "13113",
+        indicators: [
+          { indicatorId: "population_total", rawValue: 200000, dataYear: "", sourceId: "estat" },
+        ],
+      },
+    ];
+    const results = scoreCities(citiesNoYear, definitions, preset);
+    for (const r of results) {
+      expect(r.confidence).toBeDefined();
+      expect(["high", "medium", "low"]).toContain(r.confidence.level);
+    }
+  });
 });

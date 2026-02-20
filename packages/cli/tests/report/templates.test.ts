@@ -6,7 +6,7 @@ import { renderDashboard } from "../../src/report/templates/dashboard";
 import { renderCityDetail } from "../../src/report/templates/city-detail";
 import { renderDisclaimer } from "../../src/report/templates/disclaimer";
 import { baseStyles } from "../../src/report/templates/styles";
-import type { CityScoreResult, IndicatorDefinition, WeightPreset } from "@townlens/core";
+import type { CityScoreResult, IndicatorDefinition, IndicatorStarRating, WeightPreset } from "@townlens/core";
 
 const definitions: ReadonlyArray<IndicatorDefinition> = [
   { id: "population_total", label: "総人口", unit: "人", direction: "higher_better", category: "childcare", precision: 0 },
@@ -139,6 +139,17 @@ describe("renderSummary", () => {
     expect(html).toContain("🥉");
     expect(html).toContain("4位");
   });
+
+  it("スター評価がある場合にスター表示を使用する", () => {
+    const starResults: ReadonlyArray<CityScoreResult> = [
+      { ...sampleResults[0], starRating: 4.2, rank: 1 },
+      { ...sampleResults[1], starRating: 3.5, rank: 2 },
+    ];
+    const html = renderSummary({ results: starResults, presetLabel: "子育て重視", definitions });
+    expect(html).toContain("★");
+    expect(html).toContain("4.2 / 5.0");
+    expect(html).toContain("3.5 / 5.0");
+  });
 });
 
 describe("renderDashboard", () => {
@@ -163,6 +174,19 @@ describe("renderDashboard", () => {
     ];
     const html = renderDashboard({ results: resultsNoBaseline, definitions });
     expect(html).not.toContain("パーセンタイル:");
+  });
+
+  it("スター評価がある場合にスター情報を表示する", () => {
+    const indicatorStars: ReadonlyArray<IndicatorStarRating> = [
+      { indicatorId: "population_total", stars: 4, nationalPercentile: 75 },
+      { indicatorId: "kids_ratio", stars: 3, nationalPercentile: 50 },
+    ];
+    const starResults: ReadonlyArray<CityScoreResult> = [
+      { ...sampleResults[0], starRating: 3.5, indicatorStars },
+    ];
+    const html = renderDashboard({ results: starResults, definitions });
+    expect(html).toContain("★");
+    expect(html).toContain("新宿区");
   });
 });
 
@@ -259,6 +283,50 @@ describe("renderCityDetail", () => {
     });
     expect(html).toContain("65.3%");
     expect(html).toContain("予算内取引割合");
+  });
+
+  it("スター評価がある場合にスター表示を使用する", () => {
+    const indicatorStars: ReadonlyArray<IndicatorStarRating> = [
+      { indicatorId: "population_total", stars: 4, nationalPercentile: 78 },
+      { indicatorId: "kids_ratio", stars: 3, nationalPercentile: 52 },
+    ];
+    const starResult: CityScoreResult = {
+      ...sampleResults[0],
+      starRating: 3.8,
+      indicatorStars,
+    };
+    const html = renderCityDetail({
+      result: starResult,
+      definition: definitions,
+      rawRow: rawRows[0],
+      totalCities: 2,
+    });
+    expect(html).toContain("★");
+    expect(html).toContain("全国上位 78%");
+    expect(html).toContain("全国上位 52%");
+    expect(html).toContain("3.8");
+  });
+
+  it("カテゴリ平均がスター評価で表示される", () => {
+    const indicatorStars: ReadonlyArray<IndicatorStarRating> = [
+      { indicatorId: "population_total", stars: 5, nationalPercentile: 90 },
+      { indicatorId: "kids_ratio", stars: 4, nationalPercentile: 70 },
+    ];
+    const starResult: CityScoreResult = {
+      ...sampleResults[0],
+      starRating: 4.5,
+      indicatorStars,
+    };
+    const html = renderCityDetail({
+      result: starResult,
+      definition: definitions,
+      rawRow: rawRows[0],
+      totalCities: 2,
+    });
+    // カテゴリ平均のスター表示
+    expect(html).toContain("★");
+    // スター評価がある場合は「/ 5.0」が表示される
+    expect(html).toContain("/ 5.0");
   });
 
   it("価格指標を含む場合にQ25-Q75レンジを表示する", () => {

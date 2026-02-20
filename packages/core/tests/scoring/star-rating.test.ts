@@ -89,8 +89,16 @@ describe("starColor", () => {
     expect(starColor(5)).toBe("#10b981");
   });
 
+  it("4つ星はライトグリーン系", () => {
+    expect(starColor(4)).toBe("#22c55e");
+  });
+
   it("3つ星はアンバー系", () => {
     expect(starColor(3)).toBe("#f59e0b");
+  });
+
+  it("2つ星はオレンジ系", () => {
+    expect(starColor(2)).toBe("#f97316");
   });
 
   it("1つ星はローズ系", () => {
