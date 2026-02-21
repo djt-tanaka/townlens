@@ -9,7 +9,12 @@ import {
   toScoringInput,
   scoreCities,
   POPULATION_INDICATORS,
-  ALL_INDICATORS,
+  PRICE_INDICATORS,
+  SAFETY_INDICATORS,
+  DISASTER_INDICATORS,
+  EDUCATION_INDICATORS,
+  TRANSPORT_INDICATORS,
+  HEALTHCARE_INDICATORS,
   findPreset,
   CHILDCARE_FOCUSED,
   ReinfoApiClient,
@@ -144,7 +149,7 @@ async function buildScoredReport(
 
         if (priceData.size > 0) {
           scoringInput = mergePriceIntoScoringInput(scoringInput, priceData);
-          definitions = ALL_INDICATORS;
+          definitions = [...definitions, ...PRICE_INDICATORS];
           hasPriceData = true;
           enrichedRows = reportData.rows.map((row) => {
             const stats = priceData.get(row.areaCode);
@@ -184,7 +189,7 @@ async function buildScoredReport(
 
         if (crimeData.size > 0) {
           scoringInput = mergeCrimeIntoScoringInput(scoringInput, crimeData);
-          definitions = ALL_INDICATORS;
+          definitions = [...definitions, ...SAFETY_INDICATORS];
           hasCrimeData = true;
           enrichedRows = enrichedRows.map((row) => {
             const stats = crimeData.get(row.areaCode);
@@ -219,7 +224,7 @@ async function buildScoredReport(
 
         if (disasterData.size > 0) {
           scoringInput = mergeDisasterIntoScoringInput(scoringInput, disasterData);
-          definitions = ALL_INDICATORS;
+          definitions = [...definitions, ...DISASTER_INDICATORS];
           hasDisasterData = true;
           enrichedRows = enrichedRows.map((row) => {
             const data = disasterData.get(row.areaCode);
@@ -257,7 +262,7 @@ async function buildScoredReport(
 
       if (educationData.size > 0) {
         scoringInput = mergeEducationIntoScoringInput(scoringInput, educationData);
-        definitions = ALL_INDICATORS;
+        definitions = [...definitions, ...EDUCATION_INDICATORS];
         hasEducationData = true;
         enrichedRows = enrichedRows.map((row) => {
           const stats = educationData.get(row.areaCode);
@@ -293,7 +298,7 @@ async function buildScoredReport(
 
       if (transportData.size > 0) {
         scoringInput = mergeTransportIntoScoringInput(scoringInput, transportData);
-        definitions = ALL_INDICATORS;
+        definitions = [...definitions, ...TRANSPORT_INDICATORS];
         hasTransportData = true;
         enrichedRows = enrichedRows.map((row) => {
           const stats = transportData.get(row.areaCode);
@@ -329,7 +334,7 @@ async function buildScoredReport(
 
       if (healthcareData.size > 0) {
         scoringInput = mergeHealthcareIntoScoringInput(scoringInput, healthcareData);
-        definitions = ALL_INDICATORS;
+        definitions = [...definitions, ...HEALTHCARE_INDICATORS];
         hasHealthcareData = true;
         enrichedRows = enrichedRows.map((row) => {
           const stats = healthcareData.get(row.areaCode);

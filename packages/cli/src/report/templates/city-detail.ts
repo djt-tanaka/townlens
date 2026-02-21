@@ -47,6 +47,13 @@ function getRawValue(
       return (rawRow.floodRisk ? 1 : 0) + (rawRow.landslideRisk ? 1 : 0);
     },
     evacuation_sites: () => rawRow.evacuationSiteCount,
+    elementary_schools_per_capita: () => rawRow.elementarySchoolsPerCapita,
+    junior_high_schools_per_capita: () => rawRow.juniorHighSchoolsPerCapita,
+    station_count_per_capita: () => rawRow.stationCountPerCapita,
+    terminal_access_km: () => rawRow.terminalAccessKm,
+    hospitals_per_capita: () => rawRow.hospitalsPerCapita,
+    clinics_per_capita: () => rawRow.clinicsPerCapita,
+    pediatrics_per_capita: () => rawRow.pediatricsPerCapita,
   };
   return mapping[indicatorId]?.() ?? undefined;
 }

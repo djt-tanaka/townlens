@@ -39,7 +39,17 @@ import { mergeTransportIntoScoringInput } from "../estat/merge-transport-scoring
 import { buildHealthcareData } from "../estat/healthcare-data";
 import { mergeHealthcareIntoScoringInput } from "../estat/merge-healthcare-scoring";
 import { scoreCities } from "../scoring";
-import { findPreset, POPULATION_INDICATORS, ALL_INDICATORS, CHILDCARE_FOCUSED } from "../scoring/presets";
+import {
+  findPreset,
+  POPULATION_INDICATORS,
+  PRICE_INDICATORS,
+  SAFETY_INDICATORS,
+  DISASTER_INDICATORS,
+  EDUCATION_INDICATORS,
+  TRANSPORT_INDICATORS,
+  HEALTHCARE_INDICATORS,
+  CHILDCARE_FOCUSED,
+} from "../scoring/presets";
 import { DATASETS } from "../config/datasets";
 
 const MAN_YEN = 10000;
@@ -205,7 +215,7 @@ export async function runReportPipeline(
       );
       if (priceData.size > 0) {
         scoringInput = mergePriceIntoScoringInput(scoringInput, priceData);
-        definitions = ALL_INDICATORS;
+        definitions = [...definitions, ...PRICE_INDICATORS];
         hasPriceData = true;
         priceDataMap = priceData;
       }
@@ -227,7 +237,7 @@ export async function runReportPipeline(
       }, populationMap);
       if (crimeData.size > 0) {
         scoringInput = mergeCrimeIntoScoringInput(scoringInput, crimeData);
-        definitions = ALL_INDICATORS;
+        definitions = [...definitions, ...SAFETY_INDICATORS];
         hasCrimeData = true;
         crimeDataMap = crimeData;
       }
@@ -254,7 +264,7 @@ export async function runReportPipeline(
           scoringInput,
           disasterData,
         );
-        definitions = ALL_INDICATORS;
+        definitions = [...definitions, ...DISASTER_INDICATORS];
         hasDisasterData = true;
         disasterDataMap = disasterData;
       }
@@ -279,7 +289,7 @@ export async function runReportPipeline(
       );
       if (educationData.size > 0) {
         scoringInput = mergeEducationIntoScoringInput(scoringInput, educationData);
-        definitions = ALL_INDICATORS;
+        definitions = [...definitions, ...EDUCATION_INDICATORS];
         hasEducationData = true;
         educationDataMap = educationData;
       }
@@ -304,7 +314,7 @@ export async function runReportPipeline(
       );
       if (transportData.size > 0) {
         scoringInput = mergeTransportIntoScoringInput(scoringInput, transportData);
-        definitions = ALL_INDICATORS;
+        definitions = [...definitions, ...TRANSPORT_INDICATORS];
         hasTransportData = true;
         transportDataMap = transportData;
       }
@@ -329,7 +339,7 @@ export async function runReportPipeline(
       );
       if (healthcareData.size > 0) {
         scoringInput = mergeHealthcareIntoScoringInput(scoringInput, healthcareData);
-        definitions = ALL_INDICATORS;
+        definitions = [...definitions, ...HEALTHCARE_INDICATORS];
         hasHealthcareData = true;
         healthcareDataMap = healthcareData;
       }
