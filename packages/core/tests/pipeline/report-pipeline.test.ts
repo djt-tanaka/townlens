@@ -79,10 +79,23 @@ vi.mock("../../src/scoring/presets", () => {
   return {
     findPreset: vi.fn().mockReturnValue(preset),
     POPULATION_INDICATORS: [],
-    ALL_INDICATORS: [],
+    PRICE_INDICATORS: [],
+    SAFETY_INDICATORS: [],
+    DISASTER_INDICATORS: [],
+    EDUCATION_INDICATORS: [],
+    TRANSPORT_INDICATORS: [],
+    HEALTHCARE_INDICATORS: [],
     CHILDCARE_FOCUSED: preset,
   };
 });
+
+vi.mock("../../src/estat/healthcare-data", () => ({
+  buildHealthcareData: vi.fn().mockResolvedValue(new Map()),
+}));
+
+vi.mock("../../src/estat/merge-healthcare-scoring", () => ({
+  mergeHealthcareIntoScoringInput: vi.fn().mockImplementation((input) => input),
+}));
 
 vi.mock("../../src/config/datasets", () => ({
   DATASETS: {
@@ -90,6 +103,7 @@ vi.mock("../../src/config/datasets", () => ({
     crime: { statsDataId: "0003421913" },
     education: { statsDataId: "0000020205" },
     transport: { statsDataId: "0000020203" },
+    healthcare: { statsDataId: "0000020207" },
   },
 }));
 
@@ -102,6 +116,7 @@ describe("runReportPipeline", () => {
     includeDisaster: false,
     includeEducation: false,
     includeTransport: false,
+    includeHealthcare: false,
   };
 
   const mockEstatClient = {
@@ -125,6 +140,7 @@ describe("runReportPipeline", () => {
     expect(result.hasDisasterData).toBe(false);
     expect(result.hasEducationData).toBe(false);
     expect(result.hasTransportData).toBe(false);
+    expect(result.hasHealthcareData).toBe(false);
     expect(result.timeLabel).toBe("2024年");
   });
 
