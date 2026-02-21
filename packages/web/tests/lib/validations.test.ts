@@ -4,6 +4,7 @@ import {
   createReportSchema,
   reportIdSchema,
   checkoutSchema,
+  rankingPresetParamSchema,
 } from "@/lib/validations";
 
 describe("citySearchSchema", () => {
@@ -145,6 +146,30 @@ describe("checkoutSchema", () => {
 
   it("priceId フィールドが欠けている場合を拒否する", () => {
     const result = checkoutSchema.safeParse({});
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("rankingPresetParamSchema", () => {
+  it("有効なプリセットを受け入れる", () => {
+    for (const preset of ["childcare", "price", "safety"]) {
+      const result = rankingPresetParamSchema.safeParse({ preset });
+      expect(result.success).toBe(true);
+    }
+  });
+
+  it("無効なプリセットを拒否する", () => {
+    const result = rankingPresetParamSchema.safeParse({ preset: "invalid" });
+    expect(result.success).toBe(false);
+  });
+
+  it("空文字列を拒否する", () => {
+    const result = rankingPresetParamSchema.safeParse({ preset: "" });
+    expect(result.success).toBe(false);
+  });
+
+  it("preset フィールドが欠けている場合を拒否する", () => {
+    const result = rankingPresetParamSchema.safeParse({});
     expect(result.success).toBe(false);
   });
 });
