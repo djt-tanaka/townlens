@@ -27,10 +27,15 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Generate ranking data
-        run: pnpm --filter @townlens/web ranking:generate
+      - name: Pull env from Vercel
+        run: npx vercel env pull packages/web/.env.local --environment=production --yes --token=${{ secrets.VERCEL_TOKEN }}
         env:
-          ESTAT_APP_ID: ${{ secrets.ESTAT_APP_ID }}
-          REINFOLIB_API_KEY: ${{ secrets.REINFOLIB_API_KEY }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+
+      - name: Generate ranking data
+        run: |
+          set -a
+          source packages/web/.env.local
+          set +a
+          pnpm --filter @townlens/web ranking:generate
