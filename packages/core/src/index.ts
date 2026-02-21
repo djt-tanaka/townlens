@@ -73,6 +73,7 @@ export {
   resolveAreaClass,
   buildAreaEntries,
   resolveCities,
+  isMunicipalityCode,
   resolveLatestTime,
   resolveTimeCandidates,
   resolveAgeSelection,

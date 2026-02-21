@@ -47,6 +47,19 @@ export function buildAreaEntries(areaClass: ClassObj): AreaEntry[] {
   }));
 }
 
+/**
+ * e-Stat 地域コードが市区町村レベルかどうかを判定する。
+ *
+ * 全国地方公共団体コード（5桁）の慣例:
+ * - "00000"      → 全国（除外）
+ * - "XX000"      → 都道府県（下3桁が "000"）（除外）
+ * - それ以外     → 市区町村（対象）
+ */
+export function isMunicipalityCode(code: string): boolean {
+  if (code.length < 5) return false;
+  return code.slice(-3) !== "000";
+}
+
 const PREFECTURE_PREFIX = /^(北海道|東京都|京都府|大阪府|.{2,3}県)/;
 
 function stripPrefecture(input: string): string {
