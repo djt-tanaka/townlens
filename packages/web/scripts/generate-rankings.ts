@@ -19,6 +19,7 @@ import {
   extractClassObjects,
   resolveAreaClass,
   buildAreaEntries,
+  isMunicipalityCode,
   buildReportData,
   toScoringInput,
   buildPriceData,
@@ -118,8 +119,10 @@ async function main(): Promise<void> {
   const metaInfo = await estatClient.getMetaInfo(DATASETS.population.statsDataId);
   const classObjs = extractClassObjects(metaInfo);
   const areaClass = resolveAreaClass(classObjs);
-  const allEntries = buildAreaEntries(areaClass);
-  console.log(`${allEntries.length} 自治体を検出`);
+  const rawEntries = buildAreaEntries(areaClass);
+  // 都道府県・全国レベルを除外し、市区町村のみに絞り込む
+  const allEntries = rawEntries.filter((e) => isMunicipalityCode(e.code));
+  console.log(`${rawEntries.length} エリアから ${allEntries.length} 市区町村を抽出（都道府県・全国を除外）`);
 
   // チャンクに分割して処理（エリアコード付きで分割し、名前解決をバイパス）
   const entryChunks = chunk(allEntries, CHUNK_SIZE);

@@ -4,6 +4,7 @@ import {
   resolveAreaClass,
   buildAreaEntries,
   resolveCities,
+  isMunicipalityCode,
   resolveLatestTime,
   resolveAgeSelection,
   extractDataValues,
@@ -114,6 +115,33 @@ describe("buildAreaEntries", () => {
     const entries = buildAreaEntries(areaClass);
     expect(entries).toHaveLength(4);
     expect(entries[0]).toEqual({ code: "13104", name: "新宿区" });
+  });
+});
+
+describe("isMunicipalityCode", () => {
+  it("市区町村コードはtrueを返す", () => {
+    expect(isMunicipalityCode("13104")).toBe(true); // 新宿区
+    expect(isMunicipalityCode("14100")).toBe(true); // 横浜市
+    expect(isMunicipalityCode("14101")).toBe(true); // 横浜市鶴見区
+    expect(isMunicipalityCode("01100")).toBe(true); // 札幌市
+    expect(isMunicipalityCode("22137")).toBe(true); // 浜松市東区
+  });
+
+  it("都道府県コード（下3桁が000）はfalseを返す", () => {
+    expect(isMunicipalityCode("01000")).toBe(false); // 北海道
+    expect(isMunicipalityCode("13000")).toBe(false); // 東京都
+    expect(isMunicipalityCode("25000")).toBe(false); // 滋賀県
+    expect(isMunicipalityCode("47000")).toBe(false); // 沖縄県
+  });
+
+  it("全国コードはfalseを返す", () => {
+    expect(isMunicipalityCode("00000")).toBe(false);
+  });
+
+  it("5桁未満のコードはfalseを返す", () => {
+    expect(isMunicipalityCode("0000")).toBe(false);
+    expect(isMunicipalityCode("13")).toBe(false);
+    expect(isMunicipalityCode("")).toBe(false);
   });
 });
 
