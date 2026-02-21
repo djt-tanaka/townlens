@@ -6,8 +6,8 @@ import type { RegionalBlock } from "@/lib/prefecture-data";
 
 interface RegionBlockGridProps {
   readonly block: RegionalBlock;
-  /** 都道府県名 → 都市数のマップ */
-  readonly cityCounts: ReadonlyMap<string, number>;
+  /** 都道府県名 → 都市数のレコード */
+  readonly cityCounts: Readonly<Record<string, number>>;
 }
 
 /** 地方ブロック別の都道府県カードグリッド */
@@ -17,7 +17,7 @@ export function RegionBlockGrid({ block, cityCounts }: RegionBlockGridProps) {
       <h2 className="mb-4 text-xl font-bold">{block.name}</h2>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {block.prefectures.map((pref) => {
-          const cityCount = cityCounts.get(pref.name) ?? 0;
+          const cityCount = cityCounts[pref.name] ?? 0;
           return (
             <Link
               key={pref.code}

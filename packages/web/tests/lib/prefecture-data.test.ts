@@ -122,17 +122,17 @@ describe("fetchAllMunicipalityCounts", () => {
     mockFrom.mockReturnValue(createQueryChain({ data: mockData, error: null }));
 
     const counts = await fetchAllMunicipalityCounts();
-    expect(counts.get("東京都")).toBe(2);
-    expect(counts.get("大阪府")).toBe(1);
+    expect(counts["東京都"]).toBe(2);
+    expect(counts["大阪府"]).toBe(1);
   });
 
-  it("Supabase エラー時に空 Map を返す", async () => {
+  it("Supabase エラー時に空オブジェクトを返す", async () => {
     mockFrom.mockReturnValue(
       createQueryChain({ data: null, error: { message: "test error" } }),
     );
 
     const counts = await fetchAllMunicipalityCounts();
-    expect(counts.size).toBe(0);
+    expect(Object.keys(counts)).toHaveLength(0);
   });
 });
 

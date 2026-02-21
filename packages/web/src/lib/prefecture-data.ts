@@ -118,9 +118,12 @@ export const REGIONAL_BLOCKS: ReadonlyArray<RegionalBlock> = [
 /**
  * 全都道府県の都市数を一括取得する（municipalities テーブルから）。
  * 都道府県一覧ページでバッジに表示するためのもの。
+ *
+ * 注意: unstable_cache は内部的に JSON シリアライゼーションを使うため、
+ * Map は正しくシリアライズされない。プレーンオブジェクトを返す。
  */
 async function fetchAllMunicipalityCountsInternal(): Promise<
-  ReadonlyMap<string, number>
+  Readonly<Record<string, number>>
 > {
   const supabase = createAdminClient();
 
@@ -130,14 +133,13 @@ async function fetchAllMunicipalityCountsInternal(): Promise<
 
   if (error) {
     console.error(`municipalities 取得エラー: ${error.message}`);
-    return new Map();
+    return {};
   }
 
   // 都道府県名ごとにカウント
-  const counts = new Map<string, number>();
+  const counts: Record<string, number> = {};
   for (const row of data ?? []) {
-    const current = counts.get(row.prefecture) ?? 0;
-    counts.set(row.prefecture, current + 1);
+    counts[row.prefecture] = (counts[row.prefecture] ?? 0) + 1;
   }
   return counts;
 }
@@ -147,7 +149,7 @@ export const fetchAllMunicipalityCounts = unstable_cache(
   fetchAllMunicipalityCountsInternal,
   ["municipality-counts"],
   { revalidate: CACHE_REVALIDATE },
-);
+) as () => Promise<Readonly<Record<string, number>>>;
 
 /** 都道府県名に属する municipalities テーブル登録済み都市を取得 */
 async function getCityCodesForPrefectureInternal(
