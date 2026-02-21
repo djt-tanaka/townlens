@@ -8,7 +8,10 @@ export function Footer() {
           <p className="text-sm text-muted-foreground">
             TownLens - 政府統計ベースの街えらび比較ツール
           </p>
-          <nav className="flex gap-4 text-sm text-muted-foreground">
+          <nav className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
+            <Link href="/prefecture" className="hover:text-foreground">
+              都道府県
+            </Link>
             <Link href="/ranking" className="hover:text-foreground">
               ランキング
             </Link>
