@@ -29,9 +29,8 @@ export function LoginForm() {
         ? await supabase.auth.signInWithPassword({ email, password })
         : await supabase.auth.signUp({ email, password });
 
-    setLoading(false);
-
     if (authError) {
+      setLoading(false);
       setError(
         mode === "login"
           ? "メールアドレスまたはパスワードが正しくありません。"
@@ -41,13 +40,14 @@ export function LoginForm() {
     }
 
     if (mode === "signup") {
+      setLoading(false);
       setError(null);
       setMode("login");
-      // サインアップ成功メッセージを表示
       setError("確認メールを送信しました。メールを確認してからログインしてください。");
       return;
     }
 
+    // ログイン成功時はローディング維持のまま遷移（アンマウントで解放）
     router.push("/");
     router.refresh();
   }
