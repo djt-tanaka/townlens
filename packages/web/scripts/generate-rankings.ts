@@ -39,7 +39,7 @@ import type { Database } from "../src/types/database";
 
 // --- 設定 ---
 
-const CHUNK_SIZE = 10;
+const CHUNK_SIZE = 50;
 
 // --- 環境変数バリデーション ---
 
@@ -157,62 +157,42 @@ async function main(): Promise<void> {
 
       const areaCodes = reportData.rows.map((r) => r.areaCode);
 
-      // Phase 1: 不動産価格
-      try {
-        const priceYear = String(new Date().getFullYear() - 1);
-        const priceData = await buildPriceData(reinfoClient, areaCodes, priceYear);
-        if (priceData.size > 0) {
-          scoringInput = mergePriceIntoScoringInput(scoringInput, priceData);
-        }
-        console.log(`  Phase 1 (不動産): ${priceData.size} 件取得`);
-      } catch (err) {
-        console.warn(`  Phase 1 (不動産) スキップ: ${err instanceof Error ? err.message : String(err)}`);
-      }
+      // Phase 1〜3 を並列実行（各Phaseは Phase 0 の結果のみに依存し、互いに独立）
+      const populationMap = new Map(reportData.rows.map((r) => [r.areaCode, r.total]));
+      const cityNameMap = new Map(reportData.rows.map((r) => [r.areaCode, r.cityResolved]));
+      const priceYear = String(new Date().getFullYear() - 1);
 
-      // Phase 2a: 犯罪統計
-      try {
-        const populationMap = new Map(reportData.rows.map((r) => [r.areaCode, r.total]));
-        const crimeData = await buildCrimeData(
-          estatClient,
-          areaCodes,
-          { statsDataId: DATASETS.crime.statsDataId },
-          populationMap,
-        );
-        if (crimeData.size > 0) {
-          scoringInput = mergeCrimeIntoScoringInput(scoringInput, crimeData);
-        }
-        console.log(`  Phase 2a (犯罪): ${crimeData.size} 件取得`);
-      } catch (err) {
-        console.warn(`  Phase 2a (犯罪) スキップ: ${err instanceof Error ? err.message : String(err)}`);
-      }
+      const [priceResult, crimeResult, disasterResult, educationResult] = await Promise.all([
+        // Phase 1: 不動産価格
+        buildPriceData(reinfoClient, areaCodes, priceYear)
+          .then((data) => { console.log(`  Phase 1 (不動産): ${data.size} 件取得`); return data; })
+          .catch((err) => { console.warn(`  Phase 1 (不動産) スキップ: ${err instanceof Error ? err.message : String(err)}`); return null; }),
+        // Phase 2a: 犯罪統計
+        buildCrimeData(estatClient, areaCodes, { statsDataId: DATASETS.crime.statsDataId }, populationMap)
+          .then((data) => { console.log(`  Phase 2a (犯罪): ${data.size} 件取得`); return data; })
+          .catch((err) => { console.warn(`  Phase 2a (犯罪) スキップ: ${err instanceof Error ? err.message : String(err)}`); return null; }),
+        // Phase 2b: 災害リスク
+        buildDisasterData(reinfoClient, areaCodes, cityNameMap)
+          .then((data) => { console.log(`  Phase 2b (災害): ${data.size} 件取得`); return data; })
+          .catch((err) => { console.warn(`  Phase 2b (災害) スキップ: ${err instanceof Error ? err.message : String(err)}`); return null; }),
+        // Phase 3: 教育統計
+        buildEducationData(estatClient, areaCodes, { statsDataId: DATASETS.education.statsDataId }, populationMap)
+          .then((data) => { console.log(`  Phase 3 (教育): ${data.size} 件取得`); return data; })
+          .catch((err) => { console.warn(`  Phase 3 (教育) スキップ: ${err instanceof Error ? err.message : String(err)}`); return null; }),
+      ]);
 
-      // Phase 2b: 災害リスク
-      try {
-        const cityNameMap = new Map(reportData.rows.map((r) => [r.areaCode, r.cityResolved]));
-        const disasterData = await buildDisasterData(reinfoClient, areaCodes, cityNameMap);
-        if (disasterData.size > 0) {
-          scoringInput = mergeDisasterIntoScoringInput(scoringInput, disasterData);
-        }
-        console.log(`  Phase 2b (災害): ${disasterData.size} 件取得`);
-      } catch (err) {
-        console.warn(`  Phase 2b (災害) スキップ: ${err instanceof Error ? err.message : String(err)}`);
+      // 結果をマージ
+      if (priceResult && priceResult.size > 0) {
+        scoringInput = mergePriceIntoScoringInput(scoringInput, priceResult);
       }
-
-      // Phase 3: 教育統計
-      try {
-        const populationMap = new Map(reportData.rows.map((r) => [r.areaCode, r.total]));
-        const educationData = await buildEducationData(
-          estatClient,
-          areaCodes,
-          { statsDataId: DATASETS.education.statsDataId },
-          populationMap,
-        );
-        if (educationData.size > 0) {
-          scoringInput = mergeEducationIntoScoringInput(scoringInput, educationData);
-        }
-        console.log(`  Phase 3 (教育): ${educationData.size} 件取得`);
-      } catch (err) {
-        console.warn(`  Phase 3 (教育) スキップ: ${err instanceof Error ? err.message : String(err)}`);
+      if (crimeResult && crimeResult.size > 0) {
+        scoringInput = mergeCrimeIntoScoringInput(scoringInput, crimeResult);
+      }
+      if (disasterResult && disasterResult.size > 0) {
+        scoringInput = mergeDisasterIntoScoringInput(scoringInput, disasterResult);
+      }
+      if (educationResult && educationResult.size > 0) {
+        scoringInput = mergeEducationIntoScoringInput(scoringInput, educationResult);
       }
 
       // CityIndicators と人口を蓄積
