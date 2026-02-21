@@ -40,8 +40,8 @@ jobs:
           set +a
           pnpm --filter @townlens/web ranking:generate
 
-      - name: Redeploy to clear ISR cache
-        run: npx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Purge ISR cache
+        run: npx vercel cache purge --yes --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
