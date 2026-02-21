@@ -52,6 +52,8 @@ export default defineConfig({
         "src/components/layout/**/*.tsx",
         "src/components/dashboard/*.tsx",
         "src/components/city/**/*.tsx",
+        // 都道府県ページ表示コンポーネント（ロジックなし、E2E で検証）
+        "src/components/prefecture/**/*.tsx",
         "src/components/report/narrative-block.tsx",
         "src/components/report/disclaimer.tsx",
         "src/components/report/score-summary.tsx",
