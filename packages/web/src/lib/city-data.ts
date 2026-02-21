@@ -6,6 +6,7 @@
  * 単一都市向けに scoreSingleCity() で全国ベースライン基準評価のみ算出する。
  */
 
+import { unstable_cache } from "next/cache";
 import type {
   AreaEntry,
   CityIndicators,
@@ -86,8 +87,11 @@ export async function findCityByName(
   return entries.find((e) => e.name === cityName) ?? null;
 }
 
-/** 単一都市のデータを取得して全プリセットでスコアリングする */
-export async function fetchCityPageData(
+/** ISR 再生成時のキャッシュ TTL（24時間） */
+const CACHE_REVALIDATE = 86400;
+
+/** 単一都市のデータを取得して全プリセットでスコアリングする（内部実装） */
+async function fetchCityPageDataInternal(
   cityName: string,
 ): Promise<CityPageData | null> {
   const estatClient = createEstatClient();
@@ -284,3 +288,13 @@ export async function fetchCityPageData(
     rawData,
   };
 }
+
+/**
+ * 単一都市のデータを取得して全プリセットでスコアリングする。
+ * unstable_cache でサーバーサイドキャッシュし、ISR 再生成時も外部 API を毎回叩かない。
+ */
+export const fetchCityPageData = unstable_cache(
+  fetchCityPageDataInternal,
+  ["city-page-data"],
+  { revalidate: CACHE_REVALIDATE },
+);

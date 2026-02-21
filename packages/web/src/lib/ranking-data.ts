@@ -5,9 +5,13 @@
  * 書き込み（バッチ生成）は scripts/generate-rankings.ts で行う。
  */
 
+import { unstable_cache } from "next/cache";
 import type { Json } from "@/types/database";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { RANKING_PRESET_META } from "./ranking-presets";
+
+/** ISR 再生成時のキャッシュ TTL（24時間） */
+const CACHE_REVALIDATE = 86400;
 
 /** ランキング1行分の表示データ */
 export interface RankingEntry {
@@ -40,8 +44,8 @@ function toRankingEntry(row: {
   };
 }
 
-/** DB からプリセット別ランキングを取得（プリセットページ用） */
-export async function fetchRankingByPreset(
+/** DB からプリセット別ランキングを取得（内部実装） */
+async function fetchRankingByPresetInternal(
   preset: string,
   limit = 30,
 ): Promise<ReadonlyArray<RankingEntry>> {
@@ -62,6 +66,16 @@ export async function fetchRankingByPreset(
 
   return (data ?? []).map(toRankingEntry);
 }
+
+/**
+ * DB からプリセット別ランキングを取得（プリセットページ用）。
+ * unstable_cache でサーバーサイドキャッシュ。
+ */
+export const fetchRankingByPreset = unstable_cache(
+  fetchRankingByPresetInternal,
+  ["ranking-by-preset"],
+  { revalidate: CACHE_REVALIDATE },
+);
 
 /** DB から全プリセットの TOP N を取得（一覧ページ用） */
 export async function fetchAllPresetRankings(

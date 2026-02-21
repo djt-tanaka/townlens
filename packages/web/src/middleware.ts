@@ -7,7 +7,12 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // 静的ファイル・画像・OGPエンドポイントを除外し、それ以外の全ルートでセッションリフレッシュを実行
-    "/((?!_next/static|_next/image|favicon.ico|api/og|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // 認証が必要なルートのみでセッションリフレッシュを実行。
+    // ISR 公開ページ（/, /prefecture, /city, /ranking, /pricing）は除外し、
+    // CDN キャッシュが Set-Cookie で無効化されるのを防ぐ。
+    "/dashboard/:path*",
+    "/report/:path*",
+    "/auth/:path*",
+    "/api/((?!og).*)",
   ],
 };
