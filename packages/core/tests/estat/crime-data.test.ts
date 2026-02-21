@@ -300,4 +300,116 @@ describe("buildCrimeData", () => {
       }),
     );
   });
+
+  it("tab 内に実数と千人当たりの両方の指標がある場合、千人当たりを優先する", async () => {
+    // 社会・人口統計体系では tab に実数指標と千人当たり指標が混在する場合がある
+    const mixedTabMetaInfo = {
+      CLASS_INF: {
+        CLASS_OBJ: [
+          {
+            "@id": "tab",
+            "@name": "表章項目",
+            CLASS: [
+              { "@code": "K3101", "@name": "K3101_交通事故発生件数" },
+              { "@code": "K4201", "@name": "K4201_刑法犯認知件数" },
+              { "@code": "K6101", "@name": "K6101_刑法犯認知件数（人口千人当たり）" },
+              { "@code": "K6104", "@name": "K6104_窃盗犯認知件数（人口千人当たり）" },
+            ],
+          },
+          {
+            "@id": "cat01",
+            "@name": "K安全 分類",
+            CLASS: [
+              { "@code": "R3110", "@name": "実数" },
+            ],
+          },
+          {
+            "@id": "area",
+            "@name": "地域事項",
+            CLASS: [
+              { "@code": "23212", "@name": "安城市" },
+              { "@code": "23202", "@name": "岡崎市" },
+            ],
+          },
+          {
+            "@id": "time",
+            "@name": "時間軸（年度）",
+            CLASS: [
+              { "@code": "2022100000", "@name": "2022年度" },
+            ],
+          },
+        ],
+      },
+    };
+
+    const mockClient = createMockClient(mixedTabMetaInfo);
+    mockClient.getStatsData.mockResolvedValue(
+      createStatsResponse([
+        { area: "23212", time: "2022100000", cat01: "R3110", tab: "K6101", value: "7.2" },
+        { area: "23202", time: "2022100000", cat01: "R3110", tab: "K6101", value: "6.8" },
+      ]),
+    );
+
+    const result = await buildCrimeData(mockClient, ["23212", "23202"], baseConfig);
+
+    // K4201（実数）ではなく K6101（千人当たり）が選択される
+    expect(mockClient.getStatsData).toHaveBeenCalledWith(
+      expect.objectContaining({ cdTab: "K6101" }),
+    );
+    expect(result.size).toBe(2);
+    expect(result.get("23212")!.crimeRate).toBe(7.2);
+    expect(result.get("23202")!.crimeRate).toBe(6.8);
+  });
+
+  it("cat01 内の「千人当り」（「た」なし表記）も検出できる", async () => {
+    const altLabelMetaInfo = {
+      CLASS_INF: {
+        CLASS_OBJ: [
+          {
+            "@id": "tab",
+            "@name": "表章項目",
+            CLASS: [
+              { "@code": "K4201", "@name": "K4201_刑法犯認知件数" },
+            ],
+          },
+          {
+            "@id": "cat01",
+            "@name": "K安全 分類",
+            CLASS: [
+              { "@code": "R3110", "@name": "実数" },
+              { "@code": "R3120", "@name": "人口千人当り" },
+            ],
+          },
+          {
+            "@id": "area",
+            "@name": "地域事項",
+            CLASS: [
+              { "@code": "13104", "@name": "新宿区" },
+            ],
+          },
+          {
+            "@id": "time",
+            "@name": "時間軸（年度）",
+            CLASS: [
+              { "@code": "2022100000", "@name": "2022年度" },
+            ],
+          },
+        ],
+      },
+    };
+
+    const mockClient = createMockClient(altLabelMetaInfo);
+    mockClient.getStatsData.mockResolvedValue(
+      createStatsResponse([
+        { area: "13104", time: "2022100000", cat01: "R3120", tab: "K4201", value: "9.5" },
+      ]),
+    );
+
+    await buildCrimeData(mockClient, ["13104"], baseConfig);
+
+    // 「千人当り」（「た」なし）でも cdCat01=R3120 が適用される
+    expect(mockClient.getStatsData).toHaveBeenCalledWith(
+      expect.objectContaining({ cdCat01: "R3120" }),
+    );
+  });
 });

@@ -28,20 +28,34 @@ export interface CrimeStats {
   readonly dataYear: string;
 }
 
-/** 犯罪関連の指標を自動検出するスコアリング */
+/** 「千人当たり」「千人当り」など人口比率ラベルの検出 */
+function isPerCapitaLabel(normalized: string): boolean {
+  return (
+    normalized.includes("千人当たり") ||
+    normalized.includes("千人当り") ||
+    normalized.includes("1000人当")
+  );
+}
+
+/**
+ * 犯罪関連の指標を自動検出するスコアリング。
+ * 「千人当たり」（人口比率）を含む指標にはボーナスを加算し、
+ * 実数（総件数）より優先して選択されるようにする。
+ */
 function crimeIndicatorScore(name: string): number {
   const normalized = normalizeLabel(name);
+  const perCapitaBonus = isPerCapitaLabel(normalized) ? 10 : 0;
   if (normalized.includes("刑法犯") && normalized.includes("認知件数")) {
-    return 100;
+    return 100 + perCapitaBonus;
   }
   if (normalized.includes("刑法犯")) {
-    return 80;
+    return 80 + perCapitaBonus;
   }
   if (normalized.includes("犯罪") && normalized.includes("件数")) {
-    return 70;
+    return 70 + perCapitaBonus;
   }
   if (normalized.includes("犯罪")) {
-    return 50;
+    return 50 + perCapitaBonus;
   }
   return 0;
 }
@@ -98,7 +112,7 @@ function resolvePerCapitaOverrides(
     if (!cls.id.startsWith("cat") && cls.id !== "tab") continue;
 
     const perCapitaItem = cls.items.find(
-      (item) => normalizeLabel(item.name).includes("千人当たり"),
+      (item) => isPerCapitaLabel(normalizeLabel(item.name)),
     );
     if (perCapitaItem) {
       overrides[toCdParamName(cls.id)] = perCapitaItem.code;
