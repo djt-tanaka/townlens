@@ -9,6 +9,9 @@ export function Footer() {
             TownLens - 政府統計ベースの街えらび比較ツール
           </p>
           <nav className="flex gap-4 text-sm text-muted-foreground">
+            <Link href="/ranking" className="hover:text-foreground">
+              ランキング
+            </Link>
             <Link href="/pricing" className="hover:text-foreground">
               料金プラン
             </Link>

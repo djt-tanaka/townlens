@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { CITY_LOCATIONS } from "@townlens/core";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { RANKING_PRESET_META } from "@/lib/ranking-presets";
 
 /** DB アクセスがあるためビルド時プリレンダリングを無効化 */
 export const dynamic = "force-dynamic";
@@ -59,5 +60,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
   );
 
-  return [...staticPages, ...reportPages, ...cityPages];
+  // ランキングページ
+  const rankingPages: MetadataRoute.Sitemap = [
+    {
+      url: `${baseUrl}/ranking`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    ...RANKING_PRESET_META.map((meta) => ({
+      url: `${baseUrl}/ranking/${meta.slug}`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.85,
+    })),
+  ];
+
+  return [...staticPages, ...rankingPages, ...reportPages, ...cityPages];
 }

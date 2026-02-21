@@ -38,7 +38,15 @@ export const checkoutSchema = z.object({
   priceId: z.string().min(1, "priceId は必須です"),
 });
 
+/** /ranking/[preset] のパスパラメータ */
+export const rankingPresetParamSchema = z.object({
+  preset: z.enum(["childcare", "price", "safety"], {
+    message: "preset は childcare, price, safety のいずれかです",
+  }),
+});
+
 export type CitySearchInput = z.infer<typeof citySearchSchema>;
 export type CreateReportInput = z.infer<typeof createReportSchema>;
 export type ReportIdInput = z.infer<typeof reportIdSchema>;
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
+export type RankingPresetParam = z.infer<typeof rankingPresetParamSchema>;
