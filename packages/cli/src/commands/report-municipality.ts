@@ -22,6 +22,8 @@ import {
   mergeDisasterIntoScoringInput,
   buildEducationData,
   mergeEducationIntoScoringInput,
+  buildHealthcareData,
+  mergeHealthcareIntoScoringInput,
   DATASETS,
 } from "@townlens/core";
 import type { CacheAdapter, EstatApiClient, PropertyType } from "@townlens/core";
@@ -272,6 +274,43 @@ async function buildScoredReport(
     }
   }
 
+  // 医療統計データ
+  let hasHealthcareData = false;
+
+  if (options.healthcare) {
+    try {
+      const areaCodes = reportData.rows.map((r) => r.areaCode);
+      const populationMap = new Map<string, number>(
+        reportData.rows.map((r) => [r.areaCode, r.total]),
+      );
+      const healthcareData = await buildHealthcareData(
+        client, areaCodes,
+        { statsDataId: DATASETS.healthcare.statsDataId },
+        populationMap,
+      );
+
+      if (healthcareData.size > 0) {
+        scoringInput = mergeHealthcareIntoScoringInput(scoringInput, healthcareData);
+        definitions = ALL_INDICATORS;
+        hasHealthcareData = true;
+        enrichedRows = enrichedRows.map((row) => {
+          const stats = healthcareData.get(row.areaCode);
+          if (!stats) return row;
+          return {
+            ...row,
+            hospitalsPerCapita: stats.hospitalsPerCapita,
+            clinicsPerCapita: stats.clinicsPerCapita,
+            pediatricsPerCapita: stats.pediatricsPerCapita,
+          };
+        });
+      } else {
+        console.warn("[warn] 医療統計データが0件でした");
+      }
+    } catch (err) {
+      console.warn(`[warn] 医療統計データの取得に失敗しました: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
   const results = scoreCities(scoringInput, definitions, preset);
 
   console.log(`プリセット: ${preset.label}`);
@@ -286,6 +325,9 @@ async function buildScoredReport(
   }
   if (hasEducationData) {
     console.log("教育統計データ: 有効");
+  }
+  if (hasHealthcareData) {
+    console.log("医療統計データ: 有効");
   }
   for (const r of [...results].sort((a, b) => a.rank - b.rank)) {
     if (r.starRating != null) {
@@ -314,5 +356,6 @@ async function buildScoredReport(
     hasCrimeData,
     hasDisasterData,
     hasEducationData,
+    hasHealthcareData,
   });
 }
