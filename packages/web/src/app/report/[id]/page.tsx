@@ -18,6 +18,7 @@ import { ScoreSummary } from "@/components/report/score-summary";
 import { IndicatorDashboard } from "@/components/report/indicator-dashboard";
 import { CityDetail } from "@/components/report/city-detail";
 import { Disclaimer } from "@/components/report/disclaimer";
+import { ReportProcessing } from "@/components/report/report-processing";
 
 interface ReportPageProps {
   readonly params: Promise<{ id: string }>;
@@ -97,17 +98,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
   }
 
   if (report.status === "processing") {
-    return (
-      <main className="mx-auto max-w-4xl px-4 py-12">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <h1 className="text-xl font-semibold">レポート生成中...</h1>
-          <p className="text-muted-foreground">
-            しばらくお待ちください。通常1〜2分で完了します。
-          </p>
-        </div>
-      </main>
-    );
+    return <ReportProcessing reportId={report.id} />;
   }
 
   if (report.status === "failed") {
