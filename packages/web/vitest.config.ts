@@ -35,6 +35,8 @@ export default defineConfig({
         "src/app/robots.ts",
         // 都市ページデータ取得（外部 API 依存が強い、E2E で検証）
         "src/lib/city-data.ts",
+        // ランキングデータ取得（外部 DB 依存、E2E で検証）
+        "src/lib/ranking-data.ts",
         // OGP 画像生成（ImageResponse の描画テスト困難）
         "src/app/api/og/route.tsx",
         "src/app/api/og/city/route.tsx",
@@ -52,6 +54,10 @@ export default defineConfig({
         "src/components/layout/**/*.tsx",
         "src/components/dashboard/*.tsx",
         "src/components/city/**/*.tsx",
+        // ランキング表示コンポーネント（表示専用、E2E で検証）
+        "src/components/ranking/**/*.tsx",
+        // 都道府県ページ表示コンポーネント（ロジックなし、E2E で検証）
+        "src/components/prefecture/**/*.tsx",
         "src/components/report/narrative-block.tsx",
         "src/components/report/disclaimer.tsx",
         "src/components/report/score-summary.tsx",

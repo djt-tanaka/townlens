@@ -28,5 +28,6 @@ export interface ReportOptions {
   readonly disaster: boolean;
   readonly education: boolean;
   readonly transport: boolean;
+  readonly healthcare: boolean;
   readonly interactive?: boolean;
 }

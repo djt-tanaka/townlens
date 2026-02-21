@@ -31,6 +31,8 @@ export interface ScoredReportModel {
   readonly hasEducationData?: boolean;
   /** Phase 4: 交通利便性データが含まれるか */
   readonly hasTransportData?: boolean;
+  /** Phase 5: 医療統計データが含まれるか */
+  readonly hasHealthcareData?: boolean;
 }
 
 /**

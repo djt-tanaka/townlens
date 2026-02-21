@@ -4,12 +4,13 @@ export const CHILDCARE_FOCUSED: WeightPreset = {
   name: "childcare",
   label: "子育て重視",
   weights: {
-    childcare: 0.35,
-    price: 0.2,
+    childcare: 0.25,
+    price: 0.15,
     safety: 0.15,
     disaster: 0.05,
     transport: 0.05,
-    education: 0.2,
+    education: 0.15,
+    healthcare: 0.2,
   },
 };
 
@@ -18,11 +19,12 @@ export const PRICE_FOCUSED: WeightPreset = {
   label: "価格重視",
   weights: {
     childcare: 0.1,
-    price: 0.5,
+    price: 0.45,
     safety: 0.1,
-    disaster: 0.1,
+    disaster: 0.05,
     transport: 0.1,
     education: 0.1,
+    healthcare: 0.1,
   },
 };
 
@@ -30,12 +32,13 @@ export const SAFETY_FOCUSED: WeightPreset = {
   name: "safety",
   label: "安全重視",
   weights: {
-    childcare: 0.15,
+    childcare: 0.1,
     price: 0.1,
-    safety: 0.35,
-    disaster: 0.2,
-    transport: 0.1,
+    safety: 0.3,
+    disaster: 0.15,
+    transport: 0.05,
     education: 0.1,
+    healthcare: 0.2,
   },
 };
 
@@ -153,7 +156,35 @@ export const TRANSPORT_INDICATORS: ReadonlyArray<IndicatorDefinition> = [
   },
 ];
 
-/** 全指標定義（Phase 0 + Phase 1 + Phase 2a + Phase 2b + Phase 3 + Phase 4） */
+/** Phase 5: 医療統計の指標定義 */
+export const HEALTHCARE_INDICATORS: ReadonlyArray<IndicatorDefinition> = [
+  {
+    id: "hospitals_per_capita",
+    label: "一般病院数（人口10万人あたり）",
+    unit: "施設/10万人",
+    direction: "higher_better",
+    category: "healthcare",
+    precision: 2,
+  },
+  {
+    id: "clinics_per_capita",
+    label: "一般診療所数（人口10万人あたり）",
+    unit: "施設/10万人",
+    direction: "higher_better",
+    category: "healthcare",
+    precision: 1,
+  },
+  {
+    id: "pediatrics_per_capita",
+    label: "小児科標榜施設数（人口10万人あたり）",
+    unit: "施設/10万人",
+    direction: "higher_better",
+    category: "healthcare",
+    precision: 2,
+  },
+];
+
+/** 全指標定義（Phase 0 + Phase 1 + Phase 2a + Phase 2b + Phase 3 + Phase 4 + Phase 5） */
 export const ALL_INDICATORS: ReadonlyArray<IndicatorDefinition> = [
   ...POPULATION_INDICATORS,
   ...PRICE_INDICATORS,
@@ -161,4 +192,5 @@ export const ALL_INDICATORS: ReadonlyArray<IndicatorDefinition> = [
   ...DISASTER_INDICATORS,
   ...EDUCATION_INDICATORS,
   ...TRANSPORT_INDICATORS,
+  ...HEALTHCARE_INDICATORS,
 ];

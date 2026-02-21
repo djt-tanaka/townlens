@@ -61,6 +61,7 @@ export {
   DISASTER_INDICATORS,
   EDUCATION_INDICATORS,
   TRANSPORT_INDICATORS,
+  HEALTHCARE_INDICATORS,
   ALL_INDICATORS,
 } from "./scoring/presets";
 
@@ -98,6 +99,9 @@ export { mergeCrimeIntoScoringInput } from "./estat/merge-crime-scoring";
 export { buildEducationData } from "./estat/education-data";
 export type { EducationDataConfig, EducationStats } from "./estat/education-data";
 export { mergeEducationIntoScoringInput } from "./estat/merge-education-scoring";
+export { buildHealthcareData } from "./estat/healthcare-data";
+export type { HealthcareDataConfig, HealthcareStats } from "./estat/healthcare-data";
+export { mergeHealthcareIntoScoringInput } from "./estat/merge-healthcare-scoring";
 
 // ─── データセット定義 ───
 export { DATASETS } from "./config/datasets";

@@ -39,4 +39,10 @@ export interface ReportRow {
   readonly stationCountPerCapita?: number | null;
   /** Phase 4: 最寄りターミナル駅距離(km) */
   readonly terminalAccessKm?: number | null;
+  /** Phase 5: 一般病院数（人口10万人あたり） */
+  readonly hospitalsPerCapita?: number | null;
+  /** Phase 5: 一般診療所数（人口10万人あたり） */
+  readonly clinicsPerCapita?: number | null;
+  /** Phase 5: 小児科標榜施設数（人口10万人あたり） */
+  readonly pediatricsPerCapita?: number | null;
 }

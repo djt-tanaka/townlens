@@ -8,6 +8,7 @@
  * Phase 2b: 災害リスク取得（buildDisasterData → mergeDisasterIntoScoringInput）
  * Phase 3: 教育統計取得（buildEducationData → mergeEducationIntoScoringInput）
  * Phase 4: 交通利便性取得（buildTransportData → mergeTransportIntoScoringInput）
+ * Phase 5: 医療統計取得（buildHealthcareData → mergeHealthcareIntoScoringInput）
  * スコアリング: scoreCities()
  */
 
@@ -23,6 +24,7 @@ import type { CrimeStats } from "../estat/crime-data";
 import type { CityDisasterData } from "../reinfo/disaster-data";
 import type { EducationStats } from "../estat/education-data";
 import type { TransportStats } from "../estat/transport-data";
+import type { HealthcareStats } from "../estat/healthcare-data";
 import { buildReportData, toScoringInput } from "../estat/report-data";
 import { buildPriceData } from "../reinfo/price-data";
 import { mergePriceIntoScoringInput } from "../reinfo/merge-scoring";
@@ -34,6 +36,8 @@ import { buildEducationData } from "../estat/education-data";
 import { mergeEducationIntoScoringInput } from "../estat/merge-education-scoring";
 import { buildTransportData } from "../estat/transport-data";
 import { mergeTransportIntoScoringInput } from "../estat/merge-transport-scoring";
+import { buildHealthcareData } from "../estat/healthcare-data";
+import { mergeHealthcareIntoScoringInput } from "../estat/merge-healthcare-scoring";
 import { scoreCities } from "../scoring";
 import { findPreset, POPULATION_INDICATORS, ALL_INDICATORS, CHILDCARE_FOCUSED } from "../scoring/presets";
 import { DATASETS } from "../config/datasets";
@@ -48,6 +52,7 @@ function enrichRows(
   disasterData?: ReadonlyMap<string, CityDisasterData>,
   educationData?: ReadonlyMap<string, EducationStats>,
   transportData?: ReadonlyMap<string, TransportStats>,
+  healthcareData?: ReadonlyMap<string, HealthcareStats>,
 ): ReadonlyArray<ReportRow> {
   return rows.map((row) => {
     let enriched: ReportRow = { ...row };
@@ -98,6 +103,16 @@ function enrichRows(
       };
     }
 
+    const healthcare = healthcareData?.get(row.areaCode);
+    if (healthcare) {
+      enriched = {
+        ...enriched,
+        hospitalsPerCapita: healthcare.hospitalsPerCapita,
+        clinicsPerCapita: healthcare.clinicsPerCapita,
+        pediatricsPerCapita: healthcare.pediatricsPerCapita,
+      };
+    }
+
     return enriched;
   });
 }
@@ -110,6 +125,7 @@ export interface PipelineInput {
   readonly includeDisaster: boolean;
   readonly includeEducation: boolean;
   readonly includeTransport: boolean;
+  readonly includeHealthcare: boolean;
 }
 
 export interface PipelineResult {
@@ -121,6 +137,7 @@ export interface PipelineResult {
   readonly hasDisasterData: boolean;
   readonly hasEducationData: boolean;
   readonly hasTransportData: boolean;
+  readonly hasHealthcareData: boolean;
   readonly preset: WeightPreset;
   readonly timeLabel: string;
   readonly cities: ReadonlyArray<string>;
@@ -165,6 +182,7 @@ export async function runReportPipeline(
   let hasDisasterData = false;
   let hasEducationData = false;
   let hasTransportData = false;
+  let hasHealthcareData = false;
 
   const areaCodes = reportData.rows.map((r) => r.areaCode);
 
@@ -174,6 +192,7 @@ export async function runReportPipeline(
   let disasterDataMap: ReadonlyMap<string, CityDisasterData> | undefined;
   let educationDataMap: ReadonlyMap<string, EducationStats> | undefined;
   let transportDataMap: ReadonlyMap<string, TransportStats> | undefined;
+  let healthcareDataMap: ReadonlyMap<string, HealthcareStats> | undefined;
 
   // Phase 1: 不動産価格取得
   if (input.includePrice && reinfoClient) {
@@ -296,6 +315,31 @@ export async function runReportPipeline(
     }
   }
 
+  // Phase 5: 医療統計取得
+  if (input.includeHealthcare) {
+    try {
+      const populationMap = new Map<string, number>(
+        reportData.rows.map((r) => [r.areaCode, r.total]),
+      );
+      const healthcareData = await buildHealthcareData(
+        estatClient,
+        areaCodes,
+        { statsDataId: DATASETS.healthcare.statsDataId },
+        populationMap,
+      );
+      if (healthcareData.size > 0) {
+        scoringInput = mergeHealthcareIntoScoringInput(scoringInput, healthcareData);
+        definitions = ALL_INDICATORS;
+        hasHealthcareData = true;
+        healthcareDataMap = healthcareData;
+      }
+    } catch (err) {
+      console.warn(
+        `医療統計データの取得に失敗しました: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }
+
   // スコアリング
   const results = scoreCities(scoringInput, definitions, preset);
 
@@ -307,6 +351,7 @@ export async function runReportPipeline(
     disasterDataMap,
     educationDataMap,
     transportDataMap,
+    healthcareDataMap,
   );
 
   return {
@@ -318,6 +363,7 @@ export async function runReportPipeline(
     hasDisasterData,
     hasEducationData,
     hasTransportData,
+    hasHealthcareData,
     preset,
     timeLabel: reportData.timeLabel,
     cities: [...input.cityNames],

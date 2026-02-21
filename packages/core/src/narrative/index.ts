@@ -30,6 +30,7 @@ const CATEGORY_LABELS: Readonly<Record<IndicatorCategory, string>> = {
   disaster: "災害",
   transport: "交通",
   education: "教育",
+  healthcare: "医療",
 };
 
 const jaNumberFormat = new Intl.NumberFormat("ja-JP");

@@ -17,6 +17,12 @@ export async function Header() {
         </Link>
         <nav className="flex items-center gap-1 sm:gap-2">
           <Button variant="ghost" size="sm" asChild className="px-2 text-xs sm:px-3 sm:text-sm">
+            <Link href="/prefecture">都道府県</Link>
+          </Button>
+          <Button variant="ghost" size="sm" asChild className="px-2 text-xs sm:px-3 sm:text-sm">
+            <Link href="/ranking">ランキング</Link>
+          </Button>
+          <Button variant="ghost" size="sm" asChild className="px-2 text-xs sm:px-3 sm:text-sm">
             <Link href="/pricing">料金プラン</Link>
           </Button>
           {user ? (

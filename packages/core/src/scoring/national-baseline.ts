@@ -61,6 +61,18 @@ export const NATIONAL_BASELINES: ReadonlyArray<NationalBaselineEntry> = [
     indicatorId: "terminal_access_km",
     breakpoints: [10, 25, 50, 100],
   },
+  {
+    indicatorId: "hospitals_per_capita",
+    breakpoints: [3, 5, 7, 10],
+  },
+  {
+    indicatorId: "clinics_per_capita",
+    breakpoints: [40, 55, 70, 90],
+  },
+  {
+    indicatorId: "pediatrics_per_capita",
+    breakpoints: [5, 8, 12, 18],
+  },
 ];
 
 const baselineMap = new Map(
