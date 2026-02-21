@@ -33,8 +33,11 @@ export default defineConfig({
         // SEO 関連（外部 DB アクセスあり、E2E で検証）
         "src/app/sitemap.ts",
         "src/app/robots.ts",
+        // 都市ページデータ取得（外部 API 依存が強い、E2E で検証）
+        "src/lib/city-data.ts",
         // OGP 画像生成（ImageResponse の描画テスト困難）
         "src/app/api/og/route.tsx",
+        "src/app/api/og/city/route.tsx",
         // Recharts ラッパーコンポーネントは描画テスト困難
         "src/components/report/radar-chart.tsx",
         "src/components/report/bar-chart.tsx",
@@ -48,6 +51,7 @@ export default defineConfig({
         // 表示専用 Server Components（ロジックなし、E2E で検証）
         "src/components/layout/**/*.tsx",
         "src/components/dashboard/*.tsx",
+        "src/components/city/**/*.tsx",
         "src/components/report/narrative-block.tsx",
         "src/components/report/disclaimer.tsx",
         "src/components/report/score-summary.tsx",
