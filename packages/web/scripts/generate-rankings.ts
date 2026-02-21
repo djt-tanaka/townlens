@@ -131,6 +131,10 @@ async function main(): Promise<void> {
     population: number;
   }> = [];
 
+  // サーキットブレーカー: API障害時に以降のチャンクで同じAPIを繰り返しリトライしない
+  let skipPrice = false;
+  let skipDisaster = false;
+
   for (let ci = 0; ci < entryChunks.length; ci++) {
     const chunkEntries = entryChunks[ci];
     console.log(`\nチャンク ${ci + 1}/${entryChunks.length}: ${chunkEntries.length} 都市を処理中...`);
@@ -163,18 +167,32 @@ async function main(): Promise<void> {
       const priceYear = String(new Date().getFullYear() - 1);
 
       const [priceResult, crimeResult, disasterResult, educationResult] = await Promise.all([
-        // Phase 1: 不動産価格
-        buildPriceData(reinfoClient, areaCodes, priceYear)
-          .then((data) => { console.log(`  Phase 1 (不動産): ${data.size} 件取得`); return data; })
-          .catch((err) => { console.warn(`  Phase 1 (不動産) スキップ: ${err instanceof Error ? err.message : String(err)}`); return null; }),
+        // Phase 1: 不動産価格（サーキットブレーカー適用）
+        skipPrice
+          ? Promise.resolve(null)
+          : buildPriceData(reinfoClient, areaCodes, priceYear)
+              .then((data) => { console.log(`  Phase 1 (不動産): ${data.size} 件取得`); return data; })
+              .catch((err) => {
+                console.warn(`  Phase 1 (不動産) スキップ: ${err instanceof Error ? err.message : String(err)}`);
+                skipPrice = true;
+                console.warn("  [circuit-breaker] 不動産APIに障害があるため、以降のチャンクでPhase 1をスキップします");
+                return null;
+              }),
         // Phase 2a: 犯罪統計
         buildCrimeData(estatClient, areaCodes, { statsDataId: DATASETS.crime.statsDataId }, populationMap)
           .then((data) => { console.log(`  Phase 2a (犯罪): ${data.size} 件取得`); return data; })
           .catch((err) => { console.warn(`  Phase 2a (犯罪) スキップ: ${err instanceof Error ? err.message : String(err)}`); return null; }),
-        // Phase 2b: 災害リスク
-        buildDisasterData(reinfoClient, areaCodes, cityNameMap)
-          .then((data) => { console.log(`  Phase 2b (災害): ${data.size} 件取得`); return data; })
-          .catch((err) => { console.warn(`  Phase 2b (災害) スキップ: ${err instanceof Error ? err.message : String(err)}`); return null; }),
+        // Phase 2b: 災害リスク（サーキットブレーカー適用）
+        skipDisaster
+          ? Promise.resolve(null)
+          : buildDisasterData(reinfoClient, areaCodes, cityNameMap)
+              .then((data) => { console.log(`  Phase 2b (災害): ${data.size} 件取得`); return data; })
+              .catch((err) => {
+                console.warn(`  Phase 2b (災害) スキップ: ${err instanceof Error ? err.message : String(err)}`);
+                skipDisaster = true;
+                console.warn("  [circuit-breaker] 災害APIに障害があるため、以降のチャンクでPhase 2bをスキップします");
+                return null;
+              }),
         // Phase 3: 教育統計
         buildEducationData(estatClient, areaCodes, { statsDataId: DATASETS.education.statsDataId }, populationMap)
           .then((data) => { console.log(`  Phase 3 (教育): ${data.size} 件取得`); return data; })
