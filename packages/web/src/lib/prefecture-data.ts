@@ -3,10 +3,14 @@
  * 地方ブロック定義、都道府県→都市マッピング、データ取得を提供する。
  */
 
+import { unstable_cache } from "next/cache";
 import { CITY_LOCATIONS } from "@townlens/core";
 import { getPrefectureCode } from "./prefectures";
 import { fetchCityPageData } from "./city-data";
 import type { CityPageData } from "./city-data";
+
+/** ISR 再生成時のキャッシュ TTL（24時間） */
+const CACHE_REVALIDATE = 86400;
 
 /** 地方ブロック内の都道府県 */
 export interface PrefectureEntry {
@@ -125,8 +129,8 @@ export function getCityCountForPrefecture(prefectureCode: string): number {
   ).length;
 }
 
-/** 都道府県内の全都市データを並列取得する（ソートはClient側で実施） */
-export async function fetchPrefectureCities(
+/** 都道府県内の全都市データを並列取得する（内部実装） */
+async function fetchPrefectureCitiesInternal(
   prefectureName: string,
 ): Promise<ReadonlyArray<CityPageData>> {
   const prefCode = getPrefectureCode(prefectureName);
@@ -147,3 +151,13 @@ export async function fetchPrefectureCities(
     .map((r) => r.value)
     .filter((data): data is CityPageData => data !== null);
 }
+
+/**
+ * 都道府県内の全都市データを並列取得する（ソートはClient側で実施）。
+ * unstable_cache でサーバーサイドキャッシュし、ISR 再生成時も高速に応答する。
+ */
+export const fetchPrefectureCities = unstable_cache(
+  fetchPrefectureCitiesInternal,
+  ["prefecture-cities"],
+  { revalidate: CACHE_REVALIDATE },
+);

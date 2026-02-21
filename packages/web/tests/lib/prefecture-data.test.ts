@@ -1,4 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+/* next/cache の unstable_cache をパススルーモック */
+vi.mock("next/cache", () => ({
+  unstable_cache: (fn: Function) => fn,
+}));
+
 import {
   REGIONAL_BLOCKS,
   getCityCodesForPrefecture,
