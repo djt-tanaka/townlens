@@ -44,9 +44,8 @@ export function useReport(): UseReportReturn {
             ? err.message
             : "レポート生成中にエラーが発生しました";
         setError(message);
-        throw err;
-      } finally {
         setIsLoading(false);
+        throw err;
       }
     },
     [],
