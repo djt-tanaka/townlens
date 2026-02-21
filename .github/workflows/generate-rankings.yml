@@ -40,7 +40,8 @@ jobs:
           set +a
           pnpm --filter @townlens/web ranking:generate
 
-      - name: Revalidate ranking pages
-        run: |
-          curl -sf -X POST "${{ vars.NEXT_PUBLIC_SITE_URL }}/api/revalidate-rankings" \
-            -H "Authorization: Bearer ${{ secrets.REVALIDATION_SECRET }}"
+      - name: Redeploy to clear ISR cache
+        run: npx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
