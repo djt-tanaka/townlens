@@ -1,182 +1,53 @@
-import {
-  Users,
-  Baby,
-  Home,
-  ShieldAlert,
-  CloudRain,
-  MapPin,
-  GraduationCap,
-  Hospital,
-  Train,
-} from "lucide-react";
+import { Users, Baby } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import type { CityRawData } from "@/lib/city-data";
 
 interface CityStatsProps {
   readonly population: number;
   readonly kidsRatio: number;
-  readonly rawData: CityRawData;
-}
-
-interface StatItem {
-  readonly icon: React.ReactNode;
-  readonly label: string;
-  readonly value: string;
-  readonly unit: string;
 }
 
 function formatNumber(value: number): string {
   return new Intl.NumberFormat("ja-JP").format(value);
 }
 
-function buildStatItems(
-  population: number,
-  kidsRatio: number,
-  rawData: CityRawData,
-): ReadonlyArray<StatItem> {
-  const items: StatItem[] = [
-    {
-      icon: <Users className="h-5 w-5 text-primary" />,
-      label: "総人口",
-      value: formatNumber(population),
-      unit: "人",
-    },
-    {
-      icon: <Baby className="h-5 w-5 text-primary" />,
-      label: "0-14歳比率",
-      value: kidsRatio.toFixed(1),
-      unit: "%",
-    },
-  ];
-
-  if (rawData.condoPriceMedian != null) {
-    items.push({
-      icon: <Home className="h-5 w-5 text-primary" />,
-      label: "中古マンション価格（中央値）",
-      value: formatNumber(rawData.condoPriceMedian),
-      unit: "万円",
-    });
-  }
-
-  if (rawData.crimeRate != null) {
-    items.push({
-      icon: <ShieldAlert className="h-5 w-5 text-primary" />,
-      label: "刑法犯認知件数",
-      value: rawData.crimeRate.toFixed(2),
-      unit: "件/千人",
-    });
-  }
-
-  if (rawData.floodRisk != null) {
-    items.push({
-      icon: <CloudRain className="h-5 w-5 text-primary" />,
-      label: "洪水・土砂災害リスク",
-      value: rawData.floodRisk ? "あり" : "なし",
-      unit: "",
-    });
-  }
-
-  if (rawData.evacuationSiteCount != null) {
-    items.push({
-      icon: <MapPin className="h-5 w-5 text-primary" />,
-      label: "避難場所数",
-      value: formatNumber(rawData.evacuationSiteCount),
-      unit: "箇所",
-    });
-  }
-
-  if (rawData.elementarySchoolsPerCapita != null) {
-    items.push({
-      icon: <GraduationCap className="h-5 w-5 text-primary" />,
-      label: "小学校数（万人あたり）",
-      value: rawData.elementarySchoolsPerCapita.toFixed(2),
-      unit: "校/万人",
-    });
-  }
-
-  if (rawData.juniorHighSchoolsPerCapita != null) {
-    items.push({
-      icon: <GraduationCap className="h-5 w-5 text-primary" />,
-      label: "中学校数（万人あたり）",
-      value: rawData.juniorHighSchoolsPerCapita.toFixed(2),
-      unit: "校/万人",
-    });
-  }
-
-  if (rawData.hospitalsPerCapita != null) {
-    items.push({
-      icon: <Hospital className="h-5 w-5 text-primary" />,
-      label: "一般病院数（10万人あたり）",
-      value: rawData.hospitalsPerCapita.toFixed(2),
-      unit: "施設/10万人",
-    });
-  }
-
-  if (rawData.clinicsPerCapita != null) {
-    items.push({
-      icon: <Hospital className="h-5 w-5 text-primary" />,
-      label: "一般診療所数（10万人あたり）",
-      value: rawData.clinicsPerCapita.toFixed(1),
-      unit: "施設/10万人",
-    });
-  }
-
-  if (rawData.pediatricsPerCapita != null) {
-    items.push({
-      icon: <Hospital className="h-5 w-5 text-primary" />,
-      label: "小児科標榜施設数（10万人あたり）",
-      value: rawData.pediatricsPerCapita.toFixed(2),
-      unit: "施設/10万人",
-    });
-  }
-
-  if (rawData.stationCountPerCapita != null) {
-    items.push({
-      icon: <Train className="h-5 w-5 text-primary" />,
-      label: "鉄道駅数（万人あたり）",
-      value: rawData.stationCountPerCapita.toFixed(2),
-      unit: "駅/万人",
-    });
-  }
-
-  if (rawData.terminalAccessKm != null) {
-    items.push({
-      icon: <Train className="h-5 w-5 text-primary" />,
-      label: "最寄りターミナル駅距離",
-      value: rawData.terminalAccessKm.toFixed(1),
-      unit: "km",
-    });
-  }
-
-  return items;
-}
-
-/** 都市の基本統計を表示するカードグリッド */
-export function CityStats({ population, kidsRatio, rawData }: CityStatsProps) {
-  const items = buildStatItems(population, kidsRatio, rawData);
-
+/** 都市の基本統計（人口・0-14歳比率）を表示するサマリーカード */
+export function CityStats({ population, kidsRatio }: CityStatsProps) {
   return (
     <section>
       <h2 className="mb-4 text-xl font-bold">基本統計</h2>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((item) => (
-          <Card key={item.label}>
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="rounded-lg bg-primary/10 p-2">{item.icon}</div>
-              <div>
-                <p className="text-xs text-muted-foreground">{item.label}</p>
-                <p className="text-lg font-bold">
-                  {item.value}
-                  {item.unit && (
-                    <span className="ml-1 text-sm font-normal text-muted-foreground">
-                      {item.unit}
-                    </span>
-                  )}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="rounded-lg bg-primary/10 p-2">
+              <Users className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">総人口</p>
+              <p className="text-lg font-bold">
+                {formatNumber(population)}
+                <span className="ml-1 text-sm font-normal text-muted-foreground">
+                  人
+                </span>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="rounded-lg bg-primary/10 p-2">
+              <Baby className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">0-14歳比率</p>
+              <p className="text-lg font-bold">
+                {kidsRatio.toFixed(1)}
+                <span className="ml-1 text-sm font-normal text-muted-foreground">
+                  %
+                </span>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </section>
   );
