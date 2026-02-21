@@ -50,14 +50,20 @@ export function buildAreaEntries(areaClass: ClassObj): AreaEntry[] {
 /**
  * e-Stat 地域コードが市区町村レベルかどうかを判定する。
  *
- * 全国地方公共団体コード（5桁）の慣例:
- * - "00000"      → 全国（除外）
- * - "XX000"      → 都道府県（下3桁が "000"）（除外）
+ * 全国地方公共団体コード:
+ * - 5桁形式: "XXXXX" — 標準
+ * - 6桁形式: "XXXXXX" — チェックディジット付き
+ *
+ * 判定ルール:
+ * - "00000(X)"   → 全国（除外）
+ * - "XX000(X)"   → 都道府県（3〜5桁目が "000"）（除外）
  * - それ以外     → 市区町村（対象）
+ *
+ * slice(2, 5) で3〜5桁目を取ることで、5桁・6桁どちらでも正しく判定できる。
  */
 export function isMunicipalityCode(code: string): boolean {
   if (code.length < 5) return false;
-  return code.slice(-3) !== "000";
+  return code.slice(2, 5) !== "000";
 }
 
 const PREFECTURE_PREFIX = /^(北海道|東京都|京都府|大阪府|.{2,3}県)/;

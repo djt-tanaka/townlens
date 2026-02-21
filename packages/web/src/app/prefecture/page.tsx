@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
-import { REGIONAL_BLOCKS } from "@/lib/prefecture-data";
+import {
+  REGIONAL_BLOCKS,
+  fetchAllMunicipalityCounts,
+} from "@/lib/prefecture-data";
 import { RegionBlockGrid } from "@/components/prefecture/region-block-grid";
+
+/** ISR: 24時間で再生成 */
+export const revalidate = 86400;
 
 export const metadata: Metadata = {
   title: "都道府県一覧",
@@ -13,7 +19,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default function PrefectureIndexPage() {
+export default async function PrefectureIndexPage() {
+  const cityCounts = await fetchAllMunicipalityCounts();
+
   return (
     <main className="mx-auto min-h-screen max-w-4xl space-y-10 px-4 py-8">
       <section className="space-y-2">
@@ -26,7 +34,11 @@ export default function PrefectureIndexPage() {
       </section>
 
       {REGIONAL_BLOCKS.map((block) => (
-        <RegionBlockGrid key={block.name} block={block} />
+        <RegionBlockGrid
+          key={block.name}
+          block={block}
+          cityCounts={cityCounts}
+        />
       ))}
     </main>
   );

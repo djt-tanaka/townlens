@@ -1,10 +1,12 @@
 /**
  * 都道府県ページ用データ層。
  * 地方ブロック定義、都道府県→都市マッピング、データ取得を提供する。
+ *
+ * 都市一覧は municipalities テーブル（自治体マスター）から取得する。
  */
 
 import { unstable_cache } from "next/cache";
-import { CITY_LOCATIONS } from "@townlens/core";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getPrefectureCode } from "./prefectures";
 import { fetchCityPageData } from "./city-data";
 import type { CityPageData } from "./city-data";
@@ -113,21 +115,69 @@ export const REGIONAL_BLOCKS: ReadonlyArray<RegionalBlock> = [
   },
 ];
 
-/** 都道府県コードに属する CITY_LOCATIONS 登録済み都市を取得 */
-export function getCityCodesForPrefecture(
-  prefectureCode: string,
-): ReadonlyArray<{ readonly code: string; readonly name: string }> {
-  return [...CITY_LOCATIONS.entries()]
-    .filter(([code]) => code.startsWith(prefectureCode))
-    .map(([code, loc]) => ({ code, name: loc.name }));
+/**
+ * 全都道府県の都市数を一括取得する（municipalities テーブルから）。
+ * 都道府県一覧ページでバッジに表示するためのもの。
+ */
+async function fetchAllMunicipalityCountsInternal(): Promise<
+  ReadonlyMap<string, number>
+> {
+  const supabase = createAdminClient();
+
+  const { data, error } = await supabase
+    .from("municipalities")
+    .select("prefecture");
+
+  if (error) {
+    console.error(`municipalities 取得エラー: ${error.message}`);
+    return new Map();
+  }
+
+  // 都道府県名ごとにカウント
+  const counts = new Map<string, number>();
+  for (const row of data ?? []) {
+    const current = counts.get(row.prefecture) ?? 0;
+    counts.set(row.prefecture, current + 1);
+  }
+  return counts;
 }
 
-/** 都道府県内の登録都市数を返す（同期・インメモリ） */
-export function getCityCountForPrefecture(prefectureCode: string): number {
-  return [...CITY_LOCATIONS.keys()].filter((code) =>
-    code.startsWith(prefectureCode),
-  ).length;
+/** 全都道府県の都市数を一括取得（キャッシュ付き） */
+export const fetchAllMunicipalityCounts = unstable_cache(
+  fetchAllMunicipalityCountsInternal,
+  ["municipality-counts"],
+  { revalidate: CACHE_REVALIDATE },
+);
+
+/** 都道府県名に属する municipalities テーブル登録済み都市を取得 */
+async function getCityCodesForPrefectureInternal(
+  prefectureName: string,
+): Promise<ReadonlyArray<{ readonly code: string; readonly name: string }>> {
+  const supabase = createAdminClient();
+
+  const { data, error } = await supabase
+    .from("municipalities")
+    .select("area_code, city_name")
+    .eq("prefecture", prefectureName)
+    .order("area_code");
+
+  if (error) {
+    console.error(`municipalities 取得エラー: ${error.message}`);
+    return [];
+  }
+
+  return (data ?? []).map((row) => ({
+    code: row.area_code,
+    name: row.city_name,
+  }));
 }
+
+/** 都道府県内の都市一覧を取得（キャッシュ付き） */
+export const getCityCodesForPrefecture = unstable_cache(
+  getCityCodesForPrefectureInternal,
+  ["prefecture-city-codes"],
+  { revalidate: CACHE_REVALIDATE },
+);
 
 /** 都道府県内の全都市データを並列取得する（内部実装） */
 async function fetchPrefectureCitiesInternal(
@@ -136,7 +186,7 @@ async function fetchPrefectureCitiesInternal(
   const prefCode = getPrefectureCode(prefectureName);
   if (!prefCode) return [];
 
-  const cityEntries = getCityCodesForPrefecture(prefCode);
+  const cityEntries = await getCityCodesForPrefectureInternal(prefectureName);
   if (cityEntries.length === 0) return [];
 
   const results = await Promise.allSettled(
