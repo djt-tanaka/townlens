@@ -32,6 +32,8 @@ import {
   mergeEducationIntoScoringInput,
   buildHealthcareData,
   mergeHealthcareIntoScoringInput,
+  buildTransportData,
+  mergeTransportIntoScoringInput,
 } from "@townlens/core";
 import type { SingleCityScore } from "@townlens/core";
 import { createEstatClient, createReinfoClient } from "./api-clients";
@@ -63,6 +65,8 @@ export interface CityRawData {
   readonly hospitalsPerCapita?: number | null;
   readonly clinicsPerCapita?: number | null;
   readonly pediatricsPerCapita?: number | null;
+  readonly stationCountPerCapita?: number | null;
+  readonly terminalAccessKm?: number | null;
 }
 
 /** 全市区町村リストのメモリキャッシュ */
@@ -135,6 +139,8 @@ async function fetchCityPageDataInternal(
   let hospitalsPerCapita: number | null = null;
   let clinicsPerCapita: number | null = null;
   let pediatricsPerCapita: number | null = null;
+  let stationCountPerCapita: number | null = null;
+  let terminalAccessKm: number | null = null;
 
   // Phase 1: 不動産価格取得
   let reinfoClient;
@@ -259,6 +265,32 @@ async function fetchCityPageDataInternal(
     // 医療統計データの取得失敗はスキップ
   }
 
+  // Phase 5: 交通統計取得
+  try {
+    const populationMap = new Map<string, number>([
+      [row.areaCode, row.total],
+    ]);
+    const transportData = await buildTransportData(
+      estatClient,
+      areaCodes,
+      { statsDataId: DATASETS.transport.statsDataId },
+      populationMap,
+    );
+    if (transportData.size > 0) {
+      scoringInput = mergeTransportIntoScoringInput(
+        scoringInput,
+        transportData,
+      );
+      const tr = transportData.get(row.areaCode);
+      if (tr) {
+        stationCountPerCapita = tr.stationCountPerCapita;
+        terminalAccessKm = tr.terminalAccessKm;
+      }
+    }
+  } catch {
+    // 交通統計データの取得失敗はスキップ
+  }
+
   const rawData: CityRawData = {
     condoPriceMedian,
     crimeRate,
@@ -269,6 +301,8 @@ async function fetchCityPageDataInternal(
     hospitalsPerCapita,
     clinicsPerCapita,
     pediatricsPerCapita,
+    stationCountPerCapita,
+    terminalAccessKm,
   };
 
   // 全プリセットでスコアリング
