@@ -236,7 +236,7 @@ export function CityDetail({
                                               {"\u2606".repeat(5 - indicatorStar.stars)}
                                             </div>
                                             <div className="text-[11px] text-muted-foreground">
-                                              全国上位 {indicatorStar.nationalPercentile.toFixed(0)}%
+                                              全国上位 {(100 - indicatorStar.nationalPercentile).toFixed(0)}%
                                             </div>
                                           </>
                                         );

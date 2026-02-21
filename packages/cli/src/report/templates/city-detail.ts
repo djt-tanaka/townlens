@@ -155,7 +155,7 @@ export function renderCityDetail(model: CityDetailModel): string {
             const stColor = starColor(is.stars);
             scoreDisplay = `
               <div style="font-size:18px;letter-spacing:1px;color:${stColor};">${filled.repeat(is.stars)}${empty.repeat(5 - is.stars)}</div>
-              <div class="note" style="margin-top:2px;">\u5168\u56fd\u4e0a\u4f4d ${is.nationalPercentile.toFixed(0)}%</div>`;
+              <div class="note" style="margin-top:2px;">\u5168\u56fd\u4e0a\u4f4d ${(100 - is.nationalPercentile).toFixed(0)}%</div>`;
           } else {
             const score = cs?.score ?? 0;
             const sColor =
