@@ -121,10 +121,9 @@ async function main(): Promise<void> {
   const allEntries = buildAreaEntries(areaClass);
   console.log(`${allEntries.length} 自治体を検出`);
 
-  // チャンクに分割して処理
-  const cityNames = allEntries.map((e) => e.name);
-  const chunks = chunk(cityNames, CHUNK_SIZE);
-  console.log(`${chunks.length} チャンクに分割（各 ${CHUNK_SIZE} 都市）`);
+  // チャンクに分割して処理（エリアコード付きで分割し、名前解決をバイパス）
+  const entryChunks = chunk(allEntries, CHUNK_SIZE);
+  console.log(`${entryChunks.length} チャンクに分割（各 ${CHUNK_SIZE} 都市）`);
 
   // 全自治体の CityIndicators を蓄積
   const allCityData: Array<{
@@ -132,16 +131,19 @@ async function main(): Promise<void> {
     population: number;
   }> = [];
 
-  for (let ci = 0; ci < chunks.length; ci++) {
-    const chunkCities = chunks[ci];
-    console.log(`\nチャンク ${ci + 1}/${chunks.length}: ${chunkCities.length} 都市を処理中...`);
+  for (let ci = 0; ci < entryChunks.length; ci++) {
+    const chunkEntries = entryChunks[ci];
+    console.log(`\nチャンク ${ci + 1}/${entryChunks.length}: ${chunkEntries.length} 都市を処理中...`);
 
     try {
-      // Phase 0: 人口統計
+      // Phase 0: 人口統計（エリアコード直接指定で同名自治体エラーを回避）
+      const chunkAreaCodes = chunkEntries.map((e) => e.code);
+      const chunkCityNames = chunkEntries.map((e) => e.name);
       const reportData = await buildReportData({
         client: estatClient,
         statsDataId: DATASETS.population.statsDataId,
-        cityNames: [...chunkCities],
+        cityNames: chunkCityNames,
+        areaCodes: chunkAreaCodes,
         selectors: DATASETS.population.selectors,
         metaInfo,
       });

@@ -24,6 +24,8 @@ export interface BuildReportInput {
   client: EstatApiClient;
   statsDataId: string;
   cityNames: string[];
+  /** エリアコードを直接指定する場合（名前解決をバイパス） */
+  areaCodes?: string[];
   selectors?: SelectorConfig;
   timeCode?: string;
   metaInfo: any;
@@ -73,7 +75,20 @@ export async function buildReportData(input: BuildReportInput): Promise<BuildRep
 
   const areaClass = resolveAreaClass(classObjs);
   const areaEntries = buildAreaEntries(areaClass);
-  const cities = resolveCities(input.cityNames, areaEntries);
+
+  let cities: ReturnType<typeof resolveCities>;
+  if (input.areaCodes) {
+    const entryMap = new Map(areaEntries.map((e) => [e.code, e]));
+    cities = input.areaCodes.map((code) => {
+      const entry = entryMap.get(code);
+      if (!entry) {
+        throw new AppError(`エリアコード '${code}' がメタ情報に存在しません`, []);
+      }
+      return { input: entry.name, resolvedName: entry.name, code: entry.code };
+    });
+  } else {
+    cities = resolveCities(input.cityNames, areaEntries);
+  }
   const ageSelection = resolveAgeSelection(classObjs, input.selectors);
   const timeSelection = resolveLatestTime(classObjs, input.timeCode);
 
