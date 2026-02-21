@@ -11,6 +11,8 @@ import type {
   AreaEntry,
   CityIndicators,
   WeightPreset,
+  IndicatorDefinition,
+  IndicatorStarRating,
 } from "@townlens/core";
 import {
   extractClassObjects,
@@ -53,6 +55,12 @@ export interface CityPageData {
     readonly score: SingleCityScore;
   }>;
   readonly rawData: CityRawData;
+  /** 指標定義（カテゴリ別ダッシュボード表示用） */
+  readonly indicators: ReadonlyArray<IndicatorDefinition>;
+  /** 子育て重視プリセットの指標別スター評価（レーダーチャート・カテゴリ別ダッシュボード用） */
+  readonly indicatorStars: ReadonlyArray<IndicatorStarRating>;
+  /** データ取得に成功したフェーズのフラグ */
+  readonly dataAvailability: CityDataAvailability;
 }
 
 export interface CityRawData {
@@ -67,6 +75,15 @@ export interface CityRawData {
   readonly pediatricsPerCapita?: number | null;
   readonly stationCountPerCapita?: number | null;
   readonly terminalAccessKm?: number | null;
+}
+
+export interface CityDataAvailability {
+  readonly hasPriceData: boolean;
+  readonly hasCrimeData: boolean;
+  readonly hasDisasterData: boolean;
+  readonly hasEducationData: boolean;
+  readonly hasHealthcareData: boolean;
+  readonly hasTransportData: boolean;
 }
 
 /** 全市区町村リストのメモリキャッシュ */
@@ -312,6 +329,26 @@ async function fetchCityPageDataInternal(
     score: scoreSingleCity(cityData, ALL_INDICATORS, preset),
   }));
 
+  // 子育て重視プリセット（デフォルト）の指標別スター評価を取得
+  const defaultScore = presetScores[0]?.score;
+  const indicatorStars = defaultScore?.indicatorStars ?? [];
+
+  // データ取得状況
+  const dataAvailability: CityDataAvailability = {
+    hasPriceData: condoPriceMedian !== null,
+    hasCrimeData: crimeRate !== null,
+    hasDisasterData: floodRisk !== null || evacuationSiteCount !== null,
+    hasEducationData:
+      elementarySchoolsPerCapita !== null ||
+      juniorHighSchoolsPerCapita !== null,
+    hasHealthcareData:
+      hospitalsPerCapita !== null ||
+      clinicsPerCapita !== null ||
+      pediatricsPerCapita !== null,
+    hasTransportData:
+      stationCountPerCapita !== null || terminalAccessKm !== null,
+  };
+
   return {
     cityName: row.cityResolved,
     areaCode: row.areaCode,
@@ -320,6 +357,9 @@ async function fetchCityPageDataInternal(
     kidsRatio: row.ratio,
     presetScores,
     rawData,
+    indicators: ALL_INDICATORS as ReadonlyArray<IndicatorDefinition>,
+    indicatorStars,
+    dataAvailability,
   };
 }
 

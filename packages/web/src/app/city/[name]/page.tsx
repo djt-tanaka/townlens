@@ -1,11 +1,16 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { CITY_LOCATIONS } from "@townlens/core";
+import { CITY_LOCATIONS, generateCityNarrative } from "@townlens/core";
+import type { CityScoreResult } from "@townlens/core";
 import { Badge } from "@/components/ui/badge";
 import { CityStats } from "@/components/city/city-stats";
 import { PresetScoreCards } from "@/components/city/preset-score-cards";
+import { CategoryIndicatorCards } from "@/components/city/category-indicator-cards";
+import { CityRadarChart } from "@/components/city/city-radar-chart";
+import { DataSourceInfo } from "@/components/city/data-source-info";
 import { CompareCta } from "@/components/city/compare-cta";
 import { RelatedCities } from "@/components/city/related-cities";
+import { NarrativeBlock } from "@/components/report/narrative-block";
 import { fetchCityPageData } from "@/lib/city-data";
 import { findNearbyCities } from "@/lib/nearby-cities";
 
@@ -67,6 +72,33 @@ export async function generateMetadata({
   };
 }
 
+/** 単一都市の SingleCityScore から擬似的な CityScoreResult を構築してナラティブ生成する */
+function buildNarrative(data: Awaited<ReturnType<typeof fetchCityPageData>>) {
+  if (!data) return null;
+
+  const defaultPresetScore = data.presetScores[0];
+  if (!defaultPresetScore) return null;
+
+  const { score } = defaultPresetScore;
+
+  // generateCityNarrative は CityScoreResult を期待するため、
+  // SingleCityScore から必要な最低限のフィールドを構築する
+  const pseudoResult: CityScoreResult = {
+    cityName: data.cityName,
+    areaCode: data.areaCode,
+    compositeScore: 0,
+    rank: 1,
+    choice: [],
+    baseline: [],
+    confidence: { level: "medium", reason: "" },
+    notes: [],
+    starRating: score.starRating,
+    indicatorStars: score.indicatorStars,
+  };
+
+  return generateCityNarrative(pseudoResult, data.indicators, 1);
+}
+
 export default async function CityPage({ params }: CityPageProps) {
   const { name } = await params;
   const cityName = decodeURIComponent(name);
@@ -77,6 +109,7 @@ export default async function CityPage({ params }: CityPageProps) {
   }
 
   const nearbyCities = findNearbyCities(data.areaCode);
+  const narrative = buildNarrative(data);
 
   return (
     <main className="mx-auto min-h-screen max-w-4xl space-y-8 px-4 py-8">
@@ -97,11 +130,30 @@ export default async function CityPage({ params }: CityPageProps) {
       <CityStats
         population={data.population}
         kidsRatio={data.kidsRatio}
-        rawData={data.rawData}
       />
 
       {/* プリセット別スコア概要 */}
       <PresetScoreCards presetScores={data.presetScores} />
+
+      {/* レーダーチャート */}
+      <CityRadarChart
+        indicators={data.indicators}
+        indicatorStars={data.indicatorStars}
+        cityName={data.cityName}
+      />
+
+      {/* カテゴリ別詳細評価 */}
+      <CategoryIndicatorCards
+        indicators={data.indicators}
+        indicatorStars={data.indicatorStars}
+        rawData={data.rawData}
+      />
+
+      {/* 評価コメント */}
+      {narrative && <NarrativeBlock narrative={narrative} variant="city" />}
+
+      {/* データソース情報 */}
+      <DataSourceInfo dataAvailability={data.dataAvailability} />
 
       {/* CTA: この街と比較する */}
       <CompareCta cityName={data.cityName} />
