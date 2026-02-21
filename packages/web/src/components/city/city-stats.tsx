@@ -7,6 +7,7 @@ import {
   MapPin,
   GraduationCap,
   Hospital,
+  Train,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import type { CityRawData } from "@/lib/city-data";
@@ -126,6 +127,24 @@ function buildStatItems(
       label: "小児科標榜施設数（10万人あたり）",
       value: rawData.pediatricsPerCapita.toFixed(2),
       unit: "施設/10万人",
+    });
+  }
+
+  if (rawData.stationCountPerCapita != null) {
+    items.push({
+      icon: <Train className="h-5 w-5 text-primary" />,
+      label: "鉄道駅数（万人あたり）",
+      value: rawData.stationCountPerCapita.toFixed(2),
+      unit: "駅/万人",
+    });
+  }
+
+  if (rawData.terminalAccessKm != null) {
+    items.push({
+      icon: <Train className="h-5 w-5 text-primary" />,
+      label: "最寄りターミナル駅距離",
+      value: rawData.terminalAccessKm.toFixed(1),
+      unit: "km",
     });
   }
 
