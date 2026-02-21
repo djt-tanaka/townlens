@@ -39,3 +39,8 @@ jobs:
           source packages/web/.env.local
           set +a
           pnpm --filter @townlens/web ranking:generate
+
+      - name: Revalidate ranking pages
+        run: |
+          curl -sf -X POST "${{ vars.NEXT_PUBLIC_SITE_URL }}/api/revalidate-rankings" \
+            -H "Authorization: Bearer ${{ secrets.REVALIDATION_SECRET }}"
