@@ -137,6 +137,26 @@ export interface Database {
         };
         Relationships: [];
       };
+      municipalities: {
+        Row: {
+          area_code: string;
+          city_name: string;
+          prefecture: string;
+          generated_at: string;
+        };
+        Insert: {
+          area_code: string;
+          city_name: string;
+          prefecture: string;
+          generated_at?: string;
+        };
+        Update: {
+          city_name?: string;
+          prefecture?: string;
+          generated_at?: string;
+        };
+        Relationships: [];
+      };
       city_rankings: {
         Row: {
           id: string;

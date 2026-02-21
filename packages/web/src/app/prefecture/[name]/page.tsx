@@ -9,7 +9,7 @@ import {
 } from "@/lib/prefectures";
 import {
   fetchPrefectureCities,
-  getCityCountForPrefecture,
+  getCityCodesForPrefecture,
 } from "@/lib/prefecture-data";
 import { PrefectureCityList } from "@/components/prefecture/prefecture-city-list";
 import { EmptyPrefecture } from "@/components/prefecture/empty-prefecture";
@@ -40,11 +40,11 @@ export async function generateMetadata({
     return { title: "都道府県が見つかりません" };
   }
 
-  const cityCount = getCityCountForPrefecture(prefCode);
+  const cityEntries = await getCityCodesForPrefecture(prefName);
   const title = `${prefName}の市区町村 暮らしやすさランキング`;
   const description =
-    cityCount > 0
-      ? `${prefName}の${cityCount}市区町村を子育て・安全・住宅価格で政府統計データに基づきスコアリング。`
+    cityEntries.length > 0
+      ? `${prefName}の${cityEntries.length}市区町村を子育て・安全・住宅価格で政府統計データに基づきスコアリング。`
       : `${prefName}の市区町村データを政府統計で分析。`;
 
   return {

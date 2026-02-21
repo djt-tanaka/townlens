@@ -73,6 +73,16 @@ function getPrefectureName(areaCode: string): string {
   return PREFECTURE_MAP.get(areaCode.slice(0, 2)) ?? "不明";
 }
 
+/**
+ * エントリ名が都道府県名そのものかどうかを判定する（名前ベースの安全策）。
+ * isMunicipalityCode のコード判定を補完し、万が一コード形式の想定外で
+ * 都道府県エントリが通過した場合にも除外できるようにする。
+ */
+const PREFECTURE_NAMES = new Set(PREFECTURE_MAP.values());
+function isPrefectureName(name: string): boolean {
+  return PREFECTURE_NAMES.has(name);
+}
+
 // --- チャンク分割ユーティリティ ---
 
 function chunk<T>(array: ReadonlyArray<T>, size: number): ReadonlyArray<ReadonlyArray<T>> {
@@ -121,8 +131,35 @@ async function main(): Promise<void> {
   const areaClass = resolveAreaClass(classObjs);
   const rawEntries = buildAreaEntries(areaClass);
   // 都道府県・全国レベルを除外し、市区町村のみに絞り込む
-  const allEntries = rawEntries.filter((e) => isMunicipalityCode(e.code));
+  // isMunicipalityCode（コード判定）+ isPrefectureName（名前判定）の二重フィルタ
+  const allEntries = rawEntries.filter(
+    (e) => isMunicipalityCode(e.code) && !isPrefectureName(e.name),
+  );
   console.log(`${rawEntries.length} エリアから ${allEntries.length} 市区町村を抽出（都道府県・全国を除外）`);
+
+  // --- 自治体マスターテーブル (municipalities) を upsert ---
+  console.log("自治体マスターテーブルを更新中...");
+  const municipalityChunks = chunk(allEntries, 500);
+  let municipalityCount = 0;
+
+  for (const muniChunk of municipalityChunks) {
+    const rows = muniChunk.map((e) => ({
+      area_code: e.code,
+      city_name: e.name,
+      prefecture: getPrefectureName(e.code),
+      generated_at: new Date().toISOString(),
+    }));
+
+    const { error } = await supabase
+      .from("municipalities")
+      .upsert(rows, { onConflict: "area_code" });
+
+    if (error) {
+      console.error(`  municipalities upsert エラー: ${error.message}`);
+    }
+    municipalityCount += muniChunk.length;
+  }
+  console.log(`  ${municipalityCount} 自治体をマスターテーブルに保存`);
 
   // チャンクに分割して処理（エリアコード付きで分割し、名前解決をバイパス）
   const entryChunks = chunk(allEntries, CHUNK_SIZE);

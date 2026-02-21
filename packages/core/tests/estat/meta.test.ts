@@ -127,15 +127,30 @@ describe("isMunicipalityCode", () => {
     expect(isMunicipalityCode("22137")).toBe(true); // 浜松市東区
   });
 
-  it("都道府県コード（下3桁が000）はfalseを返す", () => {
+  it("都道府県コード（3〜5桁目が000）はfalseを返す", () => {
     expect(isMunicipalityCode("01000")).toBe(false); // 北海道
     expect(isMunicipalityCode("13000")).toBe(false); // 東京都
     expect(isMunicipalityCode("25000")).toBe(false); // 滋賀県
     expect(isMunicipalityCode("47000")).toBe(false); // 沖縄県
   });
 
+  it("6桁チェックディジット付き都道府県コードはfalseを返す", () => {
+    expect(isMunicipalityCode("010006")).toBe(false); // 北海道
+    expect(isMunicipalityCode("130001")).toBe(false); // 東京都
+    expect(isMunicipalityCode("250007")).toBe(false); // 滋賀県
+    expect(isMunicipalityCode("470007")).toBe(false); // 沖縄県
+    expect(isMunicipalityCode("230006")).toBe(false); // 愛知県
+  });
+
+  it("6桁チェックディジット付き市区町村コードはtrueを返す", () => {
+    expect(isMunicipalityCode("131041")).toBe(true); // 新宿区
+    expect(isMunicipalityCode("141003")).toBe(true); // 横浜市
+    expect(isMunicipalityCode("011002")).toBe(true); // 札幌市
+  });
+
   it("全国コードはfalseを返す", () => {
     expect(isMunicipalityCode("00000")).toBe(false);
+    expect(isMunicipalityCode("000006")).toBe(false); // 6桁版
   });
 
   it("5桁未満のコードはfalseを返す", () => {
