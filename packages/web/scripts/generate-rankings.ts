@@ -39,7 +39,7 @@ import type { Database } from "../src/types/database";
 
 // --- 設定 ---
 
-const CHUNK_SIZE = 200;
+const CHUNK_SIZE = 10;
 
 // --- 環境変数バリデーション ---
 
