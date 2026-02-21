@@ -56,6 +56,8 @@ export default defineConfig({
         "src/components/city/**/*.tsx",
         // ランキング表示コンポーネント（表示専用、E2E で検証）
         "src/components/ranking/**/*.tsx",
+        // 都道府県ページ表示コンポーネント（ロジックなし、E2E で検証）
+        "src/components/prefecture/**/*.tsx",
         "src/components/report/narrative-block.tsx",
         "src/components/report/disclaimer.tsx",
         "src/components/report/score-summary.tsx",

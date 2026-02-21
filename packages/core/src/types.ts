@@ -35,4 +35,10 @@ export interface ReportRow {
   readonly elementarySchoolsPerCapita?: number | null;
   /** Phase 3: 中学校数（人口1万人あたり） */
   readonly juniorHighSchoolsPerCapita?: number | null;
+  /** Phase 4: 一般病院数（人口10万人あたり） */
+  readonly hospitalsPerCapita?: number | null;
+  /** Phase 4: 一般診療所数（人口10万人あたり） */
+  readonly clinicsPerCapita?: number | null;
+  /** Phase 4: 小児科標榜施設数（人口10万人あたり） */
+  readonly pediatricsPerCapita?: number | null;
 }

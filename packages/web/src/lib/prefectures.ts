@@ -3,7 +3,7 @@
  * 地域コードの先頭2桁から都道府県名を解決する。
  */
 
-const PREFECTURE_MAP: ReadonlyMap<string, string> = new Map([
+export const PREFECTURE_MAP: ReadonlyMap<string, string> = new Map([
   ["01", "北海道"],
   ["02", "青森県"],
   ["03", "岩手県"],
@@ -57,4 +57,17 @@ const PREFECTURE_MAP: ReadonlyMap<string, string> = new Map([
 export function getPrefectureName(areaCode: string): string {
   const prefCode = areaCode.slice(0, 2);
   return PREFECTURE_MAP.get(prefCode) ?? "不明";
+}
+
+/** 都道府県名からコードを逆引きする */
+export function getPrefectureCode(prefectureName: string): string | null {
+  for (const [code, name] of PREFECTURE_MAP) {
+    if (name === prefectureName) return code;
+  }
+  return null;
+}
+
+/** 全都道府県名のリストを返す */
+export function getAllPrefectureNames(): ReadonlyArray<string> {
+  return [...PREFECTURE_MAP.values()];
 }

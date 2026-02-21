@@ -6,6 +6,7 @@ import {
   CloudRain,
   MapPin,
   GraduationCap,
+  Hospital,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import type { CityRawData } from "@/lib/city-data";
@@ -98,6 +99,33 @@ function buildStatItems(
       label: "中学校数（万人あたり）",
       value: rawData.juniorHighSchoolsPerCapita.toFixed(2),
       unit: "校/万人",
+    });
+  }
+
+  if (rawData.hospitalsPerCapita != null) {
+    items.push({
+      icon: <Hospital className="h-5 w-5 text-primary" />,
+      label: "一般病院数（10万人あたり）",
+      value: rawData.hospitalsPerCapita.toFixed(2),
+      unit: "施設/10万人",
+    });
+  }
+
+  if (rawData.clinicsPerCapita != null) {
+    items.push({
+      icon: <Hospital className="h-5 w-5 text-primary" />,
+      label: "一般診療所数（10万人あたり）",
+      value: rawData.clinicsPerCapita.toFixed(1),
+      unit: "施設/10万人",
+    });
+  }
+
+  if (rawData.pediatricsPerCapita != null) {
+    items.push({
+      icon: <Hospital className="h-5 w-5 text-primary" />,
+      label: "小児科標榜施設数（10万人あたり）",
+      value: rawData.pediatricsPerCapita.toFixed(2),
+      unit: "施設/10万人",
     });
   }
 

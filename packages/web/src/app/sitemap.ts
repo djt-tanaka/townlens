@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { CITY_LOCATIONS } from "@townlens/core";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { RANKING_PRESET_META } from "@/lib/ranking-presets";
+import { PREFECTURE_MAP } from "@/lib/prefectures";
 
 /** DB アクセスがあるためビルド時プリレンダリングを無効化 */
 export const dynamic = "force-dynamic";
@@ -76,5 +77,32 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
   ];
 
-  return [...staticPages, ...rankingPages, ...reportPages, ...cityPages];
+  // 都道府県一覧ページ
+  const prefectureIndexPage: MetadataRoute.Sitemap = [
+    {
+      url: `${baseUrl}/prefecture`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    },
+  ];
+
+  // 都道府県別ページ（全47件）
+  const prefecturePages: MetadataRoute.Sitemap = [
+    ...PREFECTURE_MAP.values(),
+  ].map((name) => ({
+    url: `${baseUrl}/prefecture/${encodeURIComponent(name)}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+  }));
+
+  return [
+    ...staticPages,
+    ...rankingPages,
+    ...prefectureIndexPage,
+    ...prefecturePages,
+    ...reportPages,
+    ...cityPages,
+  ];
 }
