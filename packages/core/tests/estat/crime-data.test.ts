@@ -412,4 +412,138 @@ describe("buildCrimeData", () => {
       expect.objectContaining({ cdCat01: "R3120" }),
     );
   });
+
+  it("千人当たり指標も分類もない場合、populationMapで千人当たりに変換する", async () => {
+    // tab に K4201（実数のみ）、cat01 に R3110（実数のみ）で千人当たりオプションがないケース
+    const rawOnlyMetaInfo = {
+      CLASS_INF: {
+        CLASS_OBJ: [
+          {
+            "@id": "tab",
+            "@name": "表章項目",
+            CLASS: [
+              { "@code": "K4201", "@name": "K4201_刑法犯認知件数" },
+            ],
+          },
+          {
+            "@id": "cat01",
+            "@name": "K安全 分類",
+            CLASS: [
+              { "@code": "R3110", "@name": "実数" },
+            ],
+          },
+          {
+            "@id": "area",
+            "@name": "地域事項",
+            CLASS: [
+              { "@code": "13105", "@name": "文京区" },
+              { "@code": "13113", "@name": "渋谷区" },
+            ],
+          },
+          {
+            "@id": "time",
+            "@name": "時間軸（年度）",
+            CLASS: [
+              { "@code": "2022100000", "@name": "2022年度" },
+            ],
+          },
+        ],
+      },
+    };
+
+    const mockClient = createMockClient(rawOnlyMetaInfo);
+    // 文京区: 人口 240,000, 犯罪件数 1,393 → 千人当たり 5.804...
+    // 渋谷区: 人口 230,000, 犯罪件数 2,760 → 千人当たり 12.0
+    mockClient.getStatsData.mockResolvedValue(
+      createStatsResponse([
+        { area: "13105", time: "2022100000", cat01: "R3110", tab: "K4201", value: "1393" },
+        { area: "13113", time: "2022100000", cat01: "R3110", tab: "K4201", value: "2760" },
+      ]),
+    );
+
+    const populationMap = new Map([
+      ["13105", 240000],
+      ["13113", 230000],
+    ]);
+
+    const result = await buildCrimeData(
+      mockClient, ["13105", "13113"], baseConfig, populationMap,
+    );
+
+    expect(result.size).toBe(2);
+    // 実数を人口千人当たりに変換: 1393 / 240000 * 1000 ≒ 5.804
+    const bunkyo = result.get("13105")!;
+    expect(bunkyo.crimeRate).toBeCloseTo(5.804, 2);
+    // 実数を人口千人当たりに変換: 2760 / 230000 * 1000 = 12.0
+    const shibuya = result.get("13113")!;
+    expect(shibuya.crimeRate).toBeCloseTo(12.0, 2);
+  });
+
+  it("千人当たり指標も分類もなく populationMap もない場合はスキップする", async () => {
+    const rawOnlyMetaInfo = {
+      CLASS_INF: {
+        CLASS_OBJ: [
+          {
+            "@id": "tab",
+            "@name": "表章項目",
+            CLASS: [
+              { "@code": "K4201", "@name": "K4201_刑法犯認知件数" },
+            ],
+          },
+          {
+            "@id": "cat01",
+            "@name": "K安全 分類",
+            CLASS: [
+              { "@code": "R3110", "@name": "実数" },
+            ],
+          },
+          {
+            "@id": "area",
+            "@name": "地域事項",
+            CLASS: [
+              { "@code": "13105", "@name": "文京区" },
+            ],
+          },
+          {
+            "@id": "time",
+            "@name": "時間軸（年度）",
+            CLASS: [
+              { "@code": "2022100000", "@name": "2022年度" },
+            ],
+          },
+        ],
+      },
+    };
+
+    const mockClient = createMockClient(rawOnlyMetaInfo);
+    mockClient.getStatsData.mockResolvedValue(
+      createStatsResponse([
+        { area: "13105", time: "2022100000", cat01: "R3110", tab: "K4201", value: "1393" },
+      ]),
+    );
+
+    // populationMap を渡さない場合は実数のまま返せないのでスキップ
+    const result = await buildCrimeData(mockClient, ["13105"], baseConfig);
+    expect(result.size).toBe(0);
+  });
+
+  it("千人当たり指標がある場合は populationMap に関係なくそのまま返す", async () => {
+    // tab に K6101（千人当たり指標）がある場合は変換不要
+    const mockClient = createMockClient(tabMetaInfo);
+    mockClient.getStatsData.mockResolvedValue(
+      createStatsResponse([
+        { area: "13104", time: "2009100000", cat01: "R3120", tab: "K4201", value: "15.2" },
+      ]),
+    );
+
+    const populationMap = new Map([["13104", 300000]]);
+
+    const result = await buildCrimeData(
+      mockClient, ["13104"], baseConfig, populationMap,
+    );
+
+    expect(result.size).toBe(1);
+    // cat01 に「人口千人当たり」があるため変換せずそのまま
+    expect(result.get("13104")!.crimeRate).toBe(15.2);
+  });
 });

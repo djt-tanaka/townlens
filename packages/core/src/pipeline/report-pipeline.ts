@@ -182,9 +182,12 @@ export async function runReportPipeline(
   // Phase 2a: 犯罪統計取得
   if (input.includeCrime) {
     try {
+      const populationMap = new Map<string, number>(
+        reportData.rows.map((r) => [r.areaCode, r.total]),
+      );
       const crimeData = await buildCrimeData(estatClient, areaCodes, {
         statsDataId: DATASETS.crime.statsDataId,
-      });
+      }, populationMap);
       if (crimeData.size > 0) {
         scoringInput = mergeCrimeIntoScoringInput(scoringInput, crimeData);
         definitions = ALL_INDICATORS;

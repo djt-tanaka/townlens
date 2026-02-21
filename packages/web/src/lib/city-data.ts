@@ -154,9 +154,10 @@ export async function fetchCityPageData(
 
   // Phase 2a: 犯罪統計取得
   try {
+    const populationMap = new Map<string, number>([[row.areaCode, row.total]]);
     const crimeData = await buildCrimeData(estatClient, areaCodes, {
       statsDataId: DATASETS.crime.statsDataId,
-    });
+    }, populationMap);
     if (crimeData.size > 0) {
       scoringInput = mergeCrimeIntoScoringInput(scoringInput, crimeData);
       const crime = crimeData.get(row.areaCode);
