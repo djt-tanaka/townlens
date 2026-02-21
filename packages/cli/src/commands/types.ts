@@ -27,5 +27,6 @@ export interface ReportOptions {
   readonly crimeStatsId?: string;
   readonly disaster: boolean;
   readonly education: boolean;
+  readonly transport: boolean;
   readonly interactive?: boolean;
 }

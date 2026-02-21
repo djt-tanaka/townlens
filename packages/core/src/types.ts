@@ -35,4 +35,8 @@ export interface ReportRow {
   readonly elementarySchoolsPerCapita?: number | null;
   /** Phase 3: 中学校数（人口1万人あたり） */
   readonly juniorHighSchoolsPerCapita?: number | null;
+  /** Phase 4: 鉄道駅数（人口1万人あたり） */
+  readonly stationCountPerCapita?: number | null;
+  /** Phase 4: 最寄りターミナル駅距離(km) */
+  readonly terminalAccessKm?: number | null;
 }

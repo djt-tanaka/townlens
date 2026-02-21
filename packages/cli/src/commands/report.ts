@@ -39,6 +39,7 @@ export function registerReportCommand(program: Command, cache: CacheAdapter): vo
     .option("--crime-stats-id <id>", "犯罪統計の statsDataId")
     .option("--no-disaster", "災害リスクデータなしで実行")
     .option("--no-education", "教育統計データなしで実行")
+    .option("--no-transport", "交通利便性データなしで実行")
     .option("--interactive", "インタラクティブモードで実行")
     .action(async (rawOptions: ReportOptions) => {
       // インタラクティブモードの場合、ユーザー入力でオプションを上書き

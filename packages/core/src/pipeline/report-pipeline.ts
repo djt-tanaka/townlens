@@ -7,6 +7,7 @@
  * Phase 2a: 犯罪統計取得（buildCrimeData → mergeCrimeIntoScoringInput）
  * Phase 2b: 災害リスク取得（buildDisasterData → mergeDisasterIntoScoringInput）
  * Phase 3: 教育統計取得（buildEducationData → mergeEducationIntoScoringInput）
+ * Phase 4: 交通利便性取得（buildTransportData → mergeTransportIntoScoringInput）
  * スコアリング: scoreCities()
  */
 
@@ -21,6 +22,7 @@ import type { CondoPriceStats } from "../reinfo/types";
 import type { CrimeStats } from "../estat/crime-data";
 import type { CityDisasterData } from "../reinfo/disaster-data";
 import type { EducationStats } from "../estat/education-data";
+import type { TransportStats } from "../estat/transport-data";
 import { buildReportData, toScoringInput } from "../estat/report-data";
 import { buildPriceData } from "../reinfo/price-data";
 import { mergePriceIntoScoringInput } from "../reinfo/merge-scoring";
@@ -30,6 +32,8 @@ import { buildDisasterData } from "../reinfo/disaster-data";
 import { mergeDisasterIntoScoringInput } from "../reinfo/merge-disaster-scoring";
 import { buildEducationData } from "../estat/education-data";
 import { mergeEducationIntoScoringInput } from "../estat/merge-education-scoring";
+import { buildTransportData } from "../estat/transport-data";
+import { mergeTransportIntoScoringInput } from "../estat/merge-transport-scoring";
 import { scoreCities } from "../scoring";
 import { findPreset, POPULATION_INDICATORS, ALL_INDICATORS, CHILDCARE_FOCUSED } from "../scoring/presets";
 import { DATASETS } from "../config/datasets";
@@ -43,6 +47,7 @@ function enrichRows(
   crimeData?: ReadonlyMap<string, CrimeStats>,
   disasterData?: ReadonlyMap<string, CityDisasterData>,
   educationData?: ReadonlyMap<string, EducationStats>,
+  transportData?: ReadonlyMap<string, TransportStats>,
 ): ReadonlyArray<ReportRow> {
   return rows.map((row) => {
     let enriched: ReportRow = { ...row };
@@ -84,6 +89,15 @@ function enrichRows(
       };
     }
 
+    const transport = transportData?.get(row.areaCode);
+    if (transport) {
+      enriched = {
+        ...enriched,
+        stationCountPerCapita: transport.stationCountPerCapita,
+        terminalAccessKm: transport.terminalAccessKm,
+      };
+    }
+
     return enriched;
   });
 }
@@ -95,6 +109,7 @@ export interface PipelineInput {
   readonly includeCrime: boolean;
   readonly includeDisaster: boolean;
   readonly includeEducation: boolean;
+  readonly includeTransport: boolean;
 }
 
 export interface PipelineResult {
@@ -105,6 +120,7 @@ export interface PipelineResult {
   readonly hasCrimeData: boolean;
   readonly hasDisasterData: boolean;
   readonly hasEducationData: boolean;
+  readonly hasTransportData: boolean;
   readonly preset: WeightPreset;
   readonly timeLabel: string;
   readonly cities: ReadonlyArray<string>;
@@ -148,6 +164,7 @@ export async function runReportPipeline(
   let hasCrimeData = false;
   let hasDisasterData = false;
   let hasEducationData = false;
+  let hasTransportData = false;
 
   const areaCodes = reportData.rows.map((r) => r.areaCode);
 
@@ -156,6 +173,7 @@ export async function runReportPipeline(
   let crimeDataMap: ReadonlyMap<string, CrimeStats> | undefined;
   let disasterDataMap: ReadonlyMap<string, CityDisasterData> | undefined;
   let educationDataMap: ReadonlyMap<string, EducationStats> | undefined;
+  let transportDataMap: ReadonlyMap<string, TransportStats> | undefined;
 
   // Phase 1: 不動産価格取得
   if (input.includePrice && reinfoClient) {
@@ -231,7 +249,6 @@ export async function runReportPipeline(
   // Phase 3: 教育統計取得
   if (input.includeEducation) {
     try {
-      // 人口あたりの算出に使うため、Phase 0 の人口データを抽出
       const populationMap = new Map<string, number>(
         reportData.rows.map((r) => [r.areaCode, r.total]),
       );
@@ -254,6 +271,31 @@ export async function runReportPipeline(
     }
   }
 
+  // Phase 4: 交通利便性取得
+  if (input.includeTransport) {
+    try {
+      const populationMap = new Map<string, number>(
+        reportData.rows.map((r) => [r.areaCode, r.total]),
+      );
+      const transportData = await buildTransportData(
+        estatClient,
+        areaCodes,
+        { statsDataId: DATASETS.transport.statsDataId },
+        populationMap,
+      );
+      if (transportData.size > 0) {
+        scoringInput = mergeTransportIntoScoringInput(scoringInput, transportData);
+        definitions = ALL_INDICATORS;
+        hasTransportData = true;
+        transportDataMap = transportData;
+      }
+    } catch (err) {
+      console.warn(
+        `交通利便性データの取得に失敗しました: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }
+
   // スコアリング
   const results = scoreCities(scoringInput, definitions, preset);
 
@@ -264,6 +306,7 @@ export async function runReportPipeline(
     crimeDataMap,
     disasterDataMap,
     educationDataMap,
+    transportDataMap,
   );
 
   return {
@@ -274,6 +317,7 @@ export async function runReportPipeline(
     hasCrimeData,
     hasDisasterData,
     hasEducationData,
+    hasTransportData,
     preset,
     timeLabel: reportData.timeLabel,
     cities: [...input.cityNames],
