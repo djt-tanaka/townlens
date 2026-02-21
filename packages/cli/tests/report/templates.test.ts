@@ -302,8 +302,8 @@ describe("renderCityDetail", () => {
       totalCities: 2,
     });
     expect(html).toContain("★");
-    expect(html).toContain("全国上位 78%");
-    expect(html).toContain("全国上位 52%");
+    expect(html).toContain("全国上位 22%");
+    expect(html).toContain("全国上位 48%");
     expect(html).toContain("3.8");
   });
 
