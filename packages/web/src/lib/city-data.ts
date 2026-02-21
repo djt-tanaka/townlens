@@ -29,6 +29,8 @@ import {
   mergeDisasterIntoScoringInput,
   buildEducationData,
   mergeEducationIntoScoringInput,
+  buildHealthcareData,
+  mergeHealthcareIntoScoringInput,
 } from "@townlens/core";
 import type { SingleCityScore } from "@townlens/core";
 import { createEstatClient, createReinfoClient } from "./api-clients";
@@ -57,6 +59,9 @@ export interface CityRawData {
   readonly evacuationSiteCount?: number | null;
   readonly elementarySchoolsPerCapita?: number | null;
   readonly juniorHighSchoolsPerCapita?: number | null;
+  readonly hospitalsPerCapita?: number | null;
+  readonly clinicsPerCapita?: number | null;
+  readonly pediatricsPerCapita?: number | null;
 }
 
 /** 全市区町村リストのメモリキャッシュ */
@@ -123,6 +128,9 @@ export async function fetchCityPageData(
   let evacuationSiteCount: number | null = null;
   let elementarySchoolsPerCapita: number | null = null;
   let juniorHighSchoolsPerCapita: number | null = null;
+  let hospitalsPerCapita: number | null = null;
+  let clinicsPerCapita: number | null = null;
+  let pediatricsPerCapita: number | null = null;
 
   // Phase 1: 不動産価格取得
   let reinfoClient;
@@ -220,6 +228,33 @@ export async function fetchCityPageData(
     // 教育統計データの取得失敗はスキップ
   }
 
+  // Phase 4: 医療統計取得
+  try {
+    const populationMap = new Map<string, number>([
+      [row.areaCode, row.total],
+    ]);
+    const healthcareData = await buildHealthcareData(
+      estatClient,
+      areaCodes,
+      { statsDataId: DATASETS.healthcare.statsDataId },
+      populationMap,
+    );
+    if (healthcareData.size > 0) {
+      scoringInput = mergeHealthcareIntoScoringInput(
+        scoringInput,
+        healthcareData,
+      );
+      const hc = healthcareData.get(row.areaCode);
+      if (hc) {
+        hospitalsPerCapita = hc.hospitalsPerCapita;
+        clinicsPerCapita = hc.clinicsPerCapita;
+        pediatricsPerCapita = hc.pediatricsPerCapita;
+      }
+    }
+  } catch {
+    // 医療統計データの取得失敗はスキップ
+  }
+
   const rawData: CityRawData = {
     condoPriceMedian,
     crimeRate,
@@ -227,6 +262,9 @@ export async function fetchCityPageData(
     evacuationSiteCount,
     elementarySchoolsPerCapita,
     juniorHighSchoolsPerCapita,
+    hospitalsPerCapita,
+    clinicsPerCapita,
+    pediatricsPerCapita,
   };
 
   // 全プリセットでスコアリング

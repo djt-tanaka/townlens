@@ -5,7 +5,8 @@ export type IndicatorCategory =
   | "safety"
   | "disaster"
   | "transport"
-  | "education";
+  | "education"
+  | "healthcare";
 
 /** 指標のメタ定義 */
 export interface IndicatorDefinition {

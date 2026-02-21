@@ -10,6 +10,7 @@ import {
   SAFETY_INDICATORS,
   DISASTER_INDICATORS,
   EDUCATION_INDICATORS,
+  HEALTHCARE_INDICATORS,
   ALL_INDICATORS,
 } from "../../src/scoring/presets";
 
@@ -138,10 +139,33 @@ describe("EDUCATION_INDICATORS", () => {
   });
 });
 
+describe("HEALTHCARE_INDICATORS", () => {
+  it("Phase 4用の医療指標が定義されている", () => {
+    expect(HEALTHCARE_INDICATORS).toHaveLength(3);
+    const ids = HEALTHCARE_INDICATORS.map((d) => d.id);
+    expect(ids).toContain("hospitals_per_capita");
+    expect(ids).toContain("clinics_per_capita");
+    expect(ids).toContain("pediatrics_per_capita");
+  });
+
+  it("医療指標はhigher_betterかつhealthcareカテゴリ", () => {
+    for (const def of HEALTHCARE_INDICATORS) {
+      expect(def.direction).toBe("higher_better");
+      expect(def.category).toBe("healthcare");
+    }
+  });
+
+  it("単位が施設/10万人", () => {
+    for (const def of HEALTHCARE_INDICATORS) {
+      expect(def.unit).toBe("施設/10万人");
+    }
+  });
+});
+
 describe("ALL_INDICATORS", () => {
   it("全フェーズの指標を統合している", () => {
     expect(ALL_INDICATORS.length).toBe(
-      POPULATION_INDICATORS.length + PRICE_INDICATORS.length + SAFETY_INDICATORS.length + DISASTER_INDICATORS.length + EDUCATION_INDICATORS.length,
+      POPULATION_INDICATORS.length + PRICE_INDICATORS.length + SAFETY_INDICATORS.length + DISASTER_INDICATORS.length + EDUCATION_INDICATORS.length + HEALTHCARE_INDICATORS.length,
     );
   });
 

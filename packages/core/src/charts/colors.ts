@@ -54,6 +54,13 @@ export const CATEGORY_COLORS: Readonly<Record<IndicatorCategory, CategoryColor>>
     emoji: "\u{1F393}",
     label: "\u6559\u80b2",
   },
+  healthcare: {
+    primary: "#ec4899",
+    light: "#fce7f3",
+    dark: "#9d174d",
+    emoji: "\u{1F3E5}",
+    label: "\u533b\u7642",
+  },
 };
 
 /** 都市ごとのチャートカラー（最大7都市対応） */
