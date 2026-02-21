@@ -41,7 +41,8 @@ describe("useReport", () => {
 
     expect(response!.reportId).toBe("test-id");
     expect(response!.status).toBe("completed");
-    expect(result.current.isLoading).toBe(false);
+    // 成功時はローディング維持（画面遷移でアンマウントされるため）
+    expect(result.current.isLoading).toBe(true);
     expect(result.current.error).toBeNull();
   });
 
