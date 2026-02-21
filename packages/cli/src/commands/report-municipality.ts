@@ -171,9 +171,12 @@ async function buildScoredReport(
       console.log("犯罪統計の statsDataId が未設定のためスキップします。");
     } else {
       try {
+        const populationMap = new Map<string, number>(
+          reportData.rows.map((r) => [r.areaCode, r.total]),
+        );
         const crimeData = await buildCrimeData(client, reportData.rows.map((r) => r.areaCode), {
           statsDataId: crimeStatsDataId,
-        });
+        }, populationMap);
 
         if (crimeData.size > 0) {
           scoringInput = mergeCrimeIntoScoringInput(scoringInput, crimeData);

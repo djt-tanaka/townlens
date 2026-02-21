@@ -64,7 +64,7 @@ function crimeIndicatorScore(name: string): number {
 function resolveIndicatorClass(
   classObjs: ReadonlyArray<{ id: string; name: string; items: ReadonlyArray<{ code: string; name: string }> }>,
   explicitCode?: string,
-): { classId: string; paramName: string; code: string } | null {
+): { classId: string; paramName: string; code: string; indicatorName: string } | null {
   // 社会・人口統計体系等では指標が tab（表章項目）に格納されるケースがある
   const indicatorClasses = classObjs.filter(
     (c) => c.id.startsWith("cat") || c.id === "tab",
@@ -77,7 +77,7 @@ function resolveIndicatorClass(
     if (explicitCode) {
       const matched = cls.items.find((item) => item.code === explicitCode);
       if (matched) {
-        return { classId: cls.id, paramName: toCdParamName(cls.id), code: matched.code };
+        return { classId: cls.id, paramName: toCdParamName(cls.id), code: matched.code, indicatorName: matched.name };
       }
     }
 
@@ -87,7 +87,7 @@ function resolveIndicatorClass(
       .sort((a, b) => b.score - a.score);
 
     if (scored.length > 0) {
-      return { classId: cls.id, paramName: toCdParamName(cls.id), code: scored[0].code };
+      return { classId: cls.id, paramName: toCdParamName(cls.id), code: scored[0].code, indicatorName: scored[0].name };
     }
   }
 
@@ -125,8 +125,29 @@ function resolvePerCapitaOverrides(
 const MAX_TIME_FALLBACK = 5;
 
 /**
+ * 選択された指標・分類の組み合わせから、値が「千人当たり」として
+ * 既に正規化されているかどうかを判定する。
+ *
+ * 以下のいずれかが真の場合は千人当たり:
+ * - 指標名（tab/cat の項目名）に「千人当たり」系の文字列が含まれる
+ * - resolvePerCapitaOverrides で千人当たり分類が選択されている
+ */
+function isAlreadyPerCapita(
+  indicatorName: string | undefined,
+  perCapitaOverrides: Record<string, string>,
+): boolean {
+  if (indicatorName && isPerCapitaLabel(normalizeLabel(indicatorName))) {
+    return true;
+  }
+  return Object.keys(perCapitaOverrides).length > 0;
+}
+
+/**
  * 複数都市の犯罪統計データを構築する。
  * e-Stat「社会・人口統計体系」等から刑法犯認知件数（千人当たり）を取得する。
+ *
+ * API のメタ情報に「千人当たり」指標・分類が存在する場合はそれを優先選択する。
+ * 存在しない場合（実数のみ）は、populationMap を使って千人当たりに変換する。
  *
  * メタ情報上の最新年にデータが存在しないケースがあるため（例: time分類に2009年度が
  * あるが K4201 のデータは2008年度まで）、データが0件の場合は前年へ自動フォールバックする。
@@ -135,6 +156,7 @@ export async function buildCrimeData(
   client: EstatApiClient,
   areaCodes: ReadonlyArray<string>,
   config: CrimeDataConfig,
+  populationMap?: ReadonlyMap<string, number>,
 ): Promise<ReadonlyMap<string, CrimeStats>> {
   const result = new Map<string, CrimeStats>();
 
@@ -179,6 +201,12 @@ export async function buildCrimeData(
   const perCapitaOverrides = resolvePerCapitaOverrides(classObjs, excludeIds);
   Object.assign(extraParams, perCapitaOverrides);
 
+  // API から得られる値が既に千人当たりか、それとも実数（総件数）かを判定
+  const alreadyPerCapita = isAlreadyPerCapita(
+    indicatorClass?.indicatorName,
+    perCapitaOverrides,
+  );
+
   for (const timeSelection of timeCandidates) {
     const dataYear = timeSelection.code.replace(/\D/g, "").slice(0, 4);
 
@@ -203,8 +231,19 @@ export async function buildCrimeData(
 
     for (const [areaCode, value] of areaMap) {
       if (areaCodes.includes(areaCode) && value !== null) {
+        let crimeRate = value;
+        if (!alreadyPerCapita) {
+          // 実数（総件数）→ 人口千人当たりに変換
+          const pop = populationMap?.get(areaCode);
+          if (pop && pop > 0) {
+            crimeRate = (value / pop) * 1000;
+          } else {
+            // 人口データなしでは千人当たりを算出できないためスキップ
+            continue;
+          }
+        }
         result.set(areaCode, {
-          crimeRate: value,
+          crimeRate,
           dataYear,
         });
       }
@@ -214,6 +253,11 @@ export async function buildCrimeData(
       if (timeSelection !== timeCandidates[0]) {
         console.warn(
           `[info] 犯罪統計: 最新年(${timeCandidates[0].label})にデータがないため、${timeSelection.label}のデータを使用します。`,
+        );
+      }
+      if (!alreadyPerCapita) {
+        console.warn(
+          "[info] 犯罪統計: 千人当たり指標が見つからなかったため、人口データで千人当たりに変換しました。",
         );
       }
       return result;
