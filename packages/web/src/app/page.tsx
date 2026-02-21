@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { BarChart3, Scale, Shield } from "lucide-react";
 import { CitySearch } from "@/components/search/city-search";
@@ -29,7 +30,9 @@ export default function Home() {
           <br className="hidden sm:inline" />
           子育て・安全・価格・災害リスクを比べられます。
         </p>
-        <CitySearch />
+        <Suspense>
+          <CitySearch />
+        </Suspense>
       </section>
 
       {/* 特徴セクション */}

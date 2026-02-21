@@ -26,6 +26,8 @@ export type {
   IndicatorStarRating,
 } from "./scoring/types";
 export { scoreCities } from "./scoring";
+export { scoreSingleCity } from "./scoring/single-city";
+export type { SingleCityScore } from "./scoring/single-city";
 export { mergeIndicators } from "./scoring/merge-indicators";
 export { normalizeWithinCandidates } from "./scoring/normalize";
 export type { ChoiceScoreWithCity } from "./scoring/normalize";

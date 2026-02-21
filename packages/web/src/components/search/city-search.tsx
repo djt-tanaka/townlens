@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Search, Loader2 } from "lucide-react";
 import { ALL_PRESETS } from "@townlens/core";
 import {
@@ -30,10 +30,43 @@ const MAX_CITIES = 5;
 
 export function CitySearch() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
   const [selectedCities, setSelectedCities] = useState<
     ReadonlyArray<SelectedCity>
   >([]);
+  const compareResolved = useRef(false);
+
+  /** ?compare=都市名 パラメータから初期都市を自動選択 */
+  useEffect(() => {
+    if (compareResolved.current) return;
+    const compareName = searchParams.get("compare");
+    if (!compareName) return;
+    compareResolved.current = true;
+
+    const controller = new AbortController();
+    fetch(
+      `/api/cities/search?q=${encodeURIComponent(compareName)}`,
+      { signal: controller.signal },
+    )
+      .then((res) => {
+        if (!res.ok) throw new Error("都市検索に失敗しました");
+        return res.json() as Promise<CitySearchResponse>;
+      })
+      .then((data) => {
+        const match = data.cities.find((c) => c.name === compareName);
+        if (match) {
+          setSelectedCities((prev) =>
+            prev.some((c) => c.code === match.code) ? prev : [...prev, match],
+          );
+        }
+      })
+      .catch((err: unknown) => {
+        if (err instanceof Error && err.name === "AbortError") return;
+      });
+
+    return () => controller.abort();
+  }, [searchParams]);
   const [selectedPreset, setSelectedPreset] = useState(ALL_PRESETS[0].name);
   const { results, isLoading: isSearching } = useCitySearch(query);
   const { createReport, isLoading: isGenerating, error } = useReport();
