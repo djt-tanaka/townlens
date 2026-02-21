@@ -36,7 +36,7 @@ export async function geocodeCityName(cityName: string): Promise<CityLocation | 
       return null;
     }
 
-    return { lat, lng };
+    return { name: cityName, lat, lng };
   } catch {
     return null;
   }

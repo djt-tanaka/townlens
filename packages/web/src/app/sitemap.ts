@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { CITY_LOCATIONS } from "@townlens/core";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /** DB アクセスがあるためビルド時プリレンダリングを無効化 */
@@ -48,5 +49,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
   );
 
-  return [...staticPages, ...reportPages];
+  // 都市ページ（CITY_LOCATIONS 登録済みの主要都市）
+  const cityPages: MetadataRoute.Sitemap = [...CITY_LOCATIONS.values()].map(
+    (loc) => ({
+      url: `${baseUrl}/city/${encodeURIComponent(loc.name)}`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+    }),
+  );
+
+  return [...staticPages, ...reportPages, ...cityPages];
 }
