@@ -137,6 +137,40 @@ export interface Database {
         };
         Relationships: [];
       };
+      city_rankings: {
+        Row: {
+          id: string;
+          preset: string;
+          area_code: string;
+          city_name: string;
+          prefecture: string;
+          rank: number;
+          star_rating: number;
+          indicator_stars: Json;
+          population: number | null;
+          generated_at: string;
+        };
+        Insert: {
+          id?: string;
+          preset: string;
+          area_code: string;
+          city_name: string;
+          prefecture: string;
+          rank: number;
+          star_rating: number;
+          indicator_stars: Json;
+          population?: number | null;
+          generated_at?: string;
+        };
+        Update: {
+          rank?: number;
+          star_rating?: number;
+          indicator_stars?: Json;
+          population?: number | null;
+          generated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
