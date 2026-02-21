@@ -136,7 +136,27 @@ export const EDUCATION_INDICATORS: ReadonlyArray<IndicatorDefinition> = [
   },
 ];
 
-/** Phase 4: 医療統計の指標定義 */
+/** Phase 4: 交通利便性の指標定義 */
+export const TRANSPORT_INDICATORS: ReadonlyArray<IndicatorDefinition> = [
+  {
+    id: "station_count_per_capita",
+    label: "鉄道駅数（人口1万人あたり）",
+    unit: "駅/万人",
+    direction: "higher_better",
+    category: "transport",
+    precision: 2,
+  },
+  {
+    id: "terminal_access_km",
+    label: "最寄りターミナル駅距離",
+    unit: "km",
+    direction: "lower_better",
+    category: "transport",
+    precision: 1,
+  },
+];
+
+/** Phase 5: 医療統計の指標定義 */
 export const HEALTHCARE_INDICATORS: ReadonlyArray<IndicatorDefinition> = [
   {
     id: "hospitals_per_capita",
@@ -164,12 +184,13 @@ export const HEALTHCARE_INDICATORS: ReadonlyArray<IndicatorDefinition> = [
   },
 ];
 
-/** 全指標定義（Phase 0 + Phase 1 + Phase 2a + Phase 2b + Phase 3 + Phase 4） */
+/** 全指標定義（Phase 0 + Phase 1 + Phase 2a + Phase 2b + Phase 3 + Phase 4 + Phase 5） */
 export const ALL_INDICATORS: ReadonlyArray<IndicatorDefinition> = [
   ...POPULATION_INDICATORS,
   ...PRICE_INDICATORS,
   ...SAFETY_INDICATORS,
   ...DISASTER_INDICATORS,
   ...EDUCATION_INDICATORS,
+  ...TRANSPORT_INDICATORS,
   ...HEALTHCARE_INDICATORS,
 ];

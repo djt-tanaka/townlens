@@ -24,6 +24,7 @@ export const createReportSchema = z.object({
       includeCrime: z.boolean().default(true),
       includeDisaster: z.boolean().default(true),
       includeEducation: z.boolean().default(true),
+      includeTransport: z.boolean().default(true),
       includeHealthcare: z.boolean().default(true),
     })
     .optional(),

@@ -54,6 +54,14 @@ export const NATIONAL_BASELINES: ReadonlyArray<NationalBaselineEntry> = [
     breakpoints: [0.25, 0.5, 0.8, 1.2],
   },
   {
+    indicatorId: "station_count_per_capita",
+    breakpoints: [0.2, 0.5, 1.0, 2.0],
+  },
+  {
+    indicatorId: "terminal_access_km",
+    breakpoints: [10, 25, 50, 100],
+  },
+  {
     indicatorId: "hospitals_per_capita",
     breakpoints: [3, 5, 7, 10],
   },

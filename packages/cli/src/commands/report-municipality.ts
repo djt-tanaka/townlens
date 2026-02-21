@@ -22,6 +22,8 @@ import {
   mergeDisasterIntoScoringInput,
   buildEducationData,
   mergeEducationIntoScoringInput,
+  buildTransportData,
+  mergeTransportIntoScoringInput,
   buildHealthcareData,
   mergeHealthcareIntoScoringInput,
   DATASETS,
@@ -274,6 +276,42 @@ async function buildScoredReport(
     }
   }
 
+  // 交通利便性データ
+  let hasTransportData = false;
+
+  if (options.transport) {
+    try {
+      const areaCodes = reportData.rows.map((r) => r.areaCode);
+      const populationMap = new Map<string, number>(
+        reportData.rows.map((r) => [r.areaCode, r.total]),
+      );
+      const transportData = await buildTransportData(
+        client, areaCodes,
+        { statsDataId: DATASETS.transport.statsDataId },
+        populationMap,
+      );
+
+      if (transportData.size > 0) {
+        scoringInput = mergeTransportIntoScoringInput(scoringInput, transportData);
+        definitions = ALL_INDICATORS;
+        hasTransportData = true;
+        enrichedRows = enrichedRows.map((row) => {
+          const stats = transportData.get(row.areaCode);
+          if (!stats) return row;
+          return {
+            ...row,
+            stationCountPerCapita: stats.stationCountPerCapita,
+            terminalAccessKm: stats.terminalAccessKm,
+          };
+        });
+      } else {
+        console.warn("[warn] 交通利便性データが0件でした");
+      }
+    } catch (err) {
+      console.warn(`[warn] 交通利便性データの取得に失敗しました: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
   // 医療統計データ
   let hasHealthcareData = false;
 
@@ -326,6 +364,9 @@ async function buildScoredReport(
   if (hasEducationData) {
     console.log("教育統計データ: 有効");
   }
+  if (hasTransportData) {
+    console.log("交通利便性データ: 有効");
+  }
   if (hasHealthcareData) {
     console.log("医療統計データ: 有効");
   }
@@ -356,6 +397,7 @@ async function buildScoredReport(
     hasCrimeData,
     hasDisasterData,
     hasEducationData,
+    hasTransportData,
     hasHealthcareData,
   });
 }

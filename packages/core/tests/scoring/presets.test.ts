@@ -10,6 +10,7 @@ import {
   SAFETY_INDICATORS,
   DISASTER_INDICATORS,
   EDUCATION_INDICATORS,
+  TRANSPORT_INDICATORS,
   HEALTHCARE_INDICATORS,
   ALL_INDICATORS,
 } from "../../src/scoring/presets";
@@ -139,8 +140,32 @@ describe("EDUCATION_INDICATORS", () => {
   });
 });
 
+describe("TRANSPORT_INDICATORS", () => {
+  it("Phase 4用の交通指標が定義されている", () => {
+    expect(TRANSPORT_INDICATORS).toHaveLength(2);
+    const ids = TRANSPORT_INDICATORS.map((d) => d.id);
+    expect(ids).toContain("station_count_per_capita");
+    expect(ids).toContain("terminal_access_km");
+  });
+
+  it("交通指標はtransportカテゴリ", () => {
+    for (const def of TRANSPORT_INDICATORS) {
+      expect(def.category).toBe("transport");
+    }
+  });
+
+  it("station_count_per_capitaはhigher_better、terminal_access_kmはlower_better", () => {
+    const station = TRANSPORT_INDICATORS.find((d) => d.id === "station_count_per_capita")!;
+    expect(station.direction).toBe("higher_better");
+    expect(station.unit).toBe("駅/万人");
+    const terminal = TRANSPORT_INDICATORS.find((d) => d.id === "terminal_access_km")!;
+    expect(terminal.direction).toBe("lower_better");
+    expect(terminal.unit).toBe("km");
+  });
+});
+
 describe("HEALTHCARE_INDICATORS", () => {
-  it("Phase 4用の医療指標が定義されている", () => {
+  it("Phase 5用の医療指標が定義されている", () => {
     expect(HEALTHCARE_INDICATORS).toHaveLength(3);
     const ids = HEALTHCARE_INDICATORS.map((d) => d.id);
     expect(ids).toContain("hospitals_per_capita");
@@ -165,7 +190,7 @@ describe("HEALTHCARE_INDICATORS", () => {
 describe("ALL_INDICATORS", () => {
   it("全フェーズの指標を統合している", () => {
     expect(ALL_INDICATORS.length).toBe(
-      POPULATION_INDICATORS.length + PRICE_INDICATORS.length + SAFETY_INDICATORS.length + DISASTER_INDICATORS.length + EDUCATION_INDICATORS.length + HEALTHCARE_INDICATORS.length,
+      POPULATION_INDICATORS.length + PRICE_INDICATORS.length + SAFETY_INDICATORS.length + DISASTER_INDICATORS.length + EDUCATION_INDICATORS.length + TRANSPORT_INDICATORS.length + HEALTHCARE_INDICATORS.length,
     );
   });
 

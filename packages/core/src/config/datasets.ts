@@ -50,4 +50,9 @@ export const DATASETS = {
       kidsCode: "001",
     },
   },
+  /** 社会・人口統計体系 市区町村データ C経済基盤（鉄道駅数等） */
+  transport: {
+    statsDataId: "0000020203",
+    label: "社会・人口統計体系 C経済基盤（市区町村）",
+  },
 } as const satisfies Record<string, DatasetPreset>;

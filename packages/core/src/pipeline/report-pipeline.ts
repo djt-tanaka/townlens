@@ -7,7 +7,8 @@
  * Phase 2a: 犯罪統計取得（buildCrimeData → mergeCrimeIntoScoringInput）
  * Phase 2b: 災害リスク取得（buildDisasterData → mergeDisasterIntoScoringInput）
  * Phase 3: 教育統計取得（buildEducationData → mergeEducationIntoScoringInput）
- * Phase 4: 医療統計取得（buildHealthcareData → mergeHealthcareIntoScoringInput）
+ * Phase 4: 交通利便性取得（buildTransportData → mergeTransportIntoScoringInput）
+ * Phase 5: 医療統計取得（buildHealthcareData → mergeHealthcareIntoScoringInput）
  * スコアリング: scoreCities()
  */
 
@@ -22,6 +23,7 @@ import type { CondoPriceStats } from "../reinfo/types";
 import type { CrimeStats } from "../estat/crime-data";
 import type { CityDisasterData } from "../reinfo/disaster-data";
 import type { EducationStats } from "../estat/education-data";
+import type { TransportStats } from "../estat/transport-data";
 import type { HealthcareStats } from "../estat/healthcare-data";
 import { buildReportData, toScoringInput } from "../estat/report-data";
 import { buildPriceData } from "../reinfo/price-data";
@@ -32,6 +34,8 @@ import { buildDisasterData } from "../reinfo/disaster-data";
 import { mergeDisasterIntoScoringInput } from "../reinfo/merge-disaster-scoring";
 import { buildEducationData } from "../estat/education-data";
 import { mergeEducationIntoScoringInput } from "../estat/merge-education-scoring";
+import { buildTransportData } from "../estat/transport-data";
+import { mergeTransportIntoScoringInput } from "../estat/merge-transport-scoring";
 import { buildHealthcareData } from "../estat/healthcare-data";
 import { mergeHealthcareIntoScoringInput } from "../estat/merge-healthcare-scoring";
 import { scoreCities } from "../scoring";
@@ -47,6 +51,7 @@ function enrichRows(
   crimeData?: ReadonlyMap<string, CrimeStats>,
   disasterData?: ReadonlyMap<string, CityDisasterData>,
   educationData?: ReadonlyMap<string, EducationStats>,
+  transportData?: ReadonlyMap<string, TransportStats>,
   healthcareData?: ReadonlyMap<string, HealthcareStats>,
 ): ReadonlyArray<ReportRow> {
   return rows.map((row) => {
@@ -89,6 +94,15 @@ function enrichRows(
       };
     }
 
+    const transport = transportData?.get(row.areaCode);
+    if (transport) {
+      enriched = {
+        ...enriched,
+        stationCountPerCapita: transport.stationCountPerCapita,
+        terminalAccessKm: transport.terminalAccessKm,
+      };
+    }
+
     const healthcare = healthcareData?.get(row.areaCode);
     if (healthcare) {
       enriched = {
@@ -110,6 +124,7 @@ export interface PipelineInput {
   readonly includeCrime: boolean;
   readonly includeDisaster: boolean;
   readonly includeEducation: boolean;
+  readonly includeTransport: boolean;
   readonly includeHealthcare: boolean;
 }
 
@@ -121,6 +136,7 @@ export interface PipelineResult {
   readonly hasCrimeData: boolean;
   readonly hasDisasterData: boolean;
   readonly hasEducationData: boolean;
+  readonly hasTransportData: boolean;
   readonly hasHealthcareData: boolean;
   readonly preset: WeightPreset;
   readonly timeLabel: string;
@@ -165,6 +181,7 @@ export async function runReportPipeline(
   let hasCrimeData = false;
   let hasDisasterData = false;
   let hasEducationData = false;
+  let hasTransportData = false;
   let hasHealthcareData = false;
 
   const areaCodes = reportData.rows.map((r) => r.areaCode);
@@ -174,6 +191,7 @@ export async function runReportPipeline(
   let crimeDataMap: ReadonlyMap<string, CrimeStats> | undefined;
   let disasterDataMap: ReadonlyMap<string, CityDisasterData> | undefined;
   let educationDataMap: ReadonlyMap<string, EducationStats> | undefined;
+  let transportDataMap: ReadonlyMap<string, TransportStats> | undefined;
   let healthcareDataMap: ReadonlyMap<string, HealthcareStats> | undefined;
 
   // Phase 1: 不動産価格取得
@@ -250,7 +268,6 @@ export async function runReportPipeline(
   // Phase 3: 教育統計取得
   if (input.includeEducation) {
     try {
-      // 人口あたりの算出に使うため、Phase 0 の人口データを抽出
       const populationMap = new Map<string, number>(
         reportData.rows.map((r) => [r.areaCode, r.total]),
       );
@@ -273,7 +290,32 @@ export async function runReportPipeline(
     }
   }
 
-  // Phase 4: 医療統計取得
+  // Phase 4: 交通利便性取得
+  if (input.includeTransport) {
+    try {
+      const populationMap = new Map<string, number>(
+        reportData.rows.map((r) => [r.areaCode, r.total]),
+      );
+      const transportData = await buildTransportData(
+        estatClient,
+        areaCodes,
+        { statsDataId: DATASETS.transport.statsDataId },
+        populationMap,
+      );
+      if (transportData.size > 0) {
+        scoringInput = mergeTransportIntoScoringInput(scoringInput, transportData);
+        definitions = ALL_INDICATORS;
+        hasTransportData = true;
+        transportDataMap = transportData;
+      }
+    } catch (err) {
+      console.warn(
+        `交通利便性データの取得に失敗しました: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }
+
+  // Phase 5: 医療統計取得
   if (input.includeHealthcare) {
     try {
       const populationMap = new Map<string, number>(
@@ -308,6 +350,7 @@ export async function runReportPipeline(
     crimeDataMap,
     disasterDataMap,
     educationDataMap,
+    transportDataMap,
     healthcareDataMap,
   );
 
@@ -319,6 +362,7 @@ export async function runReportPipeline(
     hasCrimeData,
     hasDisasterData,
     hasEducationData,
+    hasTransportData,
     hasHealthcareData,
     preset,
     timeLabel: reportData.timeLabel,

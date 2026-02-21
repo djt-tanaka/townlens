@@ -60,6 +60,7 @@ export {
   SAFETY_INDICATORS,
   DISASTER_INDICATORS,
   EDUCATION_INDICATORS,
+  TRANSPORT_INDICATORS,
   HEALTHCARE_INDICATORS,
   ALL_INDICATORS,
 } from "./scoring/presets";
@@ -150,6 +151,27 @@ export {
   renderCategoryLegend,
 } from "./charts/colors";
 export type { CategoryColor } from "./charts/colors";
+
+// ─── 駅データ ───
+export type { StationEntry } from "./station/types";
+export {
+  findStationByName,
+  getAllStationNames,
+  getStationCount,
+  countStationsByAreaCode,
+} from "./station/stations";
+export { haversineDistanceKm } from "./station/haversine";
+export {
+  TERMINAL_STATIONS,
+  nearestTerminalDistance,
+  nearestTerminalDistanceKm,
+} from "./station/terminal-stations";
+export type { TerminalDistance } from "./station/terminal-stations";
+
+// ─── 交通データ ───
+export { buildTransportData } from "./estat/transport-data";
+export type { TransportDataConfig, TransportStats } from "./estat/transport-data";
+export { mergeTransportIntoScoringInput } from "./estat/merge-transport-scoring";
 
 // ─── パイプライン ───
 export { runReportPipeline } from "./pipeline/report-pipeline";
