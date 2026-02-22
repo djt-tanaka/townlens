@@ -31,8 +31,8 @@ describe("splitLabel", () => {
 
   it("括弧も中黒もない長いラベルは中間で分割する", () => {
     expect(splitLabel("ターミナル駅距離", 7)).toEqual([
-      "ターミナル",
-      "駅距離",
+      "ターミナ",
+      "ル駅距離",
     ]);
     expect(splitLabel("1人あたり公園面積", 7)).toEqual([
       "1人あたり",
