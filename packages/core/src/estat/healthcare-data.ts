@@ -7,6 +7,10 @@ import {
   extractDataValues,
   valuesByArea,
 } from "./meta";
+import {
+  expandAreaCodes,
+  aggregateRawValues,
+} from "./meta/ward-reorganization";
 import { toCdParamName } from "../utils";
 import { normalizeLabel } from "../normalize/label";
 
@@ -142,6 +146,9 @@ export async function buildHealthcareData(
     return result;
   }
 
+  // 区再編対応: 新コード → 旧コードへの展開
+  const { expandedCodes, newToOldMapping } = expandAreaCodes(areaCodes);
+
   const metaInfo = await client.getMetaInfo(config.statsDataId);
   const classObjs = extractClassObjects(metaInfo);
 
@@ -179,7 +186,7 @@ export async function buildHealthcareData(
       ? await fetchIndicator(
           client,
           config.statsDataId,
-          areaCodes,
+          expandedCodes,
           timeSelection.code,
           indicators,
           indicators.hospitalCode,
@@ -191,7 +198,7 @@ export async function buildHealthcareData(
       ? await fetchIndicator(
           client,
           config.statsDataId,
-          areaCodes,
+          expandedCodes,
           timeSelection.code,
           indicators,
           indicators.clinicCode,
@@ -203,13 +210,20 @@ export async function buildHealthcareData(
       ? await fetchIndicator(
           client,
           config.statsDataId,
-          areaCodes,
+          expandedCodes,
           timeSelection.code,
           indicators,
           indicators.pediatricsCode,
           extraParams,
         )
       : new Map<string, number | null>();
+
+    // 区再編: 旧コードの実数を新コードに合算
+    if (newToOldMapping.size > 0) {
+      aggregateRawValues(hospitalMap, newToOldMapping);
+      aggregateRawValues(clinicMap, newToOldMapping);
+      aggregateRawValues(pediatricsMap, newToOldMapping);
+    }
 
     if (
       hospitalMap.size === 0 &&

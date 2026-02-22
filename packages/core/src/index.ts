@@ -41,6 +41,7 @@ export {
   starLabel,
   starColor,
   computeCompositeStars,
+  applyDataCoveragePenalty,
 } from "./scoring/star-rating";
 export type { StarRating } from "./scoring/star-rating";
 export {
@@ -92,6 +93,18 @@ export type {
   AgeSelection,
   DataValue,
   DefaultFilter,
+  OldWardEntry,
+  WardReorganizationEntry,
+  CodeExpansion,
+} from "./estat/meta";
+export {
+  isReorganizedCode,
+  isAbolishedCode,
+  expandAreaCodes,
+  aggregateRawValues,
+  aggregatePerCapitaValues,
+  aggregateBooleanValues,
+  expandPopulationMap,
 } from "./estat/meta";
 export { buildReportData, toScoringInput } from "./estat/report-data";
 export type { BuildReportInput, BuildReportResult } from "./estat/report-data";
