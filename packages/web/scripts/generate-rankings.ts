@@ -104,6 +104,7 @@ interface CityRankingRow {
   readonly starRating: number;
   readonly indicatorStars: unknown;
   readonly population: number | null;
+  readonly kidsRatio: number | null;
 }
 
 // --- メイン処理 ---
@@ -195,6 +196,7 @@ async function main(): Promise<void> {
   const allCityData: Array<{
     indicators: CityIndicators;
     population: number;
+    kidsRatio: number;
   }> = [];
 
   // サーキットブレーカー: API障害時に以降のチャンクで同じAPIを繰り返しリトライしない
@@ -279,12 +281,14 @@ async function main(): Promise<void> {
         scoringInput = mergeEducationIntoScoringInput(scoringInput, educationResult);
       }
 
-      // CityIndicators と人口を蓄積
+      // CityIndicators と人口・子供比率を蓄積
       const populationByCode = new Map(reportData.rows.map((r) => [r.areaCode, r.total]));
+      const kidsRatioByCode = new Map(reportData.rows.map((r) => [r.areaCode, r.ratio]));
       for (const city of scoringInput) {
         allCityData.push({
           indicators: city,
           population: populationByCode.get(city.areaCode) ?? 0,
+          kidsRatio: kidsRatioByCode.get(city.areaCode) ?? 0,
         });
       }
 
@@ -312,7 +316,7 @@ async function main(): Promise<void> {
     }
 
     // 各都市をスコアリング
-    const scored: CityRankingRow[] = allCityData.map(({ indicators, population }) => {
+    const scored: CityRankingRow[] = allCityData.map(({ indicators, population, kidsRatio }) => {
       const score = scoreSingleCity(indicators, ALL_INDICATORS, preset);
       return {
         preset: preset.name,
@@ -322,6 +326,7 @@ async function main(): Promise<void> {
         starRating: score.starRating,
         indicatorStars: score.indicatorStars,
         population,
+        kidsRatio,
       };
     });
 
@@ -342,6 +347,7 @@ async function main(): Promise<void> {
         star_rating: city.starRating,
         indicator_stars: city.indicatorStars as Database["public"]["Tables"]["city_rankings"]["Insert"]["indicator_stars"],
         population: city.population,
+        kids_ratio: city.kidsRatio,
         generated_at: now,
       }));
 
