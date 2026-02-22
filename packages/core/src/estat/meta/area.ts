@@ -66,6 +66,51 @@ export function isMunicipalityCode(code: string): boolean {
   return code.slice(2, 5) !== "000";
 }
 
+/**
+ * 政令指定都市（20市）の親コード一覧。
+ *
+ * 政令指定都市は区に分かれており、親市と区の統計が両方存在する。
+ * ランキングでは親市を除外し、区のみを対象にする。
+ *
+ * 5桁コード（チェックディジットなし）で管理。
+ * 6桁コードの場合は先頭5桁で判定する。
+ */
+const DESIGNATED_CITY_CODES: ReadonlySet<string> = new Set([
+  "01100", // 札幌市
+  "04100", // 仙台市
+  "11100", // さいたま市
+  "12100", // 千葉市
+  "14100", // 横浜市
+  "14130", // 川崎市
+  "14150", // 相模原市
+  "15100", // 新潟市
+  "22100", // 静岡市
+  "22130", // 浜松市
+  "23100", // 名古屋市
+  "26100", // 京都市
+  "27100", // 大阪市
+  "27140", // 堺市
+  "28100", // 神戸市
+  "33100", // 岡山市
+  "34100", // 広島市
+  "40100", // 北九州市
+  "40130", // 福岡市
+  "43100", // 熊本市
+]);
+
+/**
+ * 政令指定都市の親コードかどうかを判定する。
+ *
+ * 政令指定都市は区に分かれており、ランキングでは親市（集約値）を除外し
+ * 区単位のみを比較対象にするために使用する。
+ *
+ * 5桁・6桁（チェックディジット付き）どちらにも対応。
+ */
+export function isDesignatedCityCode(code: string): boolean {
+  if (code.length < 5) return false;
+  return DESIGNATED_CITY_CODES.has(code.slice(0, 5));
+}
+
 const PREFECTURE_PREFIX = /^(北海道|東京都|京都府|大阪府|.{2,3}県)/;
 
 function stripPrefecture(input: string): string {

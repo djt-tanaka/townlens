@@ -20,6 +20,7 @@ import {
   resolveAreaClass,
   buildAreaEntries,
   isMunicipalityCode,
+  isDesignatedCityCode,
   buildReportData,
   toScoringInput,
   buildPriceData,
@@ -132,10 +133,11 @@ async function main(): Promise<void> {
   const rawEntries = buildAreaEntries(areaClass);
   // 都道府県・全国レベルを除外し、市区町村のみに絞り込む
   // isMunicipalityCode（コード判定）+ isPrefectureName（名前判定）の二重フィルタ
+  // さらに政令指定都市の親コードを除外（区のみランキング対象にする）
   const allEntries = rawEntries.filter(
-    (e) => isMunicipalityCode(e.code) && !isPrefectureName(e.name),
+    (e) => isMunicipalityCode(e.code) && !isPrefectureName(e.name) && !isDesignatedCityCode(e.code),
   );
-  console.log(`${rawEntries.length} エリアから ${allEntries.length} 市区町村を抽出（都道府県・全国を除外）`);
+  console.log(`${rawEntries.length} エリアから ${allEntries.length} 市区町村を抽出（都道府県・全国・政令指定都市の親コードを除外）`);
 
   // --- 自治体マスターテーブル (municipalities) を upsert ---
   console.log("自治体マスターテーブルを更新中...");

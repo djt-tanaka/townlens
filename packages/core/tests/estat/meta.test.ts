@@ -5,6 +5,7 @@ import {
   buildAreaEntries,
   resolveCities,
   isMunicipalityCode,
+  isDesignatedCityCode,
   resolveLatestTime,
   resolveAgeSelection,
   extractDataValues,
@@ -157,6 +158,61 @@ describe("isMunicipalityCode", () => {
     expect(isMunicipalityCode("0000")).toBe(false);
     expect(isMunicipalityCode("13")).toBe(false);
     expect(isMunicipalityCode("")).toBe(false);
+  });
+});
+
+describe("isDesignatedCityCode", () => {
+  it("政令指定都市の親コードはtrueを返す", () => {
+    expect(isDesignatedCityCode("01100")).toBe(true); // 札幌市
+    expect(isDesignatedCityCode("04100")).toBe(true); // 仙台市
+    expect(isDesignatedCityCode("11100")).toBe(true); // さいたま市
+    expect(isDesignatedCityCode("12100")).toBe(true); // 千葉市
+    expect(isDesignatedCityCode("14100")).toBe(true); // 横浜市
+    expect(isDesignatedCityCode("14130")).toBe(true); // 川崎市
+    expect(isDesignatedCityCode("14150")).toBe(true); // 相模原市
+    expect(isDesignatedCityCode("15100")).toBe(true); // 新潟市
+    expect(isDesignatedCityCode("22100")).toBe(true); // 静岡市
+    expect(isDesignatedCityCode("22130")).toBe(true); // 浜松市
+    expect(isDesignatedCityCode("23100")).toBe(true); // 名古屋市
+    expect(isDesignatedCityCode("26100")).toBe(true); // 京都市
+    expect(isDesignatedCityCode("27100")).toBe(true); // 大阪市
+    expect(isDesignatedCityCode("27140")).toBe(true); // 堺市
+    expect(isDesignatedCityCode("28100")).toBe(true); // 神戸市
+    expect(isDesignatedCityCode("33100")).toBe(true); // 岡山市
+    expect(isDesignatedCityCode("34100")).toBe(true); // 広島市
+    expect(isDesignatedCityCode("40100")).toBe(true); // 北九州市
+    expect(isDesignatedCityCode("40130")).toBe(true); // 福岡市
+    expect(isDesignatedCityCode("43100")).toBe(true); // 熊本市
+  });
+
+  it("政令指定都市の区コードはfalseを返す", () => {
+    expect(isDesignatedCityCode("01101")).toBe(false); // 札幌市中央区
+    expect(isDesignatedCityCode("11101")).toBe(false); // さいたま市西区
+    expect(isDesignatedCityCode("14101")).toBe(false); // 横浜市鶴見区
+    expect(isDesignatedCityCode("27102")).toBe(false); // 大阪市都島区
+  });
+
+  it("一般市区町村コードはfalseを返す", () => {
+    expect(isDesignatedCityCode("13104")).toBe(false); // 新宿区（特別区）
+    expect(isDesignatedCityCode("11203")).toBe(false); // 川口市
+    expect(isDesignatedCityCode("23202")).toBe(false); // 豊橋市
+  });
+
+  it("都道府県コードはfalseを返す", () => {
+    expect(isDesignatedCityCode("01000")).toBe(false); // 北海道
+    expect(isDesignatedCityCode("13000")).toBe(false); // 東京都
+  });
+
+  it("6桁チェックディジット付きコードにも対応する", () => {
+    expect(isDesignatedCityCode("011002")).toBe(true);  // 札幌市（6桁）
+    expect(isDesignatedCityCode("141003")).toBe(true);  // 横浜市（6桁）
+    expect(isDesignatedCityCode("141011")).toBe(false);  // 横浜市鶴見区（6桁）
+  });
+
+  it("5桁未満のコードはfalseを返す", () => {
+    expect(isDesignatedCityCode("0110")).toBe(false);
+    expect(isDesignatedCityCode("14")).toBe(false);
+    expect(isDesignatedCityCode("")).toBe(false);
   });
 });
 
