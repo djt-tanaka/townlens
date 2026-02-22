@@ -117,15 +117,27 @@ describe("fetchAllMunicipalityCounts", () => {
 
   it("都道府県ごとの都市数を返す", async () => {
     const mockData = [
-      { prefecture: "東京都" },
-      { prefecture: "東京都" },
-      { prefecture: "大阪府" },
+      { area_code: "13101", prefecture: "東京都" },
+      { area_code: "13102", prefecture: "東京都" },
+      { area_code: "27102", prefecture: "大阪府" },
     ];
     mockFrom.mockReturnValue(createQueryChain({ data: mockData, error: null }));
 
     const counts = await fetchAllMunicipalityCounts();
     expect(counts["東京都"]).toBe(2);
     expect(counts["大阪府"]).toBe(1);
+  });
+
+  it("政令指定都市の親コードをカウントから除外する", async () => {
+    const mockData = [
+      { area_code: "14101", prefecture: "神奈川県" }, // 横浜市鶴見区（区 → カウント対象）
+      { area_code: "14100", prefecture: "神奈川県" }, // 横浜市（親 → 除外）
+      { area_code: "14130", prefecture: "神奈川県" }, // 川崎市（親 → 除外）
+    ];
+    mockFrom.mockReturnValue(createQueryChain({ data: mockData, error: null }));
+
+    const counts = await fetchAllMunicipalityCounts();
+    expect(counts["神奈川県"]).toBe(1);
   });
 
   it("Supabase エラー時に空オブジェクトを返す", async () => {
@@ -182,15 +194,15 @@ describe("fetchPrefectureCities", () => {
 
   it("fetchCityPageData が null を返した都市をフィルタする", async () => {
     const mockCities = [
-      { area_code: "01100", city_name: "札幌市" },
       { area_code: "01202", city_name: "函館市" },
+      { area_code: "01203", city_name: "小樽市" },
     ];
     mockFrom.mockReturnValue(
       createQueryChain({ data: mockCities, error: null }),
     );
 
     mockFetchCityPageData
-      .mockResolvedValueOnce({ cityName: "札幌市" } as never)
+      .mockResolvedValueOnce({ cityName: "函館市" } as never)
       .mockResolvedValueOnce(null as never);
 
     const result = await fetchPrefectureCities("北海道");
@@ -199,18 +211,35 @@ describe("fetchPrefectureCities", () => {
 
   it("fetchCityPageData が reject された都市を除外する", async () => {
     const mockCities = [
-      { area_code: "01100", city_name: "札幌市" },
       { area_code: "01202", city_name: "函館市" },
+      { area_code: "01203", city_name: "小樽市" },
     ];
     mockFrom.mockReturnValue(
       createQueryChain({ data: mockCities, error: null }),
     );
 
     mockFetchCityPageData
-      .mockResolvedValueOnce({ cityName: "札幌市" } as never)
+      .mockResolvedValueOnce({ cityName: "函館市" } as never)
       .mockRejectedValueOnce(new Error("API エラー"));
 
     const result = await fetchPrefectureCities("北海道");
+    expect(result).toHaveLength(1);
+  });
+
+  it("政令指定都市の親コードを除外して都市データを取得する", async () => {
+    const mockCities = [
+      { area_code: "14100", city_name: "横浜市" },   // 政令指定都市の親 → 除外
+      { area_code: "14101", city_name: "鶴見区" },   // 区 → 取得対象
+    ];
+    mockFrom.mockReturnValue(
+      createQueryChain({ data: mockCities, error: null }),
+    );
+
+    mockFetchCityPageData.mockResolvedValue({ cityName: "鶴見区" } as never);
+
+    const result = await fetchPrefectureCities("神奈川県");
+    expect(mockFetchCityPageData).toHaveBeenCalledTimes(1);
+    expect(mockFetchCityPageData).toHaveBeenCalledWith("鶴見区");
     expect(result).toHaveLength(1);
   });
 });
