@@ -127,9 +127,12 @@ async function fetchAllMunicipalityCountsInternal(): Promise<
 > {
   const supabase = createAdminClient();
 
+  // Supabase のデフォルト行数制限は 1000 件だが、全国の自治体数は約 1,900 件。
+  // 制限なしで全件取得するために十分大きな limit を指定する。
   const { data, error } = await supabase
     .from("municipalities")
-    .select("prefecture");
+    .select("prefecture")
+    .limit(5000);
 
   if (error) {
     console.error(`municipalities 取得エラー: ${error.message}`);
