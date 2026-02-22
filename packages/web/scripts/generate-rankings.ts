@@ -139,25 +139,25 @@ async function main(): Promise<void> {
   );
   console.log(`${rawEntries.length} エリアから ${allEntries.length} 市区町村を抽出（都道府県・全国・政令指定都市の親コードを除外）`);
 
-  // --- 政令指定都市の親コードが残っている場合は削除 ---
+  // --- 都道府県・全国コード、政令指定都市の親コードが残っている場合は削除 ---
   // 以前のバージョンでフィルタなしで挿入された古い行をクリーンアップ
-  const designatedCodesToDelete = rawEntries
-    .filter((e) => isMunicipalityCode(e.code) && isDesignatedCityCode(e.code))
+  const codesToDelete = rawEntries
+    .filter((e) => !isMunicipalityCode(e.code) || isDesignatedCityCode(e.code))
     .map((e) => e.code);
 
-  if (designatedCodesToDelete.length > 0) {
-    console.log(`政令指定都市の親コード ${designatedCodesToDelete.length} 件を municipalities / city_rankings から削除中...`);
+  if (codesToDelete.length > 0) {
+    console.log(`都道府県・政令指定都市の親コード ${codesToDelete.length} 件を municipalities / city_rankings から削除中...`);
     const { error: delMuniErr } = await supabase
       .from("municipalities")
       .delete()
-      .in("area_code", designatedCodesToDelete);
+      .in("area_code", codesToDelete);
     if (delMuniErr) {
       console.error(`  municipalities 削除エラー: ${delMuniErr.message}`);
     }
     const { error: delRankErr } = await supabase
       .from("city_rankings")
       .delete()
-      .in("area_code", designatedCodesToDelete);
+      .in("area_code", codesToDelete);
     if (delRankErr) {
       console.error(`  city_rankings 削除エラー: ${delRankErr.message}`);
     }
@@ -301,6 +301,15 @@ async function main(): Promise<void> {
 
   for (const preset of ALL_PRESETS) {
     console.log(`\nプリセット「${preset.label}」のスコアリング中...`);
+
+    // 既存ランキングを削除（古い都道府県・政令指定都市エントリ等のゴミデータを一掃）
+    const { error: deleteError } = await supabase
+      .from("city_rankings")
+      .delete()
+      .eq("preset", preset.name);
+    if (deleteError) {
+      console.error(`  既存ランキング削除エラー: ${deleteError.message}`);
+    }
 
     // 各都市をスコアリング
     const scored: CityRankingRow[] = allCityData.map(({ indicators, population }) => {
