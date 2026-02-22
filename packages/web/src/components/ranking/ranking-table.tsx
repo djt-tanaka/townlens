@@ -50,38 +50,49 @@ export function RankingTable({ entries }: RankingTableProps) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {entries.map((entry) => (
-          <TableRow key={entry.areaCode}>
-            <TableCell className="text-center font-medium">
-              {MEDAL[entry.rank] ?? entry.rank}
-            </TableCell>
-            <TableCell>
-              <Link
-                href={`/city/${encodeURIComponent(entry.cityName)}`}
-                className="font-medium hover:underline"
-              >
-                {entry.cityName}
-              </Link>
-              <span className="ml-1 text-xs text-muted-foreground sm:hidden">
-                {entry.prefecture}
-              </span>
-            </TableCell>
-            <TableCell className="hidden sm:table-cell">
-              <Badge variant="outline">{entry.prefecture}</Badge>
-            </TableCell>
-            <TableCell className="text-center">
-              <span className="text-amber-500">
-                {renderStars(entry.starRating)}
-              </span>
-              <span className="ml-1 text-xs text-muted-foreground">
-                {entry.starRating.toFixed(1)}
-              </span>
-            </TableCell>
-            <TableCell className="hidden sm:table-cell text-right tabular-nums">
-              {formatPopulation(entry.population)}
-            </TableCell>
-          </TableRow>
-        ))}
+        {entries.map((entry) => {
+          const isTop3 = entry.rank <= 3;
+          const rowBg = entry.rank === 1
+            ? "bg-amber-50/60 dark:bg-amber-950/20"
+            : entry.rank === 2
+              ? "bg-slate-50/60 dark:bg-slate-800/20"
+              : entry.rank === 3
+                ? "bg-orange-50/60 dark:bg-orange-950/20"
+                : "";
+
+          return (
+            <TableRow key={entry.areaCode} className={rowBg}>
+              <TableCell className={`text-center ${isTop3 ? "text-2xl" : "font-medium"}`}>
+                {MEDAL[entry.rank] ?? entry.rank}
+              </TableCell>
+              <TableCell>
+                <Link
+                  href={`/city/${encodeURIComponent(entry.cityName)}`}
+                  className={`hover:underline ${isTop3 ? "text-base font-bold" : "font-medium"}`}
+                >
+                  {entry.cityName}
+                </Link>
+                <span className="ml-1 text-xs text-muted-foreground sm:hidden">
+                  {entry.prefecture}
+                </span>
+              </TableCell>
+              <TableCell className="hidden sm:table-cell">
+                <Badge variant="outline">{entry.prefecture}</Badge>
+              </TableCell>
+              <TableCell className="text-center">
+                <span className={`text-amber-500 ${isTop3 ? "text-base" : ""}`}>
+                  {renderStars(entry.starRating)}
+                </span>
+                <span className="ml-1 text-xs text-muted-foreground">
+                  {entry.starRating.toFixed(1)}
+                </span>
+              </TableCell>
+              <TableCell className="hidden sm:table-cell text-right tabular-nums">
+                {formatPopulation(entry.population)}
+              </TableCell>
+            </TableRow>
+          );
+        })}
       </TableBody>
     </Table>
   );
