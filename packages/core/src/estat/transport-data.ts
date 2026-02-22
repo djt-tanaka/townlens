@@ -7,6 +7,10 @@ import {
   extractDataValues,
   valuesByArea,
 } from "./meta";
+import {
+  expandAreaCodes,
+  aggregateRawValues,
+} from "./meta/ward-reorganization";
 import { toCdParamName } from "../utils";
 import { normalizeLabel } from "../normalize/label";
 import { getCityLocation } from "../reinfo/city-locations";
@@ -118,6 +122,9 @@ export async function buildTransportData(
     return result;
   }
 
+  // 区再編対応: 新コード → 旧コードへの展開
+  const { expandedCodes, newToOldMapping } = expandAreaCodes(areaCodes);
+
   // ターミナル距離は常に算出可能
   const terminalDistances = new Map<string, number>();
   for (const areaCode of areaCodes) {
@@ -159,7 +166,7 @@ export async function buildTransportData(
 
           const queryParams: GetStatsDataParams = {
             statsDataId: config.statsDataId,
-            cdArea: areaCodes.join(","),
+            cdArea: expandedCodes.join(","),
             cdTime: timeSelection.code,
             [indicators.paramName]: indicators.stationCountCode!,
             ...extraParams,
@@ -168,6 +175,11 @@ export async function buildTransportData(
           const response = await client.getStatsData(queryParams);
           const values = extractDataValues(response);
           estatStationCounts = valuesByArea(values, timeSelection.code);
+
+          // 区再編: 旧コードの駅数を新コードに合算
+          if (newToOldMapping.size > 0) {
+            aggregateRawValues(estatStationCounts, newToOldMapping);
+          }
 
           if (estatStationCounts.size > 0) {
             if (timeSelection !== timeCandidates[0]) {
@@ -196,9 +208,20 @@ export async function buildTransportData(
   // e-Statデータが取得できなかった場合、静的駅DBでフォールバック
   if (estatStationCounts.size === 0) {
     const staticCounts = countStationsByAreaCode();
-    for (const areaCode of areaCodes) {
+    // 静的DBにも旧コードで集約を試みる
+    const staticMap = new Map<string, number | null>();
+    for (const areaCode of expandedCodes) {
       const count = staticCounts.get(areaCode);
       if (count !== undefined) {
+        staticMap.set(areaCode, count);
+      }
+    }
+    if (newToOldMapping.size > 0) {
+      aggregateRawValues(staticMap, newToOldMapping);
+    }
+    for (const areaCode of areaCodes) {
+      const count = staticMap.get(areaCode);
+      if (count !== undefined && count !== null) {
         estatStationCounts.set(areaCode, count);
       }
     }

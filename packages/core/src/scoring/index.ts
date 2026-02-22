@@ -3,7 +3,7 @@ import { calculatePercentile } from "./percentile";
 import { calculateCompositeScore } from "./composite";
 import { evaluateConfidence } from "./confidence";
 import { computeNationalPercentile } from "./national-baseline";
-import { percentileToStars, computeCompositeStars } from "./star-rating";
+import { percentileToStars, computeCompositeStars, applyDataCoveragePenalty } from "./star-rating";
 import type { StarRating } from "./star-rating";
 import {
   CityIndicators,
@@ -111,9 +111,14 @@ export function scoreCities(
       const weight = def ? (preset.weights[def.category] ?? 0) : 0;
       return { indicatorId: is.indicatorId, weight };
     });
-    const starRating =
+    const rawStarRating =
       indicatorStars.length > 0
         ? computeCompositeStars(indicatorStars, starWeights)
+        : undefined;
+    // データ充足率に基づくスコア補正（指標不足の都市を中立方向に引き寄せ）
+    const starRating =
+      rawStarRating !== undefined
+        ? applyDataCoveragePenalty(rawStarRating, indicatorStars.length, definitions.length)
         : undefined;
 
     // 信頼度: 全指標の情報を集約

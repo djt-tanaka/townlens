@@ -7,6 +7,10 @@ import {
   extractDataValues,
   valuesByArea,
 } from "./meta";
+import {
+  expandAreaCodes,
+  aggregateRawValues,
+} from "./meta/ward-reorganization";
 import { toCdParamName } from "../utils";
 import { normalizeLabel } from "../normalize/label";
 
@@ -117,6 +121,9 @@ export async function buildEducationData(
     return result;
   }
 
+  // 区再編対応: 新コード → 旧コードへの展開
+  const { expandedCodes, newToOldMapping } = expandAreaCodes(areaCodes);
+
   const metaInfo = await client.getMetaInfo(config.statsDataId);
   const classObjs = extractClassObjects(metaInfo);
 
@@ -150,14 +157,20 @@ export async function buildEducationData(
   for (const timeSelection of timeCandidates) {
     const dataYear = timeSelection.code.replace(/\D/g, "").slice(0, 4);
 
-    // 小学校数と中学校数のデータを取得
+    // 小学校数と中学校数のデータを取得（展開済みコードで問い合わせ）
     const elementaryMap = indicators.elementaryCode
-      ? await fetchIndicator(client, config.statsDataId, areaCodes, timeSelection.code, indicators, indicators.elementaryCode, extraParams)
+      ? await fetchIndicator(client, config.statsDataId, expandedCodes, timeSelection.code, indicators, indicators.elementaryCode, extraParams)
       : new Map<string, number | null>();
 
     const juniorHighMap = indicators.juniorHighCode
-      ? await fetchIndicator(client, config.statsDataId, areaCodes, timeSelection.code, indicators, indicators.juniorHighCode, extraParams)
+      ? await fetchIndicator(client, config.statsDataId, expandedCodes, timeSelection.code, indicators, indicators.juniorHighCode, extraParams)
       : new Map<string, number | null>();
+
+    // 区再編: 旧コードの実数を新コードに合算
+    if (newToOldMapping.size > 0) {
+      aggregateRawValues(elementaryMap, newToOldMapping);
+      aggregateRawValues(juniorHighMap, newToOldMapping);
+    }
 
     if (elementaryMap.size === 0 && juniorHighMap.size === 0) {
       continue;

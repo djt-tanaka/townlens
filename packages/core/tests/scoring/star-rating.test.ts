@@ -6,6 +6,7 @@ import {
   starLabel,
   starColor,
   computeCompositeStars,
+  applyDataCoveragePenalty,
 } from "../../src/scoring/star-rating";
 
 describe("percentileToStars", () => {
@@ -134,5 +135,34 @@ describe("computeCompositeStars", () => {
 
   it("空の場合はデフォルト3を返す", () => {
     expect(computeCompositeStars([], [])).toBe(3);
+  });
+});
+
+describe("applyDataCoveragePenalty", () => {
+  it("全指標が揃っている場合、補正なし", () => {
+    expect(applyDataCoveragePenalty(4.5, 12, 12)).toBe(4.5);
+  });
+
+  it("充足率50%ではスコアが中立方向に引き寄せられる", () => {
+    // 4.5 × 0.5 + 3.0 × 0.5 = 3.75 → 3.8
+    expect(applyDataCoveragePenalty(4.5, 6, 12)).toBe(3.8);
+  });
+
+  it("充足率が低い場合、大幅に中立方向に補正される", () => {
+    // 4.5 × (2/12) + 3.0 × (10/12) = 0.75 + 2.5 = 3.25 → 3.3
+    expect(applyDataCoveragePenalty(4.5, 2, 12)).toBe(3.3);
+  });
+
+  it("スコアが中立値の場合、充足率に関わらず3.0を返す", () => {
+    expect(applyDataCoveragePenalty(3.0, 2, 12)).toBe(3);
+  });
+
+  it("低スコアでも中立方向に引き寄せられる", () => {
+    // 1.5 × 0.5 + 3.0 × 0.5 = 2.25 → 2.3
+    expect(applyDataCoveragePenalty(1.5, 6, 12)).toBe(2.3);
+  });
+
+  it("totalCountが0の場合、中立値を返す", () => {
+    expect(applyDataCoveragePenalty(5.0, 0, 0)).toBe(3);
   });
 });

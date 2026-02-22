@@ -37,3 +37,18 @@ export {
 } from "./data";
 
 export { formatSelectionPreview } from "./preview";
+
+export type {
+  OldWardEntry,
+  WardReorganizationEntry,
+  CodeExpansion,
+} from "./ward-reorganization";
+export {
+  isReorganizedCode,
+  isAbolishedCode,
+  expandAreaCodes,
+  aggregateRawValues,
+  aggregatePerCapitaValues,
+  aggregateBooleanValues,
+  expandPopulationMap,
+} from "./ward-reorganization";

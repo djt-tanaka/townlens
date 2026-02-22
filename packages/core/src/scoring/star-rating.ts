@@ -97,3 +97,34 @@ export function computeCompositeStars(
   const raw = weightedSum / totalWeight;
   return Math.round(raw * 10) / 10;
 }
+
+/** データ充足率の中立スター値 */
+const NEUTRAL_STARS = 3.0;
+
+/**
+ * データ充足率に基づくスコア補正。
+ *
+ * 指標データが不足している都市のスコアを中立値（3.0）方向に引き寄せる。
+ * これにより、人口データのみで高スコアになる問題（区再編等）を防ぐ。
+ *
+ * 補正式: adjusted = raw × coverage + 3.0 × (1 - coverage)
+ *   coverage = availableCount / totalCount
+ *
+ * 例: 実スコア4.5, 充足率2/12 → 4.5×0.17 + 3.0×0.83 = 3.26
+ *
+ * @param rawStarRating 補正前のスター評価（1.0-5.0）
+ * @param availableCount 値が存在する指標の数
+ * @param totalCount 定義されている指標の総数
+ * @returns 補正後のスター評価（1.0-5.0）
+ */
+export function applyDataCoveragePenalty(
+  rawStarRating: number,
+  availableCount: number,
+  totalCount: number,
+): number {
+  if (totalCount <= 0) return NEUTRAL_STARS;
+  const coverage = Math.min(1, availableCount / totalCount);
+  const adjusted =
+    rawStarRating * coverage + NEUTRAL_STARS * (1 - coverage);
+  return Math.round(adjusted * 10) / 10;
+}

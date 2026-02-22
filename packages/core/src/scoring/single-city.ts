@@ -13,7 +13,7 @@ import type {
   WeightPreset,
 } from "./types";
 import { computeNationalPercentile } from "./national-baseline";
-import { percentileToStars, computeCompositeStars } from "./star-rating";
+import { percentileToStars, computeCompositeStars, applyDataCoveragePenalty } from "./star-rating";
 
 /** 単一都市のスター評価結果 */
 export interface SingleCityScore {
@@ -61,10 +61,17 @@ export function scoreSingleCity(
     return { indicatorId: is.indicatorId, weight };
   });
 
-  const starRating =
+  const rawStarRating =
     indicatorStars.length > 0
       ? computeCompositeStars(indicatorStars, starWeights)
       : 3;
+
+  // データ充足率に基づくスコア補正（指標不足の都市を中立方向に引き寄せ）
+  const starRating = applyDataCoveragePenalty(
+    rawStarRating,
+    indicatorStars.length,
+    definitions.length,
+  );
 
   return {
     cityName: city.cityName,

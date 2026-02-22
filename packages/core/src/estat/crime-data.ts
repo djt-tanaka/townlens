@@ -7,6 +7,12 @@ import {
   extractDataValues,
   valuesByArea,
 } from "./meta";
+import {
+  expandAreaCodes,
+  expandPopulationMap,
+  aggregateRawValues,
+  aggregatePerCapitaValues,
+} from "./meta/ward-reorganization";
 import { arrify, textFrom, toCdParamName } from "../utils";
 import { normalizeLabel } from "../normalize/label";
 
@@ -164,6 +170,12 @@ export async function buildCrimeData(
     return result;
   }
 
+  // 区再編対応: 新コード → 旧コードへの展開
+  const { expandedCodes, newToOldMapping } = expandAreaCodes(areaCodes);
+  const expandedPopMap = populationMap
+    ? expandPopulationMap(populationMap, newToOldMapping)
+    : undefined;
+
   // キャッシュはクライアントに内蔵されているため、直接getMetaInfoを呼ぶ
   const metaInfo = await client.getMetaInfo(config.statsDataId);
   const classObjs = extractClassObjects(metaInfo);
@@ -212,7 +224,7 @@ export async function buildCrimeData(
 
     const queryParams: GetStatsDataParams = {
       statsDataId: config.statsDataId,
-      cdArea: areaCodes.join(","),
+      cdArea: expandedCodes.join(","),
       cdTime: timeSelection.code,
       ...(indicatorClass
         ? { [indicatorClass.paramName]: indicatorClass.code }
@@ -224,6 +236,15 @@ export async function buildCrimeData(
     const values = extractDataValues(response);
     const areaMap = valuesByArea(values, timeSelection.code);
 
+    // 区再編: 旧コードデータを新コードに集約
+    if (newToOldMapping.size > 0) {
+      if (alreadyPerCapita) {
+        aggregatePerCapitaValues(areaMap, newToOldMapping);
+      } else {
+        aggregateRawValues(areaMap, newToOldMapping);
+      }
+    }
+
     if (areaMap.size === 0) {
       // この年度にはデータがない → 前の年度を試す
       continue;
@@ -234,7 +255,7 @@ export async function buildCrimeData(
         let crimeRate = value;
         if (!alreadyPerCapita) {
           // 実数（総件数）→ 人口千人当たりに変換
-          const pop = populationMap?.get(areaCode);
+          const pop = populationMap?.get(areaCode) ?? expandedPopMap?.get(areaCode);
           if (pop && pop > 0) {
             crimeRate = (value / pop) * 1000;
           } else {
