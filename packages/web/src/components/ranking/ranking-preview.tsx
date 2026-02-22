@@ -41,28 +41,50 @@ export function RankingPreview({ meta, entries }: RankingPreviewProps) {
           ランキングデータがまだ生成されていません
         </p>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-5">
-          {entries.map((entry) => (
-            <Card key={entry.areaCode} className="relative">
-              <CardContent className="flex flex-col items-center gap-1 p-4">
-                <span className="text-lg">
-                  {MEDAL[entry.rank] ?? `${entry.rank}位`}
-                </span>
-                <Link
-                  href={`/city/${encodeURIComponent(entry.cityName)}`}
-                  className="text-sm font-semibold hover:underline"
-                >
-                  {entry.cityName}
-                </Link>
-                <Badge variant="outline" className="text-xs">
-                  {entry.prefecture}
-                </Badge>
-                <span className="text-xs text-amber-500">
-                  {renderStars(entry.starRating)} {entry.starRating.toFixed(1)}
-                </span>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="grid gap-4 sm:grid-cols-5">
+          {entries.map((entry) => {
+            const isTop3 = entry.rank <= 3;
+            const bgClass = entry.rank === 1
+              ? "bg-amber-50/60 dark:bg-amber-950/20"
+              : entry.rank === 2
+                ? "bg-slate-50/60 dark:bg-slate-800/20"
+                : entry.rank === 3
+                  ? "bg-orange-50/60 dark:bg-orange-950/20"
+                  : "";
+            const borderColor = entry.rank === 1
+              ? "#FFD700"
+              : entry.rank === 2
+                ? "#C0C0C0"
+                : entry.rank === 3
+                  ? "#CD7F32"
+                  : undefined;
+
+            return (
+              <Card
+                key={entry.areaCode}
+                className={`relative ${bgClass}`}
+                style={isTop3 ? { borderTop: `4px solid ${borderColor}` } : undefined}
+              >
+                <CardContent className="flex flex-col items-center gap-1 p-4">
+                  <span className={isTop3 ? "text-2xl" : "text-lg"}>
+                    {MEDAL[entry.rank] ?? `${entry.rank}位`}
+                  </span>
+                  <Link
+                    href={`/city/${encodeURIComponent(entry.cityName)}`}
+                    className={`hover:underline ${isTop3 ? "text-sm font-bold" : "text-sm font-semibold"}`}
+                  >
+                    {entry.cityName}
+                  </Link>
+                  <Badge variant="outline" className="text-xs">
+                    {entry.prefecture}
+                  </Badge>
+                  <span className={`text-amber-500 ${isTop3 ? "text-sm" : "text-xs"}`}>
+                    {renderStars(entry.starRating)} {entry.starRating.toFixed(1)}
+                  </span>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 
