@@ -29,11 +29,12 @@ export function RegionBlockGrid({ block, cityCounts }: RegionBlockGridProps) {
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{pref.name}</p>
                   </div>
-                  {cityCount > 0 && (
-                    <Badge variant="secondary" className="text-xs">
-                      {cityCount}都市
-                    </Badge>
-                  )}
+                  <Badge
+                    variant={cityCount > 0 ? "secondary" : "outline"}
+                    className="text-xs"
+                  >
+                    {cityCount}都市
+                  </Badge>
                 </CardContent>
               </Card>
             </Link>

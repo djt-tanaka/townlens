@@ -127,23 +127,32 @@ async function fetchAllMunicipalityCountsInternal(): Promise<
 > {
   const supabase = createAdminClient();
 
-  // Supabase のデフォルト行数制限は 1000 件だが、全国の自治体数は約 1,900 件。
-  // 制限なしで全件取得するために十分大きな limit を指定する。
-  const { data, error } = await supabase
-    .from("municipalities")
-    .select("prefecture")
-    .limit(5000);
-
-  if (error) {
-    console.error(`municipalities 取得エラー: ${error.message}`);
-    return {};
-  }
-
-  // 都道府県名ごとにカウント
+  // Supabase/PostgREST はサーバー側の max-rows 設定（デフォルト 1000）により、
+  // .limit() で大きな値を指定しても取得行数が制限される場合がある。
+  // 全国の自治体数（約 1,900 件）を確実に取得するためページネーションで全件取得する。
+  const PAGE_SIZE = 1000;
   const counts: Record<string, number> = {};
-  for (const row of data ?? []) {
-    counts[row.prefecture] = (counts[row.prefecture] ?? 0) + 1;
+  let offset = 0;
+
+  for (;;) {
+    const { data, error } = await supabase
+      .from("municipalities")
+      .select("prefecture")
+      .range(offset, offset + PAGE_SIZE - 1);
+
+    if (error) {
+      console.error(`municipalities 取得エラー: ${error.message}`);
+      return {};
+    }
+
+    for (const row of data ?? []) {
+      counts[row.prefecture] = (counts[row.prefecture] ?? 0) + 1;
+    }
+
+    if (!data || data.length < PAGE_SIZE) break;
+    offset += PAGE_SIZE;
   }
+
   return counts;
 }
 
