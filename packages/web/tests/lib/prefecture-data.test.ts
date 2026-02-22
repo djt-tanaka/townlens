@@ -34,6 +34,7 @@ function createQueryChain(result: { data: unknown; error: unknown }) {
   chain.select = vi.fn(() => chain);
   chain.eq = vi.fn(() => chain);
   chain.order = vi.fn(() => chain);
+  chain.limit = vi.fn(() => chain);
   chain.then = (resolve: Function, reject?: Function) =>
     Promise.resolve(result).then(resolve as never, reject as never);
   return chain;
