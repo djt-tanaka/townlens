@@ -29,6 +29,7 @@ vi.mock("@townlens/core", () => ({
   normalizeLabel: vi.fn().mockImplementation((s: string) => s),
   katakanaToHiragana: vi.fn().mockImplementation((s: string) => s),
   findByReading: vi.fn().mockReturnValue([]),
+  isDesignatedCityCode: vi.fn().mockReturnValue(false),
   DATASETS: {
     population: { statsDataId: "0003411595" },
   },

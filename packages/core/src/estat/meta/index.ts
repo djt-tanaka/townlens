@@ -15,6 +15,7 @@ export {
   buildAreaEntries,
   resolveCities,
   isMunicipalityCode,
+  isDesignatedCityCode,
 } from "./area";
 
 export {
