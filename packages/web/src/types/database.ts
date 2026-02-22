@@ -168,6 +168,7 @@ export interface Database {
           star_rating: number;
           indicator_stars: Json;
           population: number | null;
+          kids_ratio: number | null;
           generated_at: string;
         };
         Insert: {
@@ -180,6 +181,7 @@ export interface Database {
           star_rating: number;
           indicator_stars: Json;
           population?: number | null;
+          kids_ratio?: number | null;
           generated_at?: string;
         };
         Update: {
@@ -187,6 +189,7 @@ export interface Database {
           star_rating?: number;
           indicator_stars?: Json;
           population?: number | null;
+          kids_ratio?: number | null;
           generated_at?: string;
         };
         Relationships: [];

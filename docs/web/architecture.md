@@ -1237,6 +1237,37 @@ Phase E（要検討）: フレームワーク移行
 
 ---
 
+## 14. リファクタリング項目
+
+### 14.1 DB正規化: city_rankings テーブルから都市属性を分離
+
+**優先度**: 中（機能的には問題なし、データ設計の健全性向上）
+
+**現状の問題**:
+
+`city_rankings` テーブルに都市固有の属性（`city_name`, `prefecture`, `population`, `kids_ratio`）が冗長に格納されている。これらはプリセットごとに重複しており、本来 `municipalities` テーブルで一元管理すべきデータである。
+
+```
+現状:
+city_rankings: id, preset, area_code, city_name, prefecture, rank, star_rating, indicator_stars, population, kids_ratio, generated_at
+
+あるべき姿:
+municipalities: area_code (PK), city_name, prefecture, population, kids_ratio, generated_at
+city_rankings:  id, preset, area_code (FK → municipalities), rank, star_rating, indicator_stars, generated_at
+```
+
+**対応内容**:
+
+1. `municipalities` テーブルに `population`, `kids_ratio` カラムを追加するマイグレーション作成
+2. `city_rankings` テーブルから `city_name`, `prefecture`, `population`, `kids_ratio` を削除し、`area_code` を FK に変更
+3. `generate-rankings.ts` を更新: 都市属性は `municipalities` に書き込み、ランキング固有データのみ `city_rankings` に書き込む
+4. `prefecture-data.ts` の `fetchPrefectureCitiesInternal` を更新: `municipalities` と `city_rankings` を JOIN して取得
+5. `ranking-data.ts` のクエリを更新
+6. `database.ts` の型定義を更新
+7. テストの更新
+
+---
+
 ## 付録A: 主要な型定義（@townlens/core からの re-export）
 
 Web API のレスポンス型は `@townlens/core` の型をそのまま使用する。

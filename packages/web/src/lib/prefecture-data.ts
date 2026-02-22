@@ -3,14 +3,13 @@
  * 地方ブロック定義、都道府県→都市マッピング、データ取得を提供する。
  *
  * 都市一覧は municipalities テーブル（自治体マスター）から取得する。
+ * 都市ランキングは city_rankings テーブル（月次バッチ生成済み）から取得する。
  */
 
 import { unstable_cache } from "next/cache";
 import { isDesignatedCityCode } from "@townlens/core";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPrefectureCode } from "./prefectures";
-import { fetchCityPageData } from "./city-data";
-import type { CityPageData } from "./city-data";
 
 /** ISR 再生成時のキャッシュ TTL（24時間） */
 const CACHE_REVALIDATE = 86400;
@@ -198,32 +197,68 @@ export const getCityCodesForPrefecture = unstable_cache(
   { revalidate: CACHE_REVALIDATE },
 );
 
-/** 都道府県内の全都市データを並列取得する（内部実装） */
-async function fetchPrefectureCitiesInternal(
-  prefectureName: string,
-): Promise<ReadonlyArray<CityPageData>> {
-  const prefCode = getPrefectureCode(prefectureName);
-  if (!prefCode) return [];
-
-  const cityEntries = await getCityCodesForPrefectureInternal(prefectureName);
-  if (cityEntries.length === 0) return [];
-
-  const results = await Promise.allSettled(
-    cityEntries.map((entry) => fetchCityPageData(entry.name)),
-  );
-
-  return results
-    .filter(
-      (r): r is PromiseFulfilledResult<CityPageData | null> =>
-        r.status === "fulfilled",
-    )
-    .map((r) => r.value)
-    .filter((data): data is CityPageData => data !== null);
+/** 都道府県ページ用の軽量な都市データ（city_rankings テーブルから取得） */
+export interface PrefectureCityEntry {
+  readonly cityName: string;
+  readonly areaCode: string;
+  readonly population: number;
+  readonly kidsRatio: number;
+  /** プリセット名 → スター評価のマッピング */
+  readonly presetStarRatings: Readonly<Record<string, number>>;
 }
 
 /**
- * 都道府県内の全都市データを並列取得する（ソートはClient側で実施）。
- * unstable_cache でサーバーサイドキャッシュし、ISR 再生成時も高速に応答する。
+ * 都道府県内の全都市ランキングデータを city_rankings テーブルから取得する（内部実装）。
+ * 月次バッチで生成済みのスコアを DB から読むだけなので高速。
+ */
+async function fetchPrefectureCitiesInternal(
+  prefectureName: string,
+): Promise<ReadonlyArray<PrefectureCityEntry>> {
+  const prefCode = getPrefectureCode(prefectureName);
+  if (!prefCode) return [];
+
+  const supabase = createAdminClient();
+
+  const { data, error } = await supabase
+    .from("city_rankings")
+    .select(
+      "area_code, city_name, population, kids_ratio, preset, star_rating",
+    )
+    .eq("prefecture", prefectureName)
+    .not("area_code", "like", "__000%");
+
+  if (error) {
+    console.error(`city_rankings 取得エラー: ${error.message}`);
+    return [];
+  }
+
+  // area_code でグルーピングし、プリセット別スコアをまとめる
+  const cityMap = new Map<string, PrefectureCityEntry>();
+
+  for (const row of data ?? []) {
+    if (isDesignatedCityCode(row.area_code)) continue;
+
+    const existing = cityMap.get(row.area_code);
+    if (existing) {
+      (existing.presetStarRatings as Record<string, number>)[row.preset] =
+        row.star_rating;
+    } else {
+      cityMap.set(row.area_code, {
+        cityName: row.city_name,
+        areaCode: row.area_code,
+        population: row.population ?? 0,
+        kidsRatio: row.kids_ratio ?? 0,
+        presetStarRatings: { [row.preset]: row.star_rating },
+      });
+    }
+  }
+
+  return [...cityMap.values()];
+}
+
+/**
+ * 都道府県内の全都市ランキングデータを取得する（ソートは Client 側で実施）。
+ * city_rankings テーブルから読み取るだけなので ISR 再生成時も高速に応答する。
  */
 export const fetchPrefectureCities = unstable_cache(
   fetchPrefectureCitiesInternal,

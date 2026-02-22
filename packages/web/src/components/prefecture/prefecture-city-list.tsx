@@ -3,26 +3,26 @@
 import { useMemo, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PrefectureCityCard } from "./prefecture-city-card";
-import type { CityPageData } from "@/lib/city-data";
+import type { PrefectureCityEntry } from "@/lib/prefecture-data";
 
 /** タブに表示するプリセット情報 */
 const PRESET_TABS = [
-  { index: 0, value: "childcare", label: "子育て重視" },
-  { index: 1, value: "price", label: "価格重視" },
-  { index: 2, value: "safety", label: "安全重視" },
+  { value: "childcare", label: "子育て重視" },
+  { value: "price", label: "価格重視" },
+  { value: "safety", label: "安全重視" },
 ] as const;
 
 interface PrefectureCityListProps {
-  readonly cities: ReadonlyArray<CityPageData>;
+  readonly cities: ReadonlyArray<PrefectureCityEntry>;
 }
 
 function sortByPreset(
-  cities: ReadonlyArray<CityPageData>,
-  presetIndex: number,
-): ReadonlyArray<CityPageData> {
+  cities: ReadonlyArray<PrefectureCityEntry>,
+  presetName: string,
+): ReadonlyArray<PrefectureCityEntry> {
   return [...cities].sort((a, b) => {
-    const aRating = a.presetScores[presetIndex]?.score.starRating ?? 0;
-    const bRating = b.presetScores[presetIndex]?.score.starRating ?? 0;
+    const aRating = a.presetStarRatings[presetName] ?? 0;
+    const bRating = b.presetStarRatings[presetName] ?? 0;
     return bRating - aRating;
   });
 }
@@ -31,12 +31,9 @@ function sortByPreset(
 export function PrefectureCityList({ cities }: PrefectureCityListProps) {
   const [activePreset, setActivePreset] = useState("childcare");
 
-  const activeIndex =
-    PRESET_TABS.find((t) => t.value === activePreset)?.index ?? 0;
-
   const sortedCities = useMemo(
-    () => sortByPreset(cities, activeIndex),
-    [cities, activeIndex],
+    () => sortByPreset(cities, activePreset),
+    [cities, activePreset],
   );
 
   return (
@@ -63,9 +60,7 @@ export function PrefectureCityList({ cities }: PrefectureCityListProps) {
                   cityName={city.cityName}
                   population={city.population}
                   kidsRatio={city.kidsRatio}
-                  starRating={
-                    city.presetScores[tab.index]?.score.starRating ?? 0
-                  }
+                  starRating={city.presetStarRatings[tab.value] ?? 0}
                   rank={index + 1}
                 />
               ))}
