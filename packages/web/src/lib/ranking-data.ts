@@ -25,26 +25,6 @@ export interface RankingEntry {
   readonly population: number | null;
 }
 
-function toRankingEntry(row: {
-  rank: number;
-  city_name: string;
-  area_code: string;
-  prefecture: string;
-  star_rating: number;
-  indicator_stars: Json;
-  population: number | null;
-}): RankingEntry {
-  return {
-    rank: row.rank,
-    cityName: row.city_name,
-    areaCode: row.area_code,
-    prefecture: row.prefecture,
-    starRating: row.star_rating,
-    indicatorStars: row.indicator_stars,
-    population: row.population,
-  };
-}
-
 /** DB からプリセット別ランキングを取得（内部実装） */
 async function fetchRankingByPresetInternal(
   preset: string,
@@ -58,7 +38,7 @@ async function fetchRankingByPresetInternal(
   const { data, error } = await supabase
     .from("city_rankings")
     .select(
-      "rank, city_name, area_code, prefecture, star_rating, indicator_stars, population",
+      "rank, area_code, star_rating, indicator_stars, municipalities(city_name, prefecture, population)",
     )
     .eq("preset", preset)
     .not("area_code", "like", "__000%") // 都道府県コード（XX000）を除外
@@ -74,7 +54,18 @@ async function fetchRankingByPresetInternal(
     .filter((row) => !isDesignatedCityCode(row.area_code))
     .slice(0, limit);
 
-  return filtered.map((row, i) => toRankingEntry({ ...row, rank: i + 1 }));
+  return filtered.map((row, i) => {
+    const muni = row.municipalities as { city_name: string; prefecture: string; population: number | null } | null;
+    return {
+      rank: i + 1,
+      cityName: muni?.city_name ?? "",
+      areaCode: row.area_code,
+      prefecture: muni?.prefecture ?? "",
+      starRating: row.star_rating,
+      indicatorStars: row.indicator_stars,
+      population: muni?.population ?? null,
+    };
+  });
 }
 
 /**

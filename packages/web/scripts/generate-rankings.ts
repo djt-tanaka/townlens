@@ -99,12 +99,8 @@ function chunk<T>(array: ReadonlyArray<T>, size: number): ReadonlyArray<Readonly
 interface CityRankingRow {
   readonly preset: string;
   readonly areaCode: string;
-  readonly cityName: string;
-  readonly prefecture: string;
   readonly starRating: number;
   readonly indicatorStars: unknown;
-  readonly population: number | null;
-  readonly kidsRatio: number | null;
 }
 
 // --- メイン処理 ---
@@ -300,6 +296,32 @@ async function main(): Promise<void> {
 
   console.log(`\n合計 ${allCityData.length} 都市のデータを取得`);
 
+  // --- municipalities テーブルに population / kids_ratio を反映 ---
+  console.log("自治体マスターに人口・子供比率を反映中...");
+  const muniUpdateChunks = chunk(allCityData, 500);
+  let muniUpdatedCount = 0;
+
+  for (const muniChunk of muniUpdateChunks) {
+    const rows = muniChunk.map((city) => ({
+      area_code: city.indicators.areaCode,
+      city_name: city.indicators.cityName,
+      prefecture: getPrefectureName(city.indicators.areaCode),
+      population: city.population,
+      kids_ratio: city.kidsRatio,
+      generated_at: new Date().toISOString(),
+    }));
+
+    const { error } = await supabase
+      .from("municipalities")
+      .upsert(rows, { onConflict: "area_code" });
+
+    if (error) {
+      console.error(`  municipalities 更新エラー: ${error.message}`);
+    }
+    muniUpdatedCount += muniChunk.length;
+  }
+  console.log(`  ${muniUpdatedCount} 自治体の人口・子供比率を更新`);
+
   // プリセット別にスコアリング → 順位付け → DB 保存
   const now = new Date().toISOString();
 
@@ -316,17 +338,13 @@ async function main(): Promise<void> {
     }
 
     // 各都市をスコアリング
-    const scored: CityRankingRow[] = allCityData.map(({ indicators, population, kidsRatio }) => {
+    const scored: CityRankingRow[] = allCityData.map(({ indicators }) => {
       const score = scoreSingleCity(indicators, ALL_INDICATORS, preset);
       return {
         preset: preset.name,
         areaCode: score.areaCode,
-        cityName: score.cityName,
-        prefecture: getPrefectureName(score.areaCode),
         starRating: score.starRating,
         indicatorStars: score.indicatorStars,
-        population,
-        kidsRatio,
       };
     });
 
@@ -341,13 +359,9 @@ async function main(): Promise<void> {
       const rows = upsertChunk.map((city, index) => ({
         preset: city.preset,
         area_code: city.areaCode,
-        city_name: city.cityName,
-        prefecture: city.prefecture,
         rank: upsertedCount + index + 1,
         star_rating: city.starRating,
         indicator_stars: city.indicatorStars as Database["public"]["Tables"]["city_rankings"]["Insert"]["indicator_stars"],
-        population: city.population,
-        kids_ratio: city.kidsRatio,
         generated_at: now,
       }));
 
@@ -362,7 +376,7 @@ async function main(): Promise<void> {
       upsertedCount += upsertChunk.length;
     }
 
-    console.log(`  ${preset.label}: ${sorted.length} 都市をランキング保存（1位: ${sorted[0]?.cityName ?? "なし"} ★${sorted[0]?.starRating.toFixed(1) ?? "-"}）`);
+    console.log(`  ${preset.label}: ${sorted.length} 都市をランキング保存（1位: ${sorted[0]?.areaCode ?? "なし"} ★${sorted[0]?.starRating.toFixed(1) ?? "-"}）`);
   }
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);

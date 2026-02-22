@@ -142,17 +142,23 @@ export interface Database {
           area_code: string;
           city_name: string;
           prefecture: string;
+          population: number | null;
+          kids_ratio: number | null;
           generated_at: string;
         };
         Insert: {
           area_code: string;
           city_name: string;
           prefecture: string;
+          population?: number | null;
+          kids_ratio?: number | null;
           generated_at?: string;
         };
         Update: {
           city_name?: string;
           prefecture?: string;
+          population?: number | null;
+          kids_ratio?: number | null;
           generated_at?: string;
         };
         Relationships: [];
@@ -162,37 +168,35 @@ export interface Database {
           id: string;
           preset: string;
           area_code: string;
-          city_name: string;
-          prefecture: string;
           rank: number;
           star_rating: number;
           indicator_stars: Json;
-          population: number | null;
-          kids_ratio: number | null;
           generated_at: string;
         };
         Insert: {
           id?: string;
           preset: string;
           area_code: string;
-          city_name: string;
-          prefecture: string;
           rank: number;
           star_rating: number;
           indicator_stars: Json;
-          population?: number | null;
-          kids_ratio?: number | null;
           generated_at?: string;
         };
         Update: {
           rank?: number;
           star_rating?: number;
           indicator_stars?: Json;
-          population?: number | null;
-          kids_ratio?: number | null;
           generated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "city_rankings_area_code_fkey";
+            columns: ["area_code"];
+            isOneToOne: false;
+            referencedRelation: "municipalities";
+            referencedColumns: ["area_code"];
+          },
+        ];
       };
     };
     Views: {
