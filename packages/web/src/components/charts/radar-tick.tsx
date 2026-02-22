@@ -26,7 +26,7 @@ interface RadarTickProps {
   readonly cx?: number;
   readonly cy?: number;
   readonly payload?: { readonly value: string };
-  readonly textAnchor?: string;
+  readonly textAnchor?: "inherit" | "start" | "middle" | "end";
 }
 
 /** モバイル対応のレーダーチャート軸ラベル */
