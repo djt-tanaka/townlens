@@ -6,6 +6,7 @@
  */
 
 import { unstable_cache } from "next/cache";
+import { isDesignatedCityCode } from "@townlens/core";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPrefectureCode } from "./prefectures";
 import { fetchCityPageData } from "./city-data";
@@ -137,7 +138,7 @@ async function fetchAllMunicipalityCountsInternal(): Promise<
   for (;;) {
     const { data, error } = await supabase
       .from("municipalities")
-      .select("prefecture")
+      .select("area_code, prefecture")
       .range(offset, offset + PAGE_SIZE - 1);
 
     if (error) {
@@ -146,6 +147,8 @@ async function fetchAllMunicipalityCountsInternal(): Promise<
     }
 
     for (const row of data ?? []) {
+      // 政令指定都市の親コードが残っている場合は除外（区のみカウント）
+      if (isDesignatedCityCode(row.area_code)) continue;
       counts[row.prefecture] = (counts[row.prefecture] ?? 0) + 1;
     }
 
@@ -180,10 +183,12 @@ async function getCityCodesForPrefectureInternal(
     return [];
   }
 
-  return (data ?? []).map((row) => ({
-    code: row.area_code,
-    name: row.city_name,
-  }));
+  return (data ?? [])
+    .filter((row) => !isDesignatedCityCode(row.area_code))
+    .map((row) => ({
+      code: row.area_code,
+      name: row.city_name,
+    }));
 }
 
 /** 都道府県内の都市一覧を取得（キャッシュ付き） */

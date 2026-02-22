@@ -139,6 +139,30 @@ async function main(): Promise<void> {
   );
   console.log(`${rawEntries.length} エリアから ${allEntries.length} 市区町村を抽出（都道府県・全国・政令指定都市の親コードを除外）`);
 
+  // --- 政令指定都市の親コードが残っている場合は削除 ---
+  // 以前のバージョンでフィルタなしで挿入された古い行をクリーンアップ
+  const designatedCodesToDelete = rawEntries
+    .filter((e) => isMunicipalityCode(e.code) && isDesignatedCityCode(e.code))
+    .map((e) => e.code);
+
+  if (designatedCodesToDelete.length > 0) {
+    console.log(`政令指定都市の親コード ${designatedCodesToDelete.length} 件を municipalities / city_rankings から削除中...`);
+    const { error: delMuniErr } = await supabase
+      .from("municipalities")
+      .delete()
+      .in("area_code", designatedCodesToDelete);
+    if (delMuniErr) {
+      console.error(`  municipalities 削除エラー: ${delMuniErr.message}`);
+    }
+    const { error: delRankErr } = await supabase
+      .from("city_rankings")
+      .delete()
+      .in("area_code", designatedCodesToDelete);
+    if (delRankErr) {
+      console.error(`  city_rankings 削除エラー: ${delRankErr.message}`);
+    }
+  }
+
   // --- 自治体マスターテーブル (municipalities) を upsert ---
   console.log("自治体マスターテーブルを更新中...");
   const municipalityChunks = chunk(allEntries, 500);
