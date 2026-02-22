@@ -52,7 +52,7 @@ export function PrefectureCityCard({
   const bgClass = RANK_BG_CLASSES[rank] ?? "";
 
   return (
-    <Link href={`/city/${encodeURIComponent(cityName)}`}>
+    <Link href={`/city/${encodeURIComponent(cityName)}`} className="block">
       <Card
         className={`transition-colors hover:border-primary/50 hover:bg-secondary/30 ${bgClass}`}
         style={isTop3 ? { borderLeft: `5px solid ${borderColor}` } : undefined}
