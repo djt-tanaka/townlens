@@ -56,7 +56,7 @@ export function PrefectureCityList({ cities }: PrefectureCityListProps) {
         </TabsList>
         {PRESET_TABS.map((tab) => (
           <TabsContent key={tab.value} value={tab.value}>
-            <div className="space-y-5">
+            <div className="space-y-8">
               {sortedCities.map((city, index) => (
                 <PrefectureCityCard
                   key={city.areaCode}
