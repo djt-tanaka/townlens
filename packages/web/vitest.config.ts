@@ -43,6 +43,7 @@ export default defineConfig({
         // Recharts ラッパーコンポーネントは描画テスト困難
         "src/components/report/radar-chart.tsx",
         "src/components/report/bar-chart.tsx",
+        "src/components/charts/**/*.tsx",
         // shadcn/ui 自動生成コンポーネント
         "src/components/ui/**/*.tsx",
         // Client Components（認証フォーム、検索UI、料金プラン等）は E2E テストで検証

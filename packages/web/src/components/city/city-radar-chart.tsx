@@ -14,6 +14,7 @@ import type {
   IndicatorStarRating,
 } from "@townlens/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadarTick } from "@/components/charts/radar-tick";
 
 interface CityRadarChartProps {
   readonly indicators: ReadonlyArray<IndicatorDefinition>;
@@ -58,11 +59,11 @@ export function CityRadarChart({
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={320}>
-          <RadarChart data={[...data]}>
+          <RadarChart data={[...data]} outerRadius="60%">
             <PolarGrid stroke="var(--border)" />
             <PolarAngleAxis
               dataKey="indicator"
-              tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+              tick={<RadarTick />}
             />
             <PolarRadiusAxis
               angle={30}

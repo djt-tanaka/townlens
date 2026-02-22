@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import type { CityScoreResult, IndicatorDefinition } from "@townlens/core";
 import { getCityColor } from "@townlens/core";
+import { RadarTick } from "@/components/charts/radar-tick";
 
 interface ReportRadarChartProps {
   readonly results: ReadonlyArray<CityScoreResult>;
@@ -46,9 +47,9 @@ export function ReportRadarChart({
 
   return (
     <ResponsiveContainer width="100%" height={350}>
-      <RadarChart data={data}>
+      <RadarChart data={data} outerRadius="60%">
         <PolarGrid stroke="var(--border)" />
-        <PolarAngleAxis dataKey="indicator" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
+        <PolarAngleAxis dataKey="indicator" tick={<RadarTick />} />
         <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
         {results.map((result, i) => (
           <Radar
