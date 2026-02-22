@@ -6,6 +6,7 @@
  */
 
 import { unstable_cache } from "next/cache";
+import { isDesignatedCityCode } from "@townlens/core";
 import type { Json } from "@/types/database";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { RANKING_PRESET_META } from "./ranking-presets";
@@ -51,20 +52,29 @@ async function fetchRankingByPresetInternal(
 ): Promise<ReadonlyArray<RankingEntry>> {
   const supabase = createAdminClient();
 
+  // 都道府県・政令指定都市を除外するため余分にフェッチ
+  const fetchLimit = limit + 25;
+
   const { data, error } = await supabase
     .from("city_rankings")
     .select(
       "rank, city_name, area_code, prefecture, star_rating, indicator_stars, population",
     )
     .eq("preset", preset)
+    .not("area_code", "like", "__000%") // 都道府県コード（XX000）を除外
     .order("rank", { ascending: true })
-    .limit(limit);
+    .limit(fetchLimit);
 
   if (error) {
     throw new Error(`ランキング取得エラー: ${error.message}`);
   }
 
-  return (data ?? []).map(toRankingEntry);
+  // 政令指定都市の親コードを除外し、連番の順位を再付与
+  const filtered = (data ?? [])
+    .filter((row) => !isDesignatedCityCode(row.area_code))
+    .slice(0, limit);
+
+  return filtered.map((row, i) => toRankingEntry({ ...row, rank: i + 1 }));
 }
 
 /**
