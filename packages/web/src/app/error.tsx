@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 import { ErrorDisplay } from "@/components/error/error-display";
 
 interface ErrorProps {
@@ -11,7 +12,7 @@ interface ErrorProps {
 /** ルートレベルのエラーバウンダリ。専用 error.tsx を持たないページのエラーをキャッチ */
 export default function RootError({ error, reset }: ErrorProps) {
   useEffect(() => {
-    console.error("アプリケーションエラー:", error);
+    Sentry.captureException(error);
   }, [error]);
 
   return (
