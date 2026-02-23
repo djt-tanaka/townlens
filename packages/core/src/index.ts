@@ -4,6 +4,7 @@ export { AppError, formatError } from "./errors";
 export { arrify, textFrom, parseNumber, toCdParamName, escapeHtml } from "./utils";
 export type { CacheAdapter } from "./cache";
 export { DEFAULT_CACHE_TTL_MS } from "./cache";
+export { getRawValueFromRow, findRawRow } from "./report-row-utils";
 
 // ─── 正規化 ───
 export { normalizeLabel, normalizeLabelWithKana } from "./normalize/label";
@@ -149,6 +150,7 @@ export type { CityLocation } from "./reinfo/city-locations";
 export { latLngToTile, fetchDisasterRisk } from "./reinfo/disaster-client";
 export type { TileCoord, GeoJsonFeatureCollection, DisasterRiskResult } from "./reinfo/disaster-client";
 export { buildDisasterData } from "./reinfo/disaster-data";
+export type { CityDisasterData } from "./reinfo/disaster-data";
 export { mergeDisasterIntoScoringInput } from "./reinfo/merge-disaster-scoring";
 
 // ─── ナラティブ ───

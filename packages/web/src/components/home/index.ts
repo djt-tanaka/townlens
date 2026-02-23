@@ -1,0 +1,10 @@
+export { HeroSection } from "./hero-section";
+export { SocialProofBar } from "./social-proof-bar";
+export { PainPointSection } from "./pain-point-section";
+export { HowItWorksSection } from "./how-it-works-section";
+export { CategorySection } from "./category-section";
+export { ComparisonSection } from "./comparison-section";
+export { UseCaseSection } from "./use-case-section";
+export { DataTrustSection } from "./data-trust-section";
+export { PrefectureSection } from "./prefecture-section";
+export { FinalCTASection } from "./final-cta-section";
