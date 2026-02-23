@@ -7,7 +7,7 @@
  */
 
 import { unstable_cache } from "next/cache";
-import { isDesignatedCityCode } from "@townlens/core";
+import { isAggregateAreaCode } from "@townlens/core";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPrefectureCode } from "./prefectures";
 
@@ -147,7 +147,7 @@ async function fetchAllMunicipalityCountsInternal(): Promise<
 
     for (const row of data ?? []) {
       // 政令指定都市の親コードが残っている場合は除外（区のみカウント）
-      if (isDesignatedCityCode(row.area_code)) continue;
+      if (isAggregateAreaCode(row.area_code)) continue;
       counts[row.prefecture] = (counts[row.prefecture] ?? 0) + 1;
     }
 
@@ -183,7 +183,7 @@ async function getCityCodesForPrefectureInternal(
   }
 
   return (data ?? [])
-    .filter((row) => !isDesignatedCityCode(row.area_code))
+    .filter((row) => !isAggregateAreaCode(row.area_code))
     .map((row) => ({
       code: row.area_code,
       name: row.city_name,
@@ -237,7 +237,7 @@ async function fetchPrefectureCitiesInternal(
   const results: PrefectureCityEntry[] = [];
 
   for (const row of data ?? []) {
-    if (isDesignatedCityCode(row.area_code)) continue;
+    if (isAggregateAreaCode(row.area_code)) continue;
 
     const rankings = row.city_rankings as ReadonlyArray<{
       preset: string;

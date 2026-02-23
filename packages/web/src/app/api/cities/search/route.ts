@@ -15,7 +15,7 @@ import {
   normalizeLabel,
   katakanaToHiragana,
   findByReading,
-  isDesignatedCityCode,
+  isAggregateAreaCode,
   DATASETS,
 } from "@townlens/core";
 import { createEstatClient } from "@/lib/api-clients";
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
 
     // 前方一致検索（正規化ラベルで比較、政令指定都市の親コードは除外）
     const nameMatches = areaEntries.filter((entry) => {
-      if (isDesignatedCityCode(entry.code)) return false;
+      if (isAggregateAreaCode(entry.code)) return false;
       const normalizedName = normalizeLabel(entry.name);
       return normalizedName.includes(normalizedQuery);
     });
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
     const readingMatchSet = new Set(readingMatches);
     const readingResults = areaEntries.filter(
       (entry) =>
-        !isDesignatedCityCode(entry.code) &&
+        !isAggregateAreaCode(entry.code) &&
         readingMatchSet.has(entry.name) &&
         !nameMatches.some((m) => m.code === entry.code),
     );

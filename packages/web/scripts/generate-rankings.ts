@@ -20,7 +20,7 @@ import {
   resolveAreaClass,
   buildAreaEntries,
   isMunicipalityCode,
-  isDesignatedCityCode,
+  isAggregateAreaCode,
   buildReportData,
   toScoringInput,
   buildPriceData,
@@ -145,20 +145,20 @@ async function main(): Promise<void> {
   const rawEntries = buildAreaEntries(areaClass);
   // 都道府県・全国レベルを除外し、市区町村のみに絞り込む
   // isMunicipalityCode（コード判定）+ isPrefectureName（名前判定）の二重フィルタ
-  // さらに政令指定都市の親コードを除外（区のみランキング対象にする）
+  // さらに政令指定都市の親コード・東京都特別区部を除外（区のみランキング対象にする）
   const allEntries = rawEntries.filter(
-    (e) => isMunicipalityCode(e.code) && !isPrefectureName(e.name) && !isDesignatedCityCode(e.code),
+    (e) => isMunicipalityCode(e.code) && !isPrefectureName(e.name) && !isAggregateAreaCode(e.code),
   );
-  console.log(`${rawEntries.length} エリアから ${allEntries.length} 市区町村を抽出（都道府県・全国・政令指定都市の親コードを除外）`);
+  console.log(`${rawEntries.length} エリアから ${allEntries.length} 市区町村を抽出（都道府県・全国・政令指定都市の親コード・特別区部を除外）`);
 
-  // --- 都道府県・全国コード、政令指定都市の親コードが残っている場合は削除 ---
+  // --- 都道府県・全国コード、政令指定都市の親コード、特別区部が残っている場合は削除 ---
   // 以前のバージョンでフィルタなしで挿入された古い行をクリーンアップ
   const codesToDelete = rawEntries
-    .filter((e) => !isMunicipalityCode(e.code) || isDesignatedCityCode(e.code))
+    .filter((e) => !isMunicipalityCode(e.code) || isAggregateAreaCode(e.code))
     .map((e) => e.code);
 
   if (codesToDelete.length > 0) {
-    console.log(`都道府県・政令指定都市の親コード ${codesToDelete.length} 件を municipalities / city_rankings から削除中...`);
+    console.log(`都道府県・政令指定都市の親コード・特別区部 ${codesToDelete.length} 件を municipalities / city_rankings から削除中...`);
     const { error: delMuniErr } = await supabase
       .from("municipalities")
       .delete()

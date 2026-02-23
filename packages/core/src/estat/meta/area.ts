@@ -111,6 +111,33 @@ export function isDesignatedCityCode(code: string): boolean {
   return DESIGNATED_CITY_CODES.has(code.slice(0, 5));
 }
 
+/**
+ * 東京都特別区部の集約コード（13100）かどうかを判定する。
+ *
+ * e-Stat では東京23区の集約値として「特別区部」(13100) が存在する。
+ * 政令指定都市の親コードと同様に、ランキング・一覧では除外して
+ * 個別の区（13101〜13123）のみを表示する。
+ *
+ * 5桁・6桁（チェックディジット付き）どちらにも対応。
+ */
+const TOKYO_SPECIAL_WARD_CODE = "13100";
+
+export function isTokyoSpecialWardCode(code: string): boolean {
+  if (code.length < 5) return false;
+  return code.slice(0, 5) === TOKYO_SPECIAL_WARD_CODE;
+}
+
+/**
+ * ランキング・一覧から除外すべき集約コードかどうかを判定する。
+ *
+ * 以下を除外対象とする:
+ * - 政令指定都市の親コード（横浜市 14100 等）
+ * - 東京都特別区部の集約コード（13100）
+ */
+export function isAggregateAreaCode(code: string): boolean {
+  return isDesignatedCityCode(code) || isTokyoSpecialWardCode(code);
+}
+
 const PREFECTURE_PREFIX = /^(北海道|東京都|京都府|大阪府|.{2,3}県)/;
 
 function stripPrefecture(input: string): string {

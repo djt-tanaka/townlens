@@ -6,6 +6,8 @@ import {
   resolveCities,
   isMunicipalityCode,
   isDesignatedCityCode,
+  isTokyoSpecialWardCode,
+  isAggregateAreaCode,
   resolveLatestTime,
   resolveAgeSelection,
   extractDataValues,
@@ -213,6 +215,58 @@ describe("isDesignatedCityCode", () => {
     expect(isDesignatedCityCode("0110")).toBe(false);
     expect(isDesignatedCityCode("14")).toBe(false);
     expect(isDesignatedCityCode("")).toBe(false);
+  });
+});
+
+describe("isTokyoSpecialWardCode", () => {
+  it("特別区部の集約コード(13100)はtrueを返す", () => {
+    expect(isTokyoSpecialWardCode("13100")).toBe(true);
+  });
+
+  it("6桁チェックディジット付きコードにも対応する", () => {
+    expect(isTokyoSpecialWardCode("131002")).toBe(true);
+  });
+
+  it("個別の特別区コードはfalseを返す", () => {
+    expect(isTokyoSpecialWardCode("13101")).toBe(false); // 千代田区
+    expect(isTokyoSpecialWardCode("13104")).toBe(false); // 新宿区
+    expect(isTokyoSpecialWardCode("13123")).toBe(false); // 江戸川区
+  });
+
+  it("東京都の都道府県コードはfalseを返す", () => {
+    expect(isTokyoSpecialWardCode("13000")).toBe(false);
+  });
+
+  it("他の都道府県コードはfalseを返す", () => {
+    expect(isTokyoSpecialWardCode("14100")).toBe(false); // 横浜市
+    expect(isTokyoSpecialWardCode("27100")).toBe(false); // 大阪市
+  });
+
+  it("5桁未満のコードはfalseを返す", () => {
+    expect(isTokyoSpecialWardCode("1310")).toBe(false);
+    expect(isTokyoSpecialWardCode("")).toBe(false);
+  });
+});
+
+describe("isAggregateAreaCode", () => {
+  it("政令指定都市の親コードはtrueを返す", () => {
+    expect(isAggregateAreaCode("14100")).toBe(true); // 横浜市
+    expect(isAggregateAreaCode("27100")).toBe(true); // 大阪市
+  });
+
+  it("特別区部の集約コードはtrueを返す", () => {
+    expect(isAggregateAreaCode("13100")).toBe(true);
+  });
+
+  it("個別の区・市コードはfalseを返す", () => {
+    expect(isAggregateAreaCode("13101")).toBe(false); // 千代田区
+    expect(isAggregateAreaCode("14101")).toBe(false); // 横浜市鶴見区
+    expect(isAggregateAreaCode("11203")).toBe(false); // 川口市
+  });
+
+  it("都道府県コードはfalseを返す", () => {
+    expect(isAggregateAreaCode("13000")).toBe(false);
+    expect(isAggregateAreaCode("01000")).toBe(false);
   });
 });
 
