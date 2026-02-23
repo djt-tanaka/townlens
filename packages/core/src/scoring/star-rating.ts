@@ -107,10 +107,15 @@ const NEUTRAL_STARS = 3.0;
  * 指標データが不足している都市のスコアを中立値（3.0）方向に引き寄せる。
  * これにより、人口データのみで高スコアになる問題（区再編等）を防ぐ。
  *
- * 補正式: adjusted = raw × coverage + 3.0 × (1 - coverage)
+ * coverage² を使用することで、充足率が低い場合のペナルティをより強くする。
+ * 線形だと充足率16.7%で3.26星だったのが、二次関数で2.54星まで下がる。
+ *
+ * 補正式: adjusted = raw × coverage² + 2.5 × (1 - coverage²)
  *   coverage = availableCount / totalCount
  *
- * 例: 実スコア4.5, 充足率2/12 → 4.5×0.17 + 3.0×0.83 = 3.26
+ * 例: 実スコア4.5, 充足率2/12 → 4.5×0.028 + 2.5×0.972 = 2.56
+ * 例: 実スコア4.5, 充足率6/12 → 4.5×0.25  + 2.5×0.75  = 3.0
+ * 例: 実スコア4.5, 充足率12/12 → 4.5×1.0   + 2.5×0.0   = 4.5
  *
  * @param rawStarRating 補正前のスター評価（1.0-5.0）
  * @param availableCount 値が存在する指標の数
@@ -124,7 +129,9 @@ export function applyDataCoveragePenalty(
 ): number {
   if (totalCount <= 0) return NEUTRAL_STARS;
   const coverage = Math.min(1, availableCount / totalCount);
+  const coverageSq = coverage * coverage;
+  const PENALTY_NEUTRAL = 2.5;
   const adjusted =
-    rawStarRating * coverage + NEUTRAL_STARS * (1 - coverage);
+    rawStarRating * coverageSq + PENALTY_NEUTRAL * (1 - coverageSq);
   return Math.round(adjusted * 10) / 10;
 }

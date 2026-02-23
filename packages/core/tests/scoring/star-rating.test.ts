@@ -143,26 +143,29 @@ describe("applyDataCoveragePenalty", () => {
     expect(applyDataCoveragePenalty(4.5, 12, 12)).toBe(4.5);
   });
 
-  it("充足率50%ではスコアが中立方向に引き寄せられる", () => {
-    // 4.5 × 0.5 + 3.0 × 0.5 = 3.75 → 3.8
-    expect(applyDataCoveragePenalty(4.5, 6, 12)).toBe(3.8);
+  it("充足率50%ではスコアがペナルティ中立方向に引き寄せられる", () => {
+    // coverage²=0.25: 4.5 × 0.25 + 2.5 × 0.75 = 1.125 + 1.875 = 3.0
+    expect(applyDataCoveragePenalty(4.5, 6, 12)).toBe(3);
   });
 
-  it("充足率が低い場合、大幅に中立方向に補正される", () => {
-    // 4.5 × (2/12) + 3.0 × (10/12) = 0.75 + 2.5 = 3.25 → 3.3
-    expect(applyDataCoveragePenalty(4.5, 2, 12)).toBe(3.3);
-  });
-
-  it("スコアが中立値の場合、充足率に関わらず3.0を返す", () => {
-    expect(applyDataCoveragePenalty(3.0, 2, 12)).toBe(3);
+  it("充足率が低い場合、大幅にペナルティ中立方向に補正される", () => {
+    // coverage=2/12≈0.167, coverage²≈0.028: 4.5 × 0.028 + 2.5 × 0.972 ≈ 2.56
+    expect(applyDataCoveragePenalty(4.5, 2, 12)).toBe(2.6);
   });
 
   it("低スコアでも中立方向に引き寄せられる", () => {
-    // 1.5 × 0.5 + 3.0 × 0.5 = 2.25 → 2.3
+    // coverage²=0.25: 1.5 × 0.25 + 2.5 × 0.75 = 0.375 + 1.875 = 2.25 → 2.3
     expect(applyDataCoveragePenalty(1.5, 6, 12)).toBe(2.3);
   });
 
   it("totalCountが0の場合、中立値を返す", () => {
     expect(applyDataCoveragePenalty(5.0, 0, 0)).toBe(3);
+  });
+
+  it("充足率が高い場合はペナルティが小さい", () => {
+    // coverage=10/12≈0.833, coverage²≈0.694: 4.5 × 0.694 + 2.5 × 0.306 ≈ 3.89
+    const result = applyDataCoveragePenalty(4.5, 10, 12);
+    expect(result).toBeGreaterThanOrEqual(3.5);
+    expect(result).toBeLessThanOrEqual(4.5);
   });
 });

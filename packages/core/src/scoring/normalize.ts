@@ -1,4 +1,5 @@
 import { ChoiceScore, IndicatorDefinition } from "./types";
+import { LOG_TRANSFORM_INDICATORS, logTransform } from "./national-baseline";
 
 interface CityValue {
   readonly cityName: string;
@@ -34,13 +35,20 @@ export function normalizeWithinCandidates(
     ];
   }
 
-  const rawValues = valid.map((v) => v.value);
-  const min = Math.min(...rawValues);
-  const max = Math.max(...rawValues);
+  // per capita 指標は log(1+x) 変換を適用して外れ値を緩和
+  const useLog = LOG_TRANSFORM_INDICATORS.has(definition.id);
+  const transformed = valid.map((v) => ({
+    ...v,
+    tValue: useLog ? logTransform(v.value) : v.value,
+  }));
+
+  const tValues = transformed.map((v) => v.tValue);
+  const min = Math.min(...tValues);
+  const max = Math.max(...tValues);
   const range = max - min;
 
-  return valid.map((v) => {
-    const rawScore = range === 0 ? 50 : ((v.value - min) / range) * 100;
+  return transformed.map((v) => {
+    const rawScore = range === 0 ? 50 : ((v.tValue - min) / range) * 100;
     const score =
       definition.direction === "lower_better" ? 100 - rawScore : rawScore;
 

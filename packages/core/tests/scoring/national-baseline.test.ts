@@ -3,6 +3,8 @@ import {
   getNationalBaseline,
   computeNationalPercentile,
   NATIONAL_BASELINES,
+  LOG_TRANSFORM_INDICATORS,
+  logTransform,
 } from "../../src/scoring/national-baseline";
 
 describe("getNationalBaseline", () => {
@@ -108,5 +110,63 @@ describe("computeNationalPercentile", () => {
         expect(pct).toBeLessThanOrEqual(100);
       }
     }
+  });
+});
+
+describe("logTransform", () => {
+  it("log(1 + 0) = 0", () => {
+    expect(logTransform(0)).toBe(0);
+  });
+
+  it("正の値に対して正の結果を返す", () => {
+    expect(logTransform(1)).toBeCloseTo(Math.log(2));
+    expect(logTransform(10)).toBeCloseTo(Math.log(11));
+  });
+});
+
+describe("LOG_TRANSFORM_INDICATORS", () => {
+  it("per capita 指標が含まれている", () => {
+    expect(LOG_TRANSFORM_INDICATORS.has("elementary_schools_per_capita")).toBe(true);
+    expect(LOG_TRANSFORM_INDICATORS.has("hospitals_per_capita")).toBe(true);
+    expect(LOG_TRANSFORM_INDICATORS.has("station_count_per_capita")).toBe(true);
+  });
+
+  it("per capita でない指標は含まれていない", () => {
+    expect(LOG_TRANSFORM_INDICATORS.has("population_total")).toBe(false);
+    expect(LOG_TRANSFORM_INDICATORS.has("crime_rate")).toBe(false);
+    expect(LOG_TRANSFORM_INDICATORS.has("condo_price_median")).toBe(false);
+  });
+});
+
+describe("per capita 指標の対数変換効果", () => {
+  it("中程度の外れ値が対数変換で抑制される", () => {
+    // schools_per_capita = 5.0（p80=2.5 の2倍）
+    // 対数変換なしだと: (5.0-2.5)/(3.75-2.5)*20+80 = 120 → 100 にクランプ
+    // 対数変換ありだと: log(6)=1.79, log(3.5)=1.25, upperBound=1.88
+    //   → 80 + (1.79-1.25)/(1.88-1.25)*20 ≈ 97 → 100未満
+    const pct = computeNationalPercentile(
+      5.0,
+      "elementary_schools_per_capita",
+      "higher_better",
+    );
+    expect(pct).toBeLessThan(100);
+    expect(pct).toBeGreaterThan(80);
+  });
+
+  it("通常範囲の per capita 値は妥当なパーセンタイルを返す", () => {
+    // breakpoints: [0.5, 1.0, 1.5, 2.5]
+    const pct = computeNationalPercentile(
+      1.5,
+      "elementary_schools_per_capita",
+      "higher_better",
+    );
+    expect(pct).toBeGreaterThanOrEqual(50);
+    expect(pct).toBeLessThanOrEqual(70);
+  });
+
+  it("非 per capita 指標は影響を受けない", () => {
+    // population_total は対数変換の対象外
+    const pct = computeNationalPercentile(300000, "population_total", "higher_better");
+    expect(pct).toBe(80);
   });
 });

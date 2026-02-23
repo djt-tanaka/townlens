@@ -75,6 +75,26 @@ export const NATIONAL_BASELINES: ReadonlyArray<NationalBaselineEntry> = [
   },
 ];
 
+/**
+ * 人口あたり（per capita）指標のIDセット。
+ *
+ * これらの指標は小規模自治体で極端に高い値を取るため、
+ * パーセンタイル算出前に log(1 + x) 変換を適用して外れ値の影響を緩和する。
+ */
+export const LOG_TRANSFORM_INDICATORS: ReadonlySet<string> = new Set([
+  "elementary_schools_per_capita",
+  "junior_high_schools_per_capita",
+  "station_count_per_capita",
+  "hospitals_per_capita",
+  "clinics_per_capita",
+  "pediatrics_per_capita",
+]);
+
+/** 対数変換: log(1 + x) */
+export function logTransform(value: number): number {
+  return Math.log(1 + value);
+}
+
 const baselineMap = new Map(
   NATIONAL_BASELINES.map((b) => [b.indicatorId, b]),
 );
@@ -102,8 +122,13 @@ export function computeNationalPercentile(
     return 50; // ベースラインなし → 中央
   }
 
+  // per capita 指標は log(1+x) 変換を適用して外れ値を緩和
+  const useLog = LOG_TRANSFORM_INDICATORS.has(indicatorId);
+  const transform = useLog ? logTransform : (x: number) => x;
+
   const [p20, p40, p60, p80] = baseline.breakpoints;
-  const thresholds = [p20, p40, p60, p80];
+  const thresholds = [transform(p20), transform(p40), transform(p60), transform(p80)];
+  rawValue = transform(rawValue);
   const percentiles = [20, 40, 60, 80];
 
   let rawPercentile: number;
