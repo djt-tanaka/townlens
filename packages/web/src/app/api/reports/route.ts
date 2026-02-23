@@ -18,6 +18,7 @@ import {
 } from "@/lib/api-utils";
 import { runReportPipeline } from "@/lib/report-pipeline";
 import type { CreateReportResponse } from "@/types";
+import type { Json } from "@/types/database";
 
 export async function POST(request: Request) {
   try {
@@ -84,12 +85,14 @@ export async function POST(request: Request) {
     }
 
     // パイプライン実行
-    const includePrice = options?.includePrice ?? true;
-    const includeCrime = options?.includeCrime ?? true;
-    const includeDisaster = options?.includeDisaster ?? true;
-    const includeEducation = options?.includeEducation ?? true;
-    const includeTransport = options?.includeTransport ?? true;
-    const includeHealthcare = options?.includeHealthcare ?? true;
+    const {
+      includePrice = true,
+      includeCrime = true,
+      includeDisaster = true,
+      includeEducation = true,
+      includeTransport = true,
+      includeHealthcare = true,
+    } = options ?? {};
 
     let reinfoClient;
     try {
@@ -109,21 +112,19 @@ export async function POST(request: Request) {
         .from("reports")
         .update({
           status: "completed" as const,
-          result_json: JSON.parse(
-            JSON.stringify({
-              results: result.results,
-              definitions: result.definitions,
-              rawRows: result.rawRows,
-              hasPriceData: result.hasPriceData,
-              hasCrimeData: result.hasCrimeData,
-              hasDisasterData: result.hasDisasterData,
-              hasEducationData: result.hasEducationData,
-              hasTransportData: result.hasTransportData,
-              hasHealthcareData: result.hasHealthcareData,
-              preset: result.preset,
-              timeLabel: result.timeLabel,
-            }),
-          ),
+          result_json: {
+            results: [...result.results],
+            definitions: [...result.definitions],
+            rawRows: [...result.rawRows],
+            hasPriceData: result.hasPriceData,
+            hasCrimeData: result.hasCrimeData,
+            hasDisasterData: result.hasDisasterData,
+            hasEducationData: result.hasEducationData,
+            hasTransportData: result.hasTransportData,
+            hasHealthcareData: result.hasHealthcareData,
+            preset: result.preset,
+            timeLabel: result.timeLabel,
+          } as unknown as Json,
         })
         .eq("id", report.id);
 

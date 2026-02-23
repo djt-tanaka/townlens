@@ -1,4 +1,4 @@
-import { escapeHtml, generateCityNarrative, CATEGORY_COLORS, starColor } from "@townlens/core";
+import { escapeHtml, generateCityNarrative, CATEGORY_COLORS, starColor, getRawValueFromRow } from "@townlens/core";
 import type {
   CityScoreResult,
   IndicatorCategory,
@@ -29,33 +29,6 @@ function confidenceLabel(level: ConfidenceLevel): string {
 
 function numberFormat(value: number): string {
   return new Intl.NumberFormat("ja-JP").format(value);
-}
-
-/** 指標IDからReportRowの実値を取得するマッピング */
-function getRawValue(
-  indicatorId: string,
-  rawRow: ReportRow,
-): number | null | undefined {
-  const mapping: Record<string, () => number | null | undefined> = {
-    population_total: () => rawRow.total,
-    kids_ratio: () => rawRow.ratio,
-    condo_price_median: () => rawRow.condoPriceMedian,
-    crime_rate: () => rawRow.crimeRate,
-    flood_risk: () => {
-      if (rawRow.floodRisk == null && rawRow.landslideRisk == null)
-        return undefined;
-      return (rawRow.floodRisk ? 1 : 0) + (rawRow.landslideRisk ? 1 : 0);
-    },
-    evacuation_sites: () => rawRow.evacuationSiteCount,
-    elementary_schools_per_capita: () => rawRow.elementarySchoolsPerCapita,
-    junior_high_schools_per_capita: () => rawRow.juniorHighSchoolsPerCapita,
-    station_count_per_capita: () => rawRow.stationCountPerCapita,
-    terminal_access_km: () => rawRow.terminalAccessKm,
-    hospitals_per_capita: () => rawRow.hospitalsPerCapita,
-    clinics_per_capita: () => rawRow.clinicsPerCapita,
-    pediatrics_per_capita: () => rawRow.pediatricsPerCapita,
-  };
-  return mapping[indicatorId]?.() ?? undefined;
 }
 
 function formatRawValue(
@@ -140,7 +113,7 @@ export function renderCityDetail(model: CityDetailModel): string {
           const cs = result.choice.find((c) => c.indicatorId === def.id);
           const bs = result.baseline.find((b) => b.indicatorId === def.id);
           const is = result.indicatorStars?.find((s) => s.indicatorId === def.id);
-          const raw = getRawValue(def.id, rawRow);
+          const raw = getRawValueFromRow(def.id, rawRow);
           const rawDisplay = formatRawValue(raw, def);
           const priceRange =
             def.id === "condo_price_median"
