@@ -46,9 +46,17 @@ const CHUNK_SIZE = 50;
 /**
  * ランキング対象に含めるための最低指標数。
  * 有効な（非null）指標がこの数未満の自治体はランキングから除外する。
- * 人口データのみ（2指標）で高スコアになる小規模自治体の偏りを防ぐ。
+ * 8/13 = 62% のカバレッジを要求し、データ不足の自治体が
+ * 少数の per capita 指標だけで上位に入るのを防ぐ。
  */
-const MIN_REQUIRED_INDICATORS = 5;
+const MIN_REQUIRED_INDICATORS = 8;
+
+/**
+ * ランキング対象に含めるための最低カテゴリ数。
+ * 7カテゴリ中、最低4カテゴリ以上にデータがある自治体のみ対象とする。
+ * per capita 系カテゴリ（教育・交通・医療）だけで高スコアになるのを防ぐ。
+ */
+const MIN_REQUIRED_CATEGORIES = 4;
 
 // --- 環境変数バリデーション ---
 
@@ -329,13 +337,27 @@ async function main(): Promise<void> {
   }
   console.log(`  ${muniUpdatedCount} 自治体の人口・子供比率を更新`);
 
-  // --- 最低指標数フィルター: データが不足している自治体をランキングから除外 ---
+  // --- 最低指標数 + カテゴリ多様性フィルター ---
+  // 指標IDからカテゴリへの逆引きマップを構築
+  const indicatorCategoryMap = new Map(
+    ALL_INDICATORS.map((d) => [d.id, d.category]),
+  );
+
   const rankableData = allCityData.filter(({ indicators }) => {
-    const validCount = indicators.indicators.filter((i) => i.rawValue !== null).length;
-    return validCount >= MIN_REQUIRED_INDICATORS;
+    const validIndicators = indicators.indicators.filter((i) => i.rawValue !== null);
+    const validCount = validIndicators.length;
+    if (validCount < MIN_REQUIRED_INDICATORS) return false;
+
+    // カテゴリ多様性チェック: 有効指標がカバーするカテゴリ数を数える
+    const categories = new Set(
+      validIndicators
+        .map((i) => indicatorCategoryMap.get(i.indicatorId))
+        .filter(Boolean),
+    );
+    return categories.size >= MIN_REQUIRED_CATEGORIES;
   });
   const excludedCount = allCityData.length - rankableData.length;
-  console.log(`\n指標数フィルター: ${allCityData.length} 都市中 ${rankableData.length} 都市がランキング対象（${excludedCount} 都市を除外、最低 ${MIN_REQUIRED_INDICATORS} 指標必要）`);
+  console.log(`\n品質フィルター: ${allCityData.length} 都市中 ${rankableData.length} 都市がランキング対象（${excludedCount} 都市を除外、最低 ${MIN_REQUIRED_INDICATORS} 指標 / ${MIN_REQUIRED_CATEGORIES} カテゴリ必要）`);
 
   // プリセット別にスコアリング → 順位付け → DB 保存
   const now = new Date().toISOString();

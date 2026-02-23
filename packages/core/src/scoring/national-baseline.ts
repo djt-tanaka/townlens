@@ -80,6 +80,8 @@ export const NATIONAL_BASELINES: ReadonlyArray<NationalBaselineEntry> = [
  *
  * これらの指標は小規模自治体で極端に高い値を取るため、
  * パーセンタイル算出前に log(1 + x) 変換を適用して外れ値の影響を緩和する。
+ * さらにパーセンタイルを PER_CAPITA_PERCENTILE_CAP で上限キャップし、
+ * 極端な値による過大評価を防ぐ。
  */
 export const LOG_TRANSFORM_INDICATORS: ReadonlySet<string> = new Set([
   "elementary_schools_per_capita",
@@ -89,6 +91,14 @@ export const LOG_TRANSFORM_INDICATORS: ReadonlySet<string> = new Set([
   "clinics_per_capita",
   "pediatrics_per_capita",
 ]);
+
+/**
+ * per capita 指標のパーセンタイル上限。
+ * 小規模自治体の per capita 値は構造的に高くなりやすいため、
+ * パーセンタイル上限を95に設定して4★（80未満は4★）への
+ * 影響を維持しつつ、極端な 5★=100 の過大評価を緩和する。
+ */
+export const PER_CAPITA_PERCENTILE_CAP = 95;
 
 /** 対数変換: log(1 + x) */
 export function logTransform(value: number): number {
@@ -170,5 +180,10 @@ export function computeNationalPercentile(
   const percentile =
     direction === "lower_better" ? 100 - rawPercentile : rawPercentile;
 
-  return Math.round(percentile * 10) / 10;
+  // per capita 指標はパーセンタイル上限を適用（小規模自治体の構造的優位を緩和）
+  const capped = useLog
+    ? Math.min(percentile, PER_CAPITA_PERCENTILE_CAP)
+    : percentile;
+
+  return Math.round(capped * 10) / 10;
 }
