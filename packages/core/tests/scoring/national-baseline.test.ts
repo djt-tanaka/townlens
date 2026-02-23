@@ -5,6 +5,7 @@ import {
   NATIONAL_BASELINES,
   LOG_TRANSFORM_INDICATORS,
   logTransform,
+  PER_CAPITA_PERCENTILE_CAP,
 } from "../../src/scoring/national-baseline";
 
 describe("getNationalBaseline", () => {
@@ -139,17 +140,15 @@ describe("LOG_TRANSFORM_INDICATORS", () => {
 });
 
 describe("per capita 指標の対数変換効果", () => {
-  it("中程度の外れ値が対数変換で抑制される", () => {
+  it("中程度の外れ値が対数変換 + キャップで抑制される", () => {
     // schools_per_capita = 5.0（p80=2.5 の2倍）
-    // 対数変換なしだと: (5.0-2.5)/(3.75-2.5)*20+80 = 120 → 100 にクランプ
-    // 対数変換ありだと: log(6)=1.79, log(3.5)=1.25, upperBound=1.88
-    //   → 80 + (1.79-1.25)/(1.88-1.25)*20 ≈ 97 → 100未満
+    // 対数変換で ~97 になるが、PER_CAPITA_PERCENTILE_CAP=95 でキャップ
     const pct = computeNationalPercentile(
       5.0,
       "elementary_schools_per_capita",
       "higher_better",
     );
-    expect(pct).toBeLessThan(100);
+    expect(pct).toBeLessThanOrEqual(PER_CAPITA_PERCENTILE_CAP);
     expect(pct).toBeGreaterThan(80);
   });
 
@@ -168,5 +167,29 @@ describe("per capita 指標の対数変換効果", () => {
     // population_total は対数変換の対象外
     const pct = computeNationalPercentile(300000, "population_total", "higher_better");
     expect(pct).toBe(80);
+  });
+});
+
+describe("PER_CAPITA_PERCENTILE_CAP", () => {
+  it("per capita 指標のパーセンタイルがキャップ値を超えない", () => {
+    // 極端に高い per capita 値でもキャップされる
+    for (const indicatorId of LOG_TRANSFORM_INDICATORS) {
+      const pct = computeNationalPercentile(
+        1000, // 極端に高い値
+        indicatorId,
+        "higher_better",
+      );
+      expect(pct).toBeLessThanOrEqual(PER_CAPITA_PERCENTILE_CAP);
+    }
+  });
+
+  it("非 per capita 指標はキャップされない", () => {
+    // population_total は per capita ではないのでキャップなし
+    const pct = computeNationalPercentile(
+      1_000_000, // 非常に大きな人口
+      "population_total",
+      "higher_better",
+    );
+    expect(pct).toBeGreaterThan(PER_CAPITA_PERCENTILE_CAP);
   });
 });
