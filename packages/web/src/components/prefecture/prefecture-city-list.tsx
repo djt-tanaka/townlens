@@ -1,73 +1,31 @@
-"use client";
-
-import { useMemo, useState } from "react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PrefectureCityCard } from "./prefecture-city-card";
 import type { PrefectureCityEntry } from "@/lib/prefecture-data";
-
-/** タブに表示するプリセット情報 */
-const PRESET_TABS = [
-  { value: "childcare", label: "子育て重視" },
-  { value: "price", label: "価格重視" },
-  { value: "safety", label: "安全重視" },
-] as const;
 
 interface PrefectureCityListProps {
   readonly cities: ReadonlyArray<PrefectureCityEntry>;
 }
 
-function sortByPreset(
-  cities: ReadonlyArray<PrefectureCityEntry>,
-  presetName: string,
-): ReadonlyArray<PrefectureCityEntry> {
-  return [...cities].sort((a, b) => {
-    const aRating = a.presetStarRatings[presetName] ?? 0;
-    const bRating = b.presetStarRatings[presetName] ?? 0;
-    return bRating - aRating;
-  });
-}
-
-/** プリセットタブ切り替え付き都市ランキングリスト */
+/** 都道府県内の市区町村一覧（area_code 順 = 五十音順） */
 export function PrefectureCityList({ cities }: PrefectureCityListProps) {
-  const [activePreset, setActivePreset] = useState("childcare");
-
-  const sortedCities = useMemo(
-    () => sortByPreset(cities, activePreset),
-    [cities, activePreset],
+  const sorted = [...cities].sort((a, b) =>
+    a.areaCode.localeCompare(b.areaCode),
   );
 
   return (
     <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">
-          市区町村ランキング（{cities.length}件）
-        </h2>
-      </div>
-      <Tabs value={activePreset} onValueChange={setActivePreset}>
-        <TabsList>
-          {PRESET_TABS.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value}>
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        {PRESET_TABS.map((tab) => (
-          <TabsContent key={tab.value} value={tab.value}>
-            <div className="space-y-3">
-              {sortedCities.map((city, index) => (
-                <PrefectureCityCard
-                  key={city.areaCode}
-                  cityName={city.cityName}
-                  population={city.population}
-                  kidsRatio={city.kidsRatio}
-                  starRating={city.presetStarRatings[tab.value] ?? 0}
-                  rank={index + 1}
-                />
-              ))}
-            </div>
-          </TabsContent>
+      <h2 className="text-xl font-bold">
+        市区町村一覧（{cities.length}件）
+      </h2>
+      <div className="space-y-3">
+        {sorted.map((city) => (
+          <PrefectureCityCard
+            key={city.areaCode}
+            cityName={city.cityName}
+            population={city.population}
+            kidsRatio={city.kidsRatio}
+          />
         ))}
-      </Tabs>
+      </div>
     </section>
   );
 }
