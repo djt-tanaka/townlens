@@ -1,6 +1,6 @@
 # スコアリングエンジン
 
-スコアリング処理は `src/scoring/` モジュールで実装。メイン関数は `scoreCities()` (`src/scoring/index.ts`)。
+スコアリング処理は `packages/core/src/scoring/` モジュールで実装。メイン関数は `scoreCities()` (`packages/core/src/scoring/index.ts`)。
 
 ## パイプライン
 
@@ -18,7 +18,7 @@ CityScoreResult[] (ランク付き結果)
 
 ## Choice Score（候補内正規化）
 
-**ファイル**: `src/scoring/normalize.ts`
+**ファイル**: `packages/core/src/scoring/normalize.ts`
 
 比較対象の候補セット内で Min-Max 正規化を行い、0〜100のスコアに変換。
 
@@ -29,7 +29,7 @@ CityScoreResult[] (ランク付き結果)
 
 ## Baseline Score（パーセンタイル）
 
-**ファイル**: `src/scoring/percentile.ts`
+**ファイル**: `packages/core/src/scoring/percentile.ts`
 
 候補セット内でのパーセンタイルランクを計算。
 
@@ -39,7 +39,7 @@ CityScoreResult[] (ランク付き結果)
 
 ## Composite Score（複合スコア）
 
-**ファイル**: `src/scoring/composite.ts`
+**ファイル**: `packages/core/src/scoring/composite.ts`
 
 カテゴリごとの重み付けで総合スコアを算出。
 
@@ -49,17 +49,17 @@ CityScoreResult[] (ランク付き結果)
 
 ## 重みプリセット
 
-**ファイル**: `src/scoring/presets.ts`
+**ファイル**: `packages/core/src/scoring/presets.ts`
 
-| プリセット | childcare | price | safety | disaster | transport |
-|-----------|-----------|-------|--------|----------|-----------|
-| 子育て重視 | 0.50 | 0.25 | 0.15 | 0.05 | 0.05 |
-| 価格重視 | 0.15 | 0.50 | 0.15 | 0.10 | 0.10 |
-| 安全重視 | 0.20 | 0.15 | 0.35 | 0.20 | 0.10 |
+| プリセット | childcare | price | safety | disaster | transport | education | healthcare |
+|-----------|-----------|-------|--------|----------|-----------|-----------|------------|
+| 子育て重視 | 0.25 | 0.15 | 0.15 | 0.05 | 0.05 | 0.15 | 0.20 |
+| 価格重視 | 0.10 | 0.45 | 0.10 | 0.05 | 0.10 | 0.10 | 0.10 |
+| 安全重視 | 0.10 | 0.10 | 0.30 | 0.15 | 0.05 | 0.10 | 0.20 |
 
 ## 信頼度評価
 
-**ファイル**: `src/scoring/confidence.ts`
+**ファイル**: `packages/core/src/scoring/confidence.ts`
 
 | レベル | データ年 | 欠損率 | サンプル数 |
 |--------|---------|--------|-----------|
@@ -69,7 +69,7 @@ CityScoreResult[] (ランク付き結果)
 
 ## 指標定義一覧
 
-**ファイル**: `src/scoring/presets.ts`
+**ファイル**: `packages/core/src/scoring/presets.ts`
 
 | Phase | ID | ラベル | 単位 | direction | category |
 |-------|-----|--------|------|-----------|----------|
@@ -79,3 +79,10 @@ CityScoreResult[] (ランク付き結果)
 | 2a | `crime_rate` | 刑法犯認知件数（人口千人当たり） | 件/千人 | lower_better | safety |
 | 2b | `flood_risk` | 洪水・土砂災害リスク | リスクスコア | lower_better | disaster |
 | 2b | `evacuation_sites` | 避難場所数 | 箇所 | higher_better | disaster |
+| 3 | `elementary_schools_per_capita` | 小学校数（人口1万人あたり） | 校/万人 | higher_better | education |
+| 3 | `junior_high_schools_per_capita` | 中学校数（人口1万人あたり） | 校/万人 | higher_better | education |
+| 4 | `station_count_per_capita` | 鉄道駅数（人口1万人あたり） | 駅/万人 | higher_better | transport |
+| 4 | `terminal_access_km` | 最寄りターミナル駅距離 | km | lower_better | transport |
+| 5 | `hospitals_per_capita` | 一般病院数（人口10万人あたり） | 施設/10万人 | higher_better | healthcare |
+| 5 | `clinics_per_capita` | 一般診療所数（人口10万人あたり） | 施設/10万人 | higher_better | healthcare |
+| 5 | `pediatrics_per_capita` | 小児科標榜施設数（人口10万人あたり） | 施設/10万人 | higher_better | healthcare |

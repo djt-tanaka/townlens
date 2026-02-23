@@ -962,21 +962,21 @@ STRIPE_PRICE_PREMIUM=
 
 ### Week 7: SEO + テスト
 
-- [ ] `generateMetadata` 実装（全ページ）
-- [ ] OGP 画像生成（`@vercel/og`）
-- [ ] `sitemap.xml` 自動生成
-- [ ] E2E テスト（Playwright）: レポート生成フロー、認証フロー
+- [x] `generateMetadata` 実装（全ページ）
+- [x] OGP 画像生成（`@vercel/og`）
+- [x] `sitemap.xml` 自動生成
+- [ ] E2E テスト（Playwright）: レポート生成フロー、認証フロー → Issue #55
 - [ ] API テスト（Vitest）: 全 Route Handler
-- [ ] core パッケージテスト: カバレッジ80%確認
+- [x] core パッケージテスト: カバレッジ80%確認
 
 ### Week 8: QA + デプロイ
 
 - [ ] クロスブラウザテスト（Chrome, Safari, Firefox）
-- [ ] パフォーマンスチューニング（Core Web Vitals）
-- [ ] Vercel デプロイ設定（環境変数、ドメイン）
-- [ ] Supabase 本番設定
-- [ ] Sentry 統合
-- [ ] ドキュメント更新
+- [ ] パフォーマンスチューニング（Core Web Vitals） → Issue #56
+- [x] Vercel デプロイ設定（環境変数、ドメイン）
+- [ ] Supabase 本番設定 → Issue #54
+- [ ] Sentry 統合 → Issue #53
+- [x] ドキュメント更新
 
 ---
 
@@ -1225,15 +1225,16 @@ Phase E（要検討）: フレームワーク移行
 
 5. **Next.js 15 の `transpilePackages` 設定**: モノレポ内の TypeScript パッケージを Next.js から利用するには `next.config.ts` で `transpilePackages: ["@townlens/core"]` の指定が必要
 
-### 13.4 次のステップ（Week 3）
+### 13.4 残タスク（ローンチ準備）
 
-- [ ] Supabase プロジェクト作成 + DB マイグレーション（§5 のスキーマ）
-- [ ] `GET /api/cities/search` 実装
-- [ ] `POST /api/reports` 実装（core パイプライン呼び出し）
-- [ ] `GET /api/reports/[id]` 実装
-- [ ] `GET /api/usage` 実装
-- [ ] Supabase Auth 統合
-- [ ] `SupabaseCacheAdapter` 実装
+Week 1-6 で API・DB・認証・UI の基盤は完了済み。残りのタスクは GitHub Issue で管理:
+
+- [ ] E2E テスト（Issue #55）
+- [ ] Core Web Vitals 最適化（Issue #56）
+- [ ] GA4 イベントトラッキング（Issue #57）
+- [ ] Sentry 統合（Issue #53）
+- [ ] 本番 Supabase hardening（Issue #54）
+- [ ] カスタムドメイン設定（Issue #50）
 
 ---
 
