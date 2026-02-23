@@ -3,6 +3,7 @@
  */
 
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { AppError } from "@townlens/core";
 
 /** 成功レスポンスを返す */
@@ -28,9 +29,10 @@ export function handleApiError(error: unknown): NextResponse {
     return errorResponse(error.message, 400, error.hints?.join("; "));
   }
 
+  Sentry.captureException(error);
+
   const message =
     error instanceof Error ? error.message : "予期しないエラーが発生しました";
-  console.error("API エラー:", error);
   return errorResponse(message, 500);
 }
 

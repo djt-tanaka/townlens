@@ -29,6 +29,9 @@ export default defineConfig({
         "src/lib/supabase/admin.ts",
         "src/lib/supabase/middleware.ts",
         "src/middleware.ts",
+        // Sentry 初期化ファイル（起動時に実行、単体テスト対象外）
+        "src/instrumentation.ts",
+        "src/instrumentation-client.ts",
         "src/app/auth/callback/route.ts",
         // SEO 関連（外部 DB アクセスあり、E2E で検証）
         "src/app/sitemap.ts",

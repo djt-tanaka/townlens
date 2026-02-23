@@ -13,6 +13,7 @@
     "ranking:generate": "tsx scripts/generate-rankings.ts"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.39.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.96.0",
     "@townlens/core": "workspace:*",
@@ -39,9 +40,9 @@
     "@types/react-dom": "^19.0.0",
     "@vitest/coverage-v8": "^4.0.18",
     "axios": "^1.13.5",
-    "tsx": "^4.19.2",
     "jsdom": "^28.1.0",
     "tailwindcss": "^4.0.0",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "vitest": "^4.0.18"
   }

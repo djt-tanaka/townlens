@@ -7,6 +7,10 @@ import {
   handleApiError,
 } from "@/lib/api-utils";
 
+vi.mock("@sentry/nextjs", () => ({
+  captureException: vi.fn(),
+}));
+
 vi.mock("next/server", () => ({
   NextResponse: {
     json: vi.fn((data, init) => ({
@@ -99,24 +103,31 @@ describe("errorResponse", () => {
 });
 
 describe("handleApiError", () => {
-  it("AppError をハンドリングする", async () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("AppError をハンドリングする（Sentry に送信しない）", async () => {
+    const Sentry = await import("@sentry/nextjs");
     const { AppError } = await import("@townlens/core");
     const err = new AppError("テストエラー", ["ヒント1"]);
     const res = handleApiError(err);
     expect(res.status).toBe(400);
+    expect(Sentry.captureException).not.toHaveBeenCalled();
   });
 
-  it("一般的な Error をハンドリングする", async () => {
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    const res = handleApiError(new Error("一般エラー"));
+  it("一般的な Error を Sentry に送信する", async () => {
+    const Sentry = await import("@sentry/nextjs");
+    const error = new Error("一般エラー");
+    const res = handleApiError(error);
     expect(res.status).toBe(500);
-    consoleSpy.mockRestore();
+    expect(Sentry.captureException).toHaveBeenCalledWith(error);
   });
 
-  it("文字列以外のエラーをハンドリングする", async () => {
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+  it("文字列エラーも Sentry に送信する", async () => {
+    const Sentry = await import("@sentry/nextjs");
     const res = handleApiError("文字列エラー");
     expect(res.status).toBe(500);
-    consoleSpy.mockRestore();
+    expect(Sentry.captureException).toHaveBeenCalledWith("文字列エラー");
   });
 });
