@@ -6,7 +6,7 @@
  */
 
 import { unstable_cache } from "next/cache";
-import { isDesignatedCityCode } from "@townlens/core";
+import { isAggregateAreaCode } from "@townlens/core";
 import type { Json } from "@/types/database";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { RANKING_PRESET_META } from "./ranking-presets";
@@ -51,7 +51,7 @@ async function fetchRankingByPresetInternal(
 
   // 政令指定都市の親コードを除外し、連番の順位を再付与
   const filtered = (data ?? [])
-    .filter((row) => !isDesignatedCityCode(row.area_code))
+    .filter((row) => !isAggregateAreaCode(row.area_code))
     .slice(0, limit);
 
   return filtered.map((row, i) => {

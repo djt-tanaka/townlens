@@ -77,6 +77,8 @@ export {
   resolveCities,
   isMunicipalityCode,
   isDesignatedCityCode,
+  isTokyoSpecialWardCode,
+  isAggregateAreaCode,
   resolveLatestTime,
   resolveTimeCandidates,
   resolveAgeSelection,

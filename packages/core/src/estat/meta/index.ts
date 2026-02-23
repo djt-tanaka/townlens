@@ -16,6 +16,8 @@ export {
   resolveCities,
   isMunicipalityCode,
   isDesignatedCityCode,
+  isTokyoSpecialWardCode,
+  isAggregateAreaCode,
 } from "./area";
 
 export {
