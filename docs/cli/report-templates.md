@@ -2,7 +2,7 @@
 
 ## HTML → PDF 変換
 
-**ファイル**: `src/report/pdf.ts`
+**ファイル**: `packages/cli/src/report/pdf.ts`
 
 Playwright の Chromium を使用して HTML を A4 PDF に変換。
 
@@ -17,7 +17,7 @@ Playwright の Chromium を使用して HTML を A4 PDF に変換。
 
 ## テンプレート構成
 
-**ディレクトリ**: `src/report/templates/`
+**ディレクトリ**: `packages/cli/src/report/templates/`
 
 スコアリング版レポートの組成は `compose.ts` の `renderScoredReportHtml()` が担当。
 
@@ -30,11 +30,11 @@ renderScoredReportHtml()
 └── renderDisclaimer()   — 免責事項（データ出典・注意事項）
 ```
 
-基本（非スコアリング）版は `src/report/html.ts` の `renderReportHtml()` で生成。
+基本（非スコアリング）版は `packages/cli/src/report/html.ts` の `renderReportHtml()` で生成。
 
 ## スタイル定義
 
-**ファイル**: `src/report/templates/styles.ts`
+**ファイル**: `packages/cli/src/report/templates/styles.ts`
 
 ### カラー変数
 

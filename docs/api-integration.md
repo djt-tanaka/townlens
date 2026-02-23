@@ -11,7 +11,7 @@
 
 ## e-Stat API
 
-**クライアント**: `src/estat/client.ts` — `EstatApiClient`
+**クライアント**: `packages/core/src/estat/client.ts` — `EstatApiClient`
 
 ### エンドポイント
 
@@ -30,7 +30,7 @@
 | 人口（年齢3区分） | `0003448299` | 国勢調査 令和2年 |
 | 犯罪統計 | `0000020211` | 社会・人口統計体系 K安全 |
 
-定義は `src/config/datasets.ts` で管理。
+定義は `packages/core/src/config/datasets.ts` で管理。
 
 ### リトライ機構
 
@@ -46,7 +46,7 @@
 
 ## 不動産情報ライブラリ API
 
-**クライアント**: `src/reinfo/client.ts` — `ReinfoApiClient`
+**クライアント**: `packages/core/src/reinfo/client.ts` — `ReinfoApiClient`
 
 ### エンドポイント
 
@@ -65,7 +65,7 @@
 | `XKT029` | 土砂災害警戒区域 | GeoJSON |
 | `XGT001` | 指定緊急避難場所 | GeoJSON |
 
-タイル座標はレベル14（約1km²）で、市区町村の代表座標から算出。代表座標は `src/reinfo/city-locations.ts` で定義。
+タイル座標はレベル14（約1km²）で、市区町村の代表座標から算出。代表座標は `packages/core/src/reinfo/city-locations.ts` で定義。
 
 ### レート制限対策
 

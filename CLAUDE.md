@@ -6,12 +6,13 @@
 
 ```bash
 # ルート（Turbo経由で全パッケージ実行）
+pnpm build                   # TypeScriptコンパイル
 pnpm test                    # 全パッケージのテスト（Vitest）
 pnpm test:coverage           # カバレッジ測定（80%必須）
-pnpm build                   # TypeScriptコンパイル
 
 # パッケージ単体
 pnpm --filter @townlens/core test:run    # coreのテスト
+pnpm --filter @townlens/cli test:run     # CLIのテスト
 pnpm --filter @townlens/web test:run     # webのテスト
 pnpm --filter @townlens/web dev          # Web開発サーバー
 pnpm --filter @townlens/cli dev -- report --cities "世田谷区,渋谷区"  # CLI実行
@@ -34,7 +35,6 @@ pnpm + Turbo モノレポ。`packages/core`（共有ロジック）→ `cli`・`
 
 - [アーキテクチャ](docs/cli/architecture.md) — ディレクトリ構成・モジュール構成・データフロー
 - [レポートテンプレート](docs/cli/report-templates.md) — HTML→PDF変換・テンプレート構成・スタイル
-- [MVP仕様（初期）](docs/cli/mvp-spec.md) — Phase 0 の初期仕様書
 
 ### Web
 
