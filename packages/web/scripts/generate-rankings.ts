@@ -43,6 +43,13 @@ import type { Database } from "../src/types/database";
 
 const CHUNK_SIZE = 50;
 
+/**
+ * ランキング対象に含めるための最低指標数。
+ * 有効な（非null）指標がこの数未満の自治体はランキングから除外する。
+ * 人口データのみ（2指標）で高スコアになる小規模自治体の偏りを防ぐ。
+ */
+const MIN_REQUIRED_INDICATORS = 5;
+
 // --- 環境変数バリデーション ---
 
 function requireEnv(name: string): string {
@@ -322,6 +329,14 @@ async function main(): Promise<void> {
   }
   console.log(`  ${muniUpdatedCount} 自治体の人口・子供比率を更新`);
 
+  // --- 最低指標数フィルター: データが不足している自治体をランキングから除外 ---
+  const rankableData = allCityData.filter(({ indicators }) => {
+    const validCount = indicators.indicators.filter((i) => i.rawValue !== null).length;
+    return validCount >= MIN_REQUIRED_INDICATORS;
+  });
+  const excludedCount = allCityData.length - rankableData.length;
+  console.log(`\n指標数フィルター: ${allCityData.length} 都市中 ${rankableData.length} 都市がランキング対象（${excludedCount} 都市を除外、最低 ${MIN_REQUIRED_INDICATORS} 指標必要）`);
+
   // プリセット別にスコアリング → 順位付け → DB 保存
   const now = new Date().toISOString();
 
@@ -337,8 +352,8 @@ async function main(): Promise<void> {
       console.error(`  既存ランキング削除エラー: ${deleteError.message}`);
     }
 
-    // 各都市をスコアリング
-    const scored: CityRankingRow[] = allCityData.map(({ indicators }) => {
+    // 各都市をスコアリング（指標数フィルターを通過した都市のみ）
+    const scored: CityRankingRow[] = rankableData.map(({ indicators }) => {
       const score = scoreSingleCity(indicators, ALL_INDICATORS, preset);
       return {
         preset: preset.name,

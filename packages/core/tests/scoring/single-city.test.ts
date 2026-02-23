@@ -174,7 +174,7 @@ describe("scoreSingleCity", () => {
     expect(result.starRating).toBeLessThanOrEqual(5);
   });
 
-  it("全指標が欠損している場合はデフォルト3を返す", () => {
+  it("全指標が欠損している場合はペナルティ中立値を返す", () => {
     const city: CityIndicators = {
       cityName: "空市",
       areaCode: "00000",
@@ -182,7 +182,8 @@ describe("scoreSingleCity", () => {
     };
     const result = scoreSingleCity(city, TEST_DEFINITIONS, TEST_PRESET);
 
-    expect(result.starRating).toBe(3);
+    // rawStarRating=3（デフォルト）, coverage=0 → 3*0 + 2.5*1 = 2.5
+    expect(result.starRating).toBe(2.5);
     expect(result.indicatorStars).toHaveLength(0);
   });
 
