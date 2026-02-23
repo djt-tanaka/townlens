@@ -38,11 +38,11 @@ export async function generateMetadata({
   }
 
   const cities = await fetchPrefectureCities(prefName);
-  const title = `${prefName}の市区町村 暮らしやすさランキング`;
+  const title = `${prefName}の市区町村一覧`;
   const description =
     cities.length > 0
-      ? `${prefName}の${cities.length}市区町村を子育て・安全・住宅価格で政府統計データに基づきスコアリング。`
-      : `${prefName}の市区町村データを政府統計で分析。`;
+      ? `${prefName}内の${cities.length}市区町村を一覧で表示。各都市の人口・子育て比率などの基本情報を掲載。`
+      : `${prefName}の市区町村一覧。`;
 
   return {
     title,
@@ -81,10 +81,10 @@ export default async function PrefecturePage({
           <Badge variant="outline">都道府県</Badge>
         </div>
         <h1 className="text-3xl font-black tracking-tight">
-          {prefName}の暮らしやすさランキング
+          {prefName}の市区町村一覧
         </h1>
         <p className="text-muted-foreground">
-          政府統計データに基づく{prefName}内の市区町村評価
+          {prefName}内の市区町村を五十音順で表示
         </p>
       </section>
 
