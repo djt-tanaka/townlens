@@ -197,20 +197,17 @@ export const getCityCodesForPrefecture = unstable_cache(
   { revalidate: CACHE_REVALIDATE },
 );
 
-/** 都道府県ページ用の軽量な都市データ（city_rankings テーブルから取得） */
+/** 都道府県ページ用の軽量な都市データ（municipalities テーブルから取得） */
 export interface PrefectureCityEntry {
   readonly cityName: string;
   readonly areaCode: string;
   readonly population: number;
   readonly kidsRatio: number;
-  /** プリセット名 → スター評価のマッピング */
-  readonly presetStarRatings: Readonly<Record<string, number>>;
 }
 
 /**
- * 都道府県内の全都市ランキングデータを取得する（内部実装）。
- * municipalities テーブルから都市属性を、city_rankings テーブルからランキングスコアを
- * JOIN して取得する。月次バッチで生成済みのスコアを DB から読むだけなので高速。
+ * 都道府県内の全都市データを取得する（内部実装）。
+ * municipalities テーブルから都市属性を取得する。
  */
 async function fetchPrefectureCitiesInternal(
   prefectureName: string,
@@ -220,51 +217,30 @@ async function fetchPrefectureCitiesInternal(
 
   const supabase = createAdminClient();
 
-  // municipalities から都市属性を取得し、city_rankings を JOIN してスコアを取得
   const { data, error } = await supabase
     .from("municipalities")
-    .select(
-      "area_code, city_name, population, kids_ratio, city_rankings(preset, star_rating)",
-    )
+    .select("area_code, city_name, population, kids_ratio")
     .eq("prefecture", prefectureName)
     .not("area_code", "like", "__000%");
 
   if (error) {
-    console.error(`municipalities/city_rankings 取得エラー: ${error.message}`);
+    console.error(`municipalities 取得エラー: ${error.message}`);
     return [];
   }
 
-  const results: PrefectureCityEntry[] = [];
-
-  for (const row of data ?? []) {
-    if (isAggregateAreaCode(row.area_code)) continue;
-
-    const rankings = row.city_rankings as ReadonlyArray<{
-      preset: string;
-      star_rating: number;
-    }>;
-    if (!rankings || rankings.length === 0) continue;
-
-    const presetStarRatings: Record<string, number> = {};
-    for (const r of rankings) {
-      presetStarRatings[r.preset] = r.star_rating;
-    }
-
-    results.push({
+  return (data ?? [])
+    .filter((row) => !isAggregateAreaCode(row.area_code))
+    .map((row) => ({
       cityName: row.city_name,
       areaCode: row.area_code,
       population: row.population ?? 0,
       kidsRatio: row.kids_ratio ?? 0,
-      presetStarRatings,
-    });
-  }
-
-  return results;
+    }));
 }
 
 /**
- * 都道府県内の全都市ランキングデータを取得する（ソートは Client 側で実施）。
- * city_rankings テーブルから読み取るだけなので ISR 再生成時も高速に応答する。
+ * 都道府県内の全都市データを取得する（ソートは Client 側で実施）。
+ * municipalities テーブルから読み取るだけなので ISR 再生成時も高速に応答する。
  */
 export const fetchPrefectureCities = unstable_cache(
   fetchPrefectureCitiesInternal,
