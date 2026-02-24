@@ -125,4 +125,13 @@
   h3 {
     letter-spacing: -0.01em;
   }
+  button,
+  [role="button"],
+  a,
+  summary,
+  [type="button"],
+  [type="reset"],
+  [type="submit"] {
+    cursor: pointer;
+  }
 }
