@@ -132,6 +132,25 @@ describe("fetchAllMunicipalityCounts", () => {
     expect(counts["神奈川県"]).toBe(1);
   });
 
+  it("1000件以上の場合にページネーションで全件取得する", async () => {
+    // 1ページ目: ちょうど 1000 件（PAGE_SIZE）→ 次ページへ進む
+    // 政令指定都市の親コードと衝突しないよう 50001 始まりで生成
+    const page1 = Array.from({ length: 1000 }, (_, i) => ({
+      area_code: String(50001 + i),
+      prefecture: "東京都",
+    }));
+    // 2ページ目: 1件 → ループ終了
+    const page2 = [{ area_code: "27102", prefecture: "大阪府" }];
+
+    mockFrom
+      .mockReturnValueOnce(createQueryChain({ data: page1, error: null }))
+      .mockReturnValueOnce(createQueryChain({ data: page2, error: null }));
+
+    const counts = await fetchAllMunicipalityCounts();
+    expect(counts["東京都"]).toBe(1000);
+    expect(counts["大阪府"]).toBe(1);
+  });
+
   it("Supabase エラー時に空オブジェクトを返す", async () => {
     mockFrom.mockReturnValue(
       createQueryChain({ data: null, error: { message: "test error" } }),
