@@ -5,7 +5,7 @@ interface PrefectureCityListProps {
   readonly cities: ReadonlyArray<PrefectureCityEntry>;
 }
 
-/** 都道府県内の市区町村一覧（area_code 順 = 五十音順） */
+/** 都道府県内の市区町村一覧（area_code 順） */
 export function PrefectureCityList({ cities }: PrefectureCityListProps) {
   const sorted = [...cities].sort((a, b) =>
     a.areaCode.localeCompare(b.areaCode),

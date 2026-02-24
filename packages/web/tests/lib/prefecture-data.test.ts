@@ -132,6 +132,25 @@ describe("fetchAllMunicipalityCounts", () => {
     expect(counts["神奈川県"]).toBe(1);
   });
 
+  it("1000件以上の場合にページネーションで全件取得する", async () => {
+    // 1ページ目: ちょうど 1000 件（PAGE_SIZE）→ 次ページへ進む
+    // 政令指定都市の親コードと衝突しないよう 50001 始まりで生成
+    const page1 = Array.from({ length: 1000 }, (_, i) => ({
+      area_code: String(50001 + i),
+      prefecture: "東京都",
+    }));
+    // 2ページ目: 1件 → ループ終了
+    const page2 = [{ area_code: "27102", prefecture: "大阪府" }];
+
+    mockFrom
+      .mockReturnValueOnce(createQueryChain({ data: page1, error: null }))
+      .mockReturnValueOnce(createQueryChain({ data: page2, error: null }));
+
+    const counts = await fetchAllMunicipalityCounts();
+    expect(counts["東京都"]).toBe(1000);
+    expect(counts["大阪府"]).toBe(1);
+  });
+
   it("Supabase エラー時に空オブジェクトを返す", async () => {
     mockFrom.mockReturnValue(
       createQueryChain({ data: null, error: { message: "test error" } }),
@@ -159,27 +178,19 @@ describe("fetchPrefectureCities", () => {
     expect(result).toEqual([]);
   });
 
-  it("municipalities + city_rankings JOIN から都道府県内の都市を取得する", async () => {
+  it("municipalities テーブルから都道府県内の都市を取得する", async () => {
     const mockData = [
       {
         area_code: "13101",
         city_name: "千代田区",
         population: 67000,
         kids_ratio: 10.5,
-        city_rankings: [
-          { preset: "childcare", star_rating: 3.5 },
-          { preset: "price", star_rating: 2.8 },
-        ],
       },
       {
         area_code: "13102",
         city_name: "中央区",
         population: 170000,
         kids_ratio: 12.1,
-        city_rankings: [
-          { preset: "childcare", star_rating: 4.0 },
-          { preset: "price", star_rating: 3.2 },
-        ],
       },
     ];
     mockFrom.mockReturnValue(
@@ -189,53 +200,9 @@ describe("fetchPrefectureCities", () => {
     const result = await fetchPrefectureCities("東京都");
     expect(result).toHaveLength(2);
     expect(result[0]?.cityName).toBe("千代田区");
-    expect(result[0]?.presetStarRatings["childcare"]).toBe(3.5);
-    expect(result[0]?.presetStarRatings["price"]).toBe(2.8);
+    expect(result[0]?.population).toBe(67000);
+    expect(result[0]?.kidsRatio).toBe(10.5);
     expect(result[1]?.cityName).toBe("中央区");
-  });
-
-  it("プリセット別スコアをまとめて返す", async () => {
-    const mockData = [
-      {
-        area_code: "01202",
-        city_name: "函館市",
-        population: 250000,
-        kids_ratio: 9.8,
-        city_rankings: [
-          { preset: "childcare", star_rating: 3.0 },
-          { preset: "price", star_rating: 4.2 },
-          { preset: "safety", star_rating: 3.8 },
-        ],
-      },
-    ];
-    mockFrom.mockReturnValue(
-      createQueryChain({ data: mockData, error: null }),
-    );
-
-    const result = await fetchPrefectureCities("北海道");
-    expect(result).toHaveLength(1);
-    const city = result[0]!;
-    expect(city.presetStarRatings["childcare"]).toBe(3.0);
-    expect(city.presetStarRatings["price"]).toBe(4.2);
-    expect(city.presetStarRatings["safety"]).toBe(3.8);
-  });
-
-  it("city_rankings が空の都市はスキップする", async () => {
-    const mockData = [
-      {
-        area_code: "13101",
-        city_name: "千代田区",
-        population: 67000,
-        kids_ratio: 10.5,
-        city_rankings: [],
-      },
-    ];
-    mockFrom.mockReturnValue(
-      createQueryChain({ data: mockData, error: null }),
-    );
-
-    const result = await fetchPrefectureCities("東京都");
-    expect(result).toEqual([]);
   });
 
   it("Supabase エラー時に空配列を返す", async () => {
@@ -254,14 +221,12 @@ describe("fetchPrefectureCities", () => {
         city_name: "横浜市",
         population: 3700000,
         kids_ratio: 11.0,
-        city_rankings: [{ preset: "childcare", star_rating: 3.5 }],
       },
       {
         area_code: "14101",
         city_name: "鶴見区",
         population: 290000,
         kids_ratio: 12.0,
-        city_rankings: [{ preset: "childcare", star_rating: 3.8 }],
       },
     ];
     mockFrom.mockReturnValue(

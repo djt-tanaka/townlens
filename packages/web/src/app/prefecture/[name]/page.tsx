@@ -84,7 +84,7 @@ export default async function PrefecturePage({
           {prefName}の市区町村一覧
         </h1>
         <p className="text-muted-foreground">
-          {prefName}内の市区町村を五十音順で表示
+          {prefName}内の市区町村を一覧で表示
         </p>
       </section>
 
