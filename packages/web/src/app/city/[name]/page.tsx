@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { CITY_LOCATIONS, generateCityNarrative } from "@townlens/core";
+import { generateCityNarrative } from "@townlens/core";
 import type { CityScoreResult } from "@townlens/core";
 import { Badge } from "@/components/ui/badge";
 import { CityStats } from "@/components/city/city-stats";
@@ -11,7 +11,7 @@ import { DataSourceInfo } from "@/components/city/data-source-info";
 import { CompareCta } from "@/components/city/compare-cta";
 import { RelatedCities } from "@/components/city/related-cities";
 import { NarrativeBlock } from "@/components/report/narrative-block";
-import { fetchCityPageData } from "@/lib/city-data";
+import { fetchCityPageData, fetchAllMunicipalityNames } from "@/lib/city-data";
 import { findNearbyCities } from "@/lib/nearby-cities";
 
 /** ISR: 24時間で再生成 */
@@ -21,13 +21,11 @@ interface CityPageProps {
   readonly params: Promise<{ name: string }>;
 }
 
-/** 主要都市をビルド時にプリレンダリング */
+/** 全市町村をビルド時にプリレンダリング */
 export async function generateStaticParams(): Promise<
   Array<{ name: string }>
 > {
-  return [...CITY_LOCATIONS.values()].map((loc) => ({
-    name: loc.name,
-  }));
+  return [...(await fetchAllMunicipalityNames())];
 }
 
 /** SEO メタデータ生成 */

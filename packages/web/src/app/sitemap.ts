@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { CITY_LOCATIONS } from "@townlens/core";
+import { isAggregateAreaCode } from "@townlens/core";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { RANKING_PRESET_META } from "@/lib/ranking-presets";
 import { PREFECTURE_MAP } from "@/lib/prefectures";
@@ -69,15 +69,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
   );
 
-  // 都市ページ（CITY_LOCATIONS 登録済みの主要都市）
-  const cityPages: MetadataRoute.Sitemap = [...CITY_LOCATIONS.values()].map(
-    (loc) => ({
-      url: `${baseUrl}/city/${encodeURIComponent(loc.name)}`,
-      lastModified: new Date(),
-      changeFrequency: "weekly" as const,
-      priority: 0.6,
-    }),
-  );
+  // 都市ページ（municipalities テーブルから全市町村を取得）
+  const PAGE_SIZE = 1000;
+  const cityNames: string[] = [];
+  let offset = 0;
+
+  for (;;) {
+    const { data: rows } = await supabase
+      .from("municipalities")
+      .select("area_code, city_name")
+      .range(offset, offset + PAGE_SIZE - 1);
+
+    for (const row of rows ?? []) {
+      if (!isAggregateAreaCode(row.area_code)) {
+        cityNames.push(row.city_name);
+      }
+    }
+
+    if (!rows || rows.length < PAGE_SIZE) break;
+    offset += PAGE_SIZE;
+  }
+
+  const cityPages: MetadataRoute.Sitemap = cityNames.map((name) => ({
+    url: `${baseUrl}/city/${encodeURIComponent(name)}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.6,
+  }));
 
   // ランキングページ
   const rankingPages: MetadataRoute.Sitemap = [
