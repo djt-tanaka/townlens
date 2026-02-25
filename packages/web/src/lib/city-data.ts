@@ -376,13 +376,21 @@ export const fetchCityPageData = unstable_cache(
 /**
  * municipalities テーブルから全市町村の city_name を取得する。
  * generateStaticParams / sitemap 用。ページネーションで全件取得。
+ * ビルド時に DB 接続できない場合は空配列を返す（dynamicParams=true で ISR 動的生成される）。
  */
 async function fetchAllMunicipalityNamesInternal(): Promise<
   ReadonlyArray<{ readonly name: string }>
 > {
-  const { createAdminClient } = await import("@/lib/supabase/admin");
+  let supabase;
+  try {
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    supabase = createAdminClient();
+  } catch {
+    // ビルド時に環境変数が未設定の場合、空配列を返す
+    return [];
+  }
+
   const { isAggregateAreaCode } = await import("@townlens/core");
-  const supabase = createAdminClient();
 
   const PAGE_SIZE = 1000;
   const results: Array<{ name: string }> = [];
