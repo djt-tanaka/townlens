@@ -372,3 +372,56 @@ export const fetchCityPageData = unstable_cache(
   ["city-page-data"],
   { revalidate: CACHE_REVALIDATE },
 );
+
+/**
+ * municipalities テーブルから全市町村の city_name を取得する。
+ * generateStaticParams / sitemap 用。ページネーションで全件取得。
+ * ビルド時に DB 接続できない場合は空配列を返す（dynamicParams=true で ISR 動的生成される）。
+ */
+async function fetchAllMunicipalityNamesInternal(): Promise<
+  ReadonlyArray<{ readonly name: string }>
+> {
+  let supabase;
+  try {
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    supabase = createAdminClient();
+  } catch {
+    // ビルド時に環境変数が未設定の場合、空配列を返す
+    return [];
+  }
+
+  const { isAggregateAreaCode } = await import("@townlens/core");
+
+  const PAGE_SIZE = 1000;
+  const results: Array<{ name: string }> = [];
+  let offset = 0;
+
+  for (;;) {
+    const { data, error } = await supabase
+      .from("municipalities")
+      .select("area_code, city_name")
+      .range(offset, offset + PAGE_SIZE - 1);
+
+    if (error) {
+      console.error(`municipalities 取得エラー: ${error.message}`);
+      return [];
+    }
+
+    for (const row of data ?? []) {
+      if (isAggregateAreaCode(row.area_code)) continue;
+      results.push({ name: row.city_name });
+    }
+
+    if (!data || data.length < PAGE_SIZE) break;
+    offset += PAGE_SIZE;
+  }
+
+  return results;
+}
+
+/** 全市町村名を取得（キャッシュ付き） */
+export const fetchAllMunicipalityNames = unstable_cache(
+  fetchAllMunicipalityNamesInternal,
+  ["all-municipality-names"],
+  { revalidate: CACHE_REVALIDATE },
+);
