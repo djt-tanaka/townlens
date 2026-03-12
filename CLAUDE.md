@@ -43,6 +43,7 @@ pnpm + Turbo モノレポ。`packages/core`（共有ロジック）→ `cli`・`
   - §13: 実装ノート（Turboの注意点・設計変更・知見）
 - [マネタイズ戦略](docs/web/monetization-strategy.md) — フリーミアム・B2B SaaS・プラットフォーム展開
 - [ランキング課金ゲーティング戦略](docs/web/ranking-gating-strategy.md) — ランキング情報の段階的制限・比較レポートとの差別化
+- [AIレポート生成戦略](docs/web/ai-report-generation-strategy.md) — AIナラティブ生成・サンプルレポート・プロバイダ抽象化・コスト試算
 
 ## 注意事項
 
